@@ -13,7 +13,7 @@ const nav = [
 
 <nav class="global-nav" aria-label="주요 메뉴">
   <div class="wrap global-nav-inner">
-    <a class="site-title" href={url('/')}>{SITE.title}</a>
+    <a class="site-title" href={url('/')}><span class="logo-dot" aria-hidden="true"></span>{SITE.title}</a>
     <ul class="global-nav-links">
       {nav.map((item) => (
         <li>
