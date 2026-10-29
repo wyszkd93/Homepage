@@ -244,7 +244,7 @@ a.cta-btn:hover { text-decoration: none; color: var(--accent); border-color: var
 .prose li::marker { color: var(--text-muted); }
 .prose hr { border: 0; border-top: 1px solid var(--hairline); margin-block: 2.5rem; }
 .prose table { display: block; overflow-x: auto; border-collapse: collapse; font-size: 0.93rem; }
-.prose th, .prose td { border-bottom: 1px solid var(--gridline); padding: 8px 10px; text-align: left; }
+.prose th, .prose td { border-bottom: 1px solid var(--gridline); padding: 8px 10px; text-align: left; vertical-align: top; }
 .prose th { color: var(--text-muted); font-size: 0.8rem; font-weight: 600; border-bottom-color: var(--hairline); }
 
 code, pre, kbd { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }

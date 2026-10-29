@@ -90,7 +90,7 @@ async function fetchWithRetry(url, { tries = 3, ...init } = {}) {
   for (let i = 0; i < tries; i++) {
     try {
       const res = await fetch(url, { ...init, headers: { 'User-Agent': UA, ...(init.headers ?? {}) } });
-      if (res.status === 404) return res;
+      if (res.status === 404 || res.status === 403) return res;
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return res;
     } catch (err) {
@@ -160,7 +160,8 @@ function parseTistoryDate(s) {
 
 async function fetchPage(link) {
   const res = await fetchWithRetry(link);
-  if (res.status === 404) return null;
+  // 404: 삭제된 글, 403: 비공개·보호 글 ("권한이 없거나 존재하지 않는 페이지")
+  if (res.status === 404 || res.status === 403) return null;
   return postFromPage(await res.text(), link);
 }
 
@@ -175,6 +176,10 @@ function createTurndown() {
   });
   // 마크다운으로 표현하기 어려운 요소는 HTML 그대로 유지
   td.keep(['iframe', 'video', 'table', 'details', 'summary']);
+
+  // 본문 글자 속 "<db_name>" 같은 꺾쇠가 HTML 태그로 해석되지 않도록 이스케이프
+  const escape = td.escape.bind(td);
+  td.escape = (text) => escape(text).replace(/</g, '&lt;');
 
   // Tistory 코드 블록: <pre class="language-js"> / <pre data-ke-language="javascript">
   td.addRule('tistoryCode', {
@@ -219,6 +224,24 @@ function cleanHtml(html) {
       img.removeAttribute(attr);
     }
   });
+
+  // 굵게/기울임 등의 끝에 붙은 <br> 제거: <b>내용<br></b> → **내용  ** 로 깨지는 것 방지
+  root.querySelectorAll('b br, strong br, em br, i br, span br, a br').forEach((br) => {
+    const parent = br.parentNode;
+    const after = parent.childNodes.slice(parent.childNodes.indexOf(br) + 1);
+    if (after.every((n) => n.nodeType === 3 && n.text.trim() === '')) br.remove();
+  });
+
+  // 표 등 HTML 그대로 남는 부분이 사이트 스타일을 따르도록 Tistory 인라인 스타일·속성 제거
+  // (코드 블록의 언어 정보는 남김)
+  const KEEP_ATTRS = new Set(['href', 'src', 'alt', 'title', 'colspan', 'rowspan', 'allowfullscreen', 'frameborder']);
+  root.querySelectorAll('*').forEach((el) => {
+    if (el.tagName === 'PRE' || el.tagName === 'CODE' || el.tagName === 'IMG') return;
+    for (const name of Object.keys(el.attributes)) {
+      if (!KEEP_ATTRS.has(name.toLowerCase())) el.removeAttribute(name);
+    }
+  });
+  root.querySelectorAll('span, font').forEach((el) => el.replaceWith(el.innerHTML));
 
   return root.innerHTML;
 }
@@ -303,7 +326,10 @@ function excerpt(markdown, len = 140) {
     .replace(/<[^>]+>/g, ' ')
     .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
     .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
-    .replace(/[#>*_`|-]/g, ' ')
+    .replace(/\\([\\`*_{}\[\]()#+\-.!|<>~])/g, '$1')
+    .replace(/&lt;/g, '<')
+    .replace(/^\s*([-+]|\d+\.)\s+/gm, '')
+    .replace(/[#>*_`|]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
   return text.length > len ? `${text.slice(0, len).trim()}…` : text;

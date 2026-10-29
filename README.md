@@ -53,7 +53,10 @@ npm run import:tistory -- <블로그ID> --ids 1-300    # RSS에 없는 옛 글: 
 - 이미지 다운로드가 실패하면 원본 주소를 그대로 둡니다(`--no-images`로 다운로드 생략).
 - 이미 있는 파일은 건너뜁니다. 다시 받으려면 `--force`. 미리보기만 하려면 `--dry-run`.
 - RSS 본문이 요약만 있으면 `--full`로 각 글 페이지에서 본문을 가져옵니다.
+- 비공개·보호·삭제된 글(Tistory가 403/404로 응답)은 "없음"으로 건너뜁니다.
 - Tistory RSS는 최근 글 일부만 담습니다(블로그 관리 → 설정에서 RSS 공개 개수 조정 가능). 전체를 옮기려면 `--ids` 를 쓰세요.
+
+> 프록시 환경(예: Claude Code 클라우드 세션)에서는 Node의 fetch가 프록시를 쓰도록 `NODE_USE_ENV_PROXY=1 npm run import:tistory -- ...` 처럼 실행하세요.
 
 ## 배포
 
