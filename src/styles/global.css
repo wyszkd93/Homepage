@@ -454,3 +454,4 @@ a.cat:hover { text-decoration: none; filter: brightness(0.95); }
 .plat { display: inline-flex; align-items: center; gap: 5px; font-size: 0.82rem; font-weight: 700; color: var(--ink-muted); }
 .plat::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--cat); }
 .plat:hover { color: var(--accent); text-decoration: none; }
+.prose :is(h2, h3, h4) { scroll-margin-top: 72px; }
