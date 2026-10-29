@@ -6,6 +6,6 @@ import { getPosts } from '../../utils/posts';
 const posts = await getPosts();
 ---
 
-<Base title="블로그" description="전체 글 목록" heading="블로그" tagline={`글 ${posts.length}개 · 카테고리를 골라 모아 볼 수 있습니다.`}>
+<Base title="블로그" description="전체 글 목록" heading="블로그" tagline={`글 ${posts.length}개 · 분야와 주제를 골라 모아 볼 수 있습니다.`}>
   <BlogBrowser all={posts} posts={posts} />
 </Base>

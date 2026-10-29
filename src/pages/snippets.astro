@@ -1,7 +1,7 @@
 ---
 import { Code } from 'astro:components';
 import Base from '../layouts/Base.astro';
-import CategoryLabel from '../components/CategoryLabel.astro';
+import PlatformLabel from '../components/PlatformLabel.astro';
 import { SNIPPET_GROUPS } from '../data/snippets';
 import { getPosts } from '../utils/posts';
 import { codeBlock, cleanSql } from '../utils/snippets';
@@ -39,7 +39,7 @@ const total = groups.reduce((n, g) => n + g.items.length, 0);
             </header>
             <Code code={s.sql} lang="sql" themes={{ light: 'github-light', dark: 'github-dark' }} />
             <p class="snippet-source">
-              <CategoryLabel category={s.post.category} />
+              <PlatformLabel platform={s.post.platform} topic={s.post.topic} />
               원문: <a href={url(`/blog/${s.post.id}/`)}>{s.post.displayTitle}</a>
             </p>
           </article>

@@ -1,19 +1,21 @@
 ---
 import type { Post } from '../utils/posts';
 import { url } from '../utils/url';
-import CategoryLabel from './CategoryLabel.astro';
+import PlatformLabel from './PlatformLabel.astro';
 
 interface Props {
   posts: Post[];
   /** 연도별로 묶어서 보여 줄지 */
   byYear?: boolean;
-  /** 카테고리 표시 여부 (카테고리 페이지에선 생략) */
-  showCategory?: boolean;
+  /** 분야 라벨 표시 (분야 페이지에선 생략) */
+  showPlatform?: boolean;
+  /** 주제 표시 (주제 페이지에선 생략) */
+  showTopic?: boolean;
   /** 현재 보고 있는 글 id (강조 표시) */
   currentId?: string;
 }
 
-const { posts, byYear = false, showCategory = true, currentId } = Astro.props;
+const { posts, byYear = false, showPlatform = true, showTopic = true, currentId } = Astro.props;
 
 // 한국 시간 기준 YYYY-MM-DD
 const ymd = (d: Date) => d.toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' });
@@ -34,12 +36,15 @@ for (const p of posts) {
       {year && <h2 class="year-head">{year}<span class="count">{list.length}</span></h2>}
       <ul class="rows">
         {list.map((post) => (
-          <li class:list={['row', { current: post.id === currentId }]}>
-            {showCategory && <CategoryLabel category={post.category} link={false} />}
+          <li class:list={['row', { current: post.id === currentId, 'has-platform': showPlatform }]}>
+            {showPlatform && <PlatformLabel platform={post.platform} link={false} />}
             <a class="row-title" href={url(`/blog/${post.id}/`)} aria-current={post.id === currentId ? 'page' : undefined}>
               {post.displayTitle}
             </a>
-            <time class="row-date" datetime={post.data.date.toISOString()}>{fmt(post.data.date, !byYear)}</time>
+            <span class="row-meta">
+              {showTopic && <span class="row-topic">{post.topic.name}</span>}
+              <time datetime={post.data.date.toISOString()}>{fmt(post.data.date, !byYear)}</time>
+            </span>
           </li>
         ))}
       </ul>

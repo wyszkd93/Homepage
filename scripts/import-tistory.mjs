@@ -335,7 +335,7 @@ function excerpt(markdown, len = 140) {
   return text.length > len ? `${text.slice(0, len).trim()}…` : text;
 }
 
-function frontmatter(post, description, category) {
+function frontmatter(post, description, keep = []) {
   // JSON 문자열은 그대로 유효한 YAML 문자열입니다.
   const q = (s) => JSON.stringify(s);
   const lines = [
@@ -344,7 +344,7 @@ function frontmatter(post, description, category) {
     description ? `description: ${q(description)}` : null,
     `date: ${post.date.toISOString()}`,
     `tags: [${post.tags.map(q).join(', ')}]`,
-    category ? `category: ${category}` : null,
+    ...keep,
     `source: ${q(post.link)}`,
     '---',
   ];
@@ -409,10 +409,10 @@ async function main() {
         summary.imageFailures += r.failed;
       }
 
-      // --force로 덮어쓸 때 직접 정해 둔 카테고리는 유지
+      // --force로 덮어쓸 때 직접 정해 둔 분류(platform, topic)는 유지
       const prev = (await exists(file)) ? await readFile(file, 'utf8') : '';
-      const category = prev.match(/^category:\s*(\S+)\s*$/m)?.[1];
-      const content = `${frontmatter(post, excerpt(body), category)}\n\n${body}\n`;
+      const keep = prev.match(/^(platform|topic):.*$/gm) ?? [];
+      const content = `${frontmatter(post, excerpt(body), keep)}\n\n${body}\n`;
       if (!opts.dryRun) await writeFile(file, content);
       console.log(`✓ ${rel}  ${post.title}`);
       summary.written++;

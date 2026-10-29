@@ -1,38 +1,71 @@
 ---
-import { CATEGORIES } from '../categories';
-import type { Post } from '../utils/posts';
+import { PLATFORMS, topicsOf, type Platform, type Topic } from '../categories';
+import { categoryUrl, type Post } from '../utils/posts';
 import { url } from '../utils/url';
 import PostRows from './PostRows.astro';
 
 interface Props {
   all: Post[];
   posts: Post[];
-  /** 현재 카테고리 슬러그, 전체면 없음 */
-  active?: string;
+  platform?: Platform;
+  topic?: Topic;
 }
-const { all, posts, active } = Astro.props;
-const counts = new Map(CATEGORIES.map((c) => [c.slug, all.filter((p) => p.category.slug === c.slug).length]));
+const { all, posts, platform, topic } = Astro.props;
+
+// 글이 있는 분야·주제만
+const tree = PLATFORMS.map((p) => {
+  const inP = all.filter((x) => x.platform.slug === p.slug);
+  const topics = topicsOf(p)
+    .map((t) => ({ topic: t, count: inP.filter((x) => x.topic.slug === t.slug).length }))
+    .filter((t) => t.count > 0);
+  return { platform: p, count: inP.length, topics };
+}).filter((p) => p.count > 0);
+const activeTree = tree.find((t) => t.platform.slug === platform?.slug);
 ---
 
 <div class="blog-layout">
-  <nav class="cat-nav" aria-label="카테고리">
-    <p class="cat-nav-title">카테고리</p>
-    <ul>
+  <nav class="cat-nav" aria-label="분류">
+    <p class="cat-nav-title">분류</p>
+    <ul class="cat-tree">
       <li>
-        <a href={url('/blog/')} aria-current={!active ? 'page' : undefined}>
+        <a href={url('/blog/')} aria-current={!platform ? 'page' : undefined}>
           <span>전체</span><span class="count">{all.length}</span>
         </a>
       </li>
-      {CATEGORIES.filter((c) => counts.get(c.slug)).map((c) => (
-        <li>
-          <a href={url(`/blog/category/${c.slug}/`)} aria-current={active === c.slug ? 'page' : undefined} style={`--cat: ${c.color}`}>
-            <span><i class="dot" aria-hidden="true"></i>{c.name}</span><span class="count">{counts.get(c.slug)}</span>
+      {tree.map((p) => (
+        <li class:list={['cat-platform', { open: p.platform.slug === platform?.slug }]} style={`--cat: ${p.platform.color}`}>
+          <a href={url(categoryUrl(p.platform))} aria-current={p.platform.slug === platform?.slug && !topic ? 'page' : undefined}>
+            <span><i class="dot" aria-hidden="true"></i>{p.platform.name}</span><span class="count">{p.count}</span>
           </a>
+          <ul class="cat-topics">
+            {p.topics.map((t) => (
+              <li>
+                <a
+                  href={url(categoryUrl(p.platform, t.topic))}
+                  aria-current={p.platform.slug === platform?.slug && t.topic.slug === topic?.slug ? 'page' : undefined}
+                >
+                  <span>{t.topic.name}</span><span class="count">{t.count}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
         </li>
       ))}
     </ul>
+    {activeTree && (
+      <ul class="cat-topics-mobile" aria-label={`${activeTree.platform.name} 주제`}>
+        <li><a href={url(categoryUrl(activeTree.platform))} aria-current={!topic ? 'page' : undefined}>전체 {activeTree.count}</a></li>
+        {activeTree.topics.map((t) => (
+          <li>
+            <a href={url(categoryUrl(activeTree.platform, t.topic))} aria-current={t.topic.slug === topic?.slug ? 'page' : undefined}>
+              {t.topic.name} {t.count}
+            </a>
+          </li>
+        ))}
+      </ul>
+    )}
   </nav>
   <div class="blog-main">
-    <PostRows posts={posts} byYear showCategory={!active} />
+    <PostRows posts={posts} byYear showPlatform={!platform} showTopic={!topic} />
   </div>
 </div>

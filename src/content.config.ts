@@ -10,8 +10,9 @@ const blog = defineCollection({
     date: z.coerce.date(),
     updated: z.coerce.date().optional(),
     tags: z.array(z.string()).default([]),
-    // 카테고리 슬러그(src/categories.ts). 없으면 제목 말머리로 자동 분류
-    category: z.string().optional(),
+    // 분야·주제 슬러그 (src/categories.ts). 없으면 제목으로 추정
+    platform: z.string().optional(),
+    topic: z.string().optional(),
     draft: z.boolean().default(false),
     // Tistory에서 가져온 글이면 원본 주소
     source: z.string().url().optional(),
