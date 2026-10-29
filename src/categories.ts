@@ -28,6 +28,7 @@ export const PLATFORMS: Platform[] = [
   { slug: 'mysql', name: 'MySQL·MariaDB', description: 'MySQL, MariaDB', color: '#2f6f9f', topics: 'db', keywords: ['mysql', 'mariadb', 'maria'] },
   { slug: 'postgresql', name: 'PostgreSQL', description: 'PostgreSQL', color: '#3b5f9e', topics: 'db', keywords: ['postgres', 'postgresql'] },
   { slug: 'tibero', name: 'Tibero', description: 'TmaxTibero', color: '#2f8f83', topics: 'db', keywords: ['tibero', '티베로'] },
+  { slug: 'mq', name: 'IBM MQ', description: 'EAI · IBM MQ 메시징 미들웨어', color: '#1f70c1', topics: 'db', keywords: ['ibm mq', 'runmqsc', 'mqsc', 'websphere mq'] },
   { slug: 'os', name: 'OS', description: '리눅스·윈도우 서버', color: '#6a7480', topics: 'os', keywords: [] },
 ];
 

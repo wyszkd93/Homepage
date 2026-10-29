@@ -1,0 +1,20 @@
+{
+  "name": "mqsc",
+  "scopeName": "source.mqsc",
+  "aliases": ["runmqsc"],
+  "patterns": [
+    { "name": "comment.line.asterisk.mqsc", "match": "^\\s*\\*.*$" },
+    { "name": "string.quoted.single.mqsc", "match": "'[^']*'" },
+    {
+      "name": "keyword.control.mqsc",
+      "match": "(?i)^\\s*(DEFINE|DISPLAY|ALTER|DELETE|START|STOP|SET|CLEAR|RESET|PING|RESOLVE|REFRESH|SUSPEND|RESUME|END)\\b"
+    },
+    {
+      "name": "entity.name.type.mqsc",
+      "match": "(?i)\\b(QMGR|QLOCAL|QREMOTE|QALIAS|QMODEL|Q|CHANNEL|CHSTATUS|LISTENER|LSSTATUS|PROCESS|TOPIC|TPSTATUS|SBSTATUS|SUB|CHLAUTH|AUTHREC|QMSTATUS|QSTATUS|CONN|SERVICE|SVSTATUS|CHINIT|TMQNAME)(?=[\\s(]|$)"
+    },
+    { "name": "variable.parameter.mqsc", "match": "\\b[A-Z][A-Z0-9]*(?=\\()" },
+    { "name": "constant.numeric.mqsc", "match": "\\b\\d+\\b" },
+    { "name": "keyword.operator.continuation.mqsc", "match": "\\+\\s*$" }
+  ]
+}
