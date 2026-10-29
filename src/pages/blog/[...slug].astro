@@ -32,7 +32,13 @@ const { Content } = await render(post);
 const { title, description, date, updated, tags, source } = post.data;
 ---
 
-<Base title={title} description={description} heading={post.displayTitle} narrow>
+<Base
+  title={title}
+  description={description}
+  heading={post.displayTitle}
+  narrow
+  article={{ published: date, modified: updated, tags, section: post.category.name }}
+>
   <div class="post-head-meta" slot="hero">
     <CategoryLabel category={post.category} />
     <time datetime={date.toISOString()}>{formatDate(date)}</time>
@@ -40,7 +46,7 @@ const { title, description, date, updated, tags, source } = post.data;
     <TagList tags={tags} />
   </div>
 
-  <article class="prose">
+  <article class="prose" data-pagefind-body>
     <Content />
   </article>
 

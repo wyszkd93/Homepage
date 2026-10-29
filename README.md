@@ -9,6 +9,7 @@
 | --- | --- |
 | `src/consts.ts` | 이름, 소개, 관심 분야, 스택, 프로젝트, 연락처 — **소개 페이지 내용은 여기서 수정** |
 | `src/content/blog/` | 블로그 글 (마크다운). 파일 하나 = 글 하나 |
+| `src/data/snippets.ts` | SQL 스니펫 페이지(`/snippets/`) 구성. 글의 n번째 코드 블록을 그대로 가져옴 |
 | `src/categories.ts` | 블로그 카테고리(목차). 제목 말머리 `[ADMIN]` 등으로 자동 분류 |
 | `src/pages/` | 페이지: 소개(`/`), 블로그 목록·글, 태그, RSS(`/rss.xml`) |
 | `src/styles/global.css` | 디자인 (라이트/다크 색상 변수) |
@@ -22,7 +23,8 @@
 ```bash
 npm install
 npm run dev      # http://localhost:4321/Homepage/
-npm run build    # dist/ 에 정적 파일 생성
+npm run build    # dist/ 에 정적 파일 생성 + 검색 색인(Pagefind)
+npm run preview  # 빌드 결과 미리보기 (검색은 여기서 동작, dev 서버에선 안 됨)
 ```
 
 ## 글 쓰기
@@ -59,6 +61,13 @@ npm run import:tistory -- <블로그ID> --ids 1-300    # RSS에 없는 옛 글: 
 - Tistory RSS는 최근 글 일부만 담습니다(블로그 관리 → 설정에서 RSS 공개 개수 조정 가능). 전체를 옮기려면 `--ids` 를 쓰세요.
 
 > 프록시 환경(예: Claude Code 클라우드 세션)에서는 Node의 fetch가 프록시를 쓰도록 `NODE_USE_ENV_PROXY=1 npm run import:tistory -- ...` 처럼 실행하세요.
+
+## 검색 엔진 등록
+
+1. [Google Search Console](https://search.google.com/search-console)에서 **URL 접두어** 속성으로 `https://wyszkd93.github.io/Homepage/` 추가 → 확인 방법 **HTML 태그** 선택
+2. [네이버 서치어드바이저](https://searchadvisor.naver.com/)에서 사이트 등록 → **HTML 태그** 선택
+3. 받은 태그의 `content` 값을 `src/consts.ts`의 `verification.google` / `verification.naver`에 넣고 배포 → 각 사이트에서 "확인"
+4. 사이트맵 제출: `https://wyszkd93.github.io/Homepage/sitemap-index.xml` (네이버는 RSS `.../rss.xml`도 제출)
 
 ## 배포
 

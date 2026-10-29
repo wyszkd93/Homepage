@@ -1,0 +1,68 @@
+---
+// Pagefind 검색. 색인은 `npm run build` 때 dist/pagefind/ 에 만들어집니다 (개발 서버에선 동작하지 않음).
+import { url } from '../utils/url';
+const base = url('/');
+---
+
+<button class="search-btn" type="button" aria-label="검색 (Ctrl+K)" data-search-open>
+  <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+  <span class="search-label">검색</span>
+  <kbd class="search-kbd">Ctrl K</kbd>
+</button>
+
+<dialog class="search-dialog" aria-label="사이트 검색" data-base={base}>
+  <div class="search-panel">
+    <div id="search"></div>
+    <p class="search-hint"><kbd>Esc</kbd> 닫기</p>
+  </div>
+</dialog>
+
+<script>
+  const dialog = document.querySelector<HTMLDialogElement>('.search-dialog')!;
+  const base = dialog.dataset.base!;
+  let loaded: Promise<void> | null = null;
+
+  function load() {
+    loaded ??= new Promise<void>((resolve, reject) => {
+      const css = document.createElement('link');
+      css.rel = 'stylesheet';
+      css.href = `${base}pagefind/pagefind-ui.css`;
+      document.head.append(css);
+      const js = document.createElement('script');
+      js.src = `${base}pagefind/pagefind-ui.js`;
+      js.onload = () => {
+        // @ts-expect-error PagefindUI는 위 스크립트가 전역에 등록합니다.
+        new PagefindUI({ element: '#search', baseUrl: base, bundlePath: `${base}pagefind/`, showSubResults: true, showImages: false, resetStyles: false });
+        resolve();
+      };
+      js.onerror = () => {
+        document.getElementById('search')!.textContent = '검색 색인이 없습니다. (npm run build 후 미리보기에서 동작합니다)';
+        reject();
+      };
+      document.head.append(js);
+    });
+    return loaded;
+  }
+
+  async function open() {
+    if (dialog.open) return;
+    dialog.showModal();
+    await load().catch(() => {});
+    dialog.querySelector<HTMLInputElement>('input')?.focus();
+  }
+
+  document.querySelectorAll('[data-search-open]').forEach((b) => b.addEventListener('click', open));
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      open();
+    } else if (e.key === '/' && !(e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement)) {
+      e.preventDefault();
+      open();
+    }
+  });
+  // 바깥(배경) 클릭 시 닫기
+  dialog.addEventListener('click', (e) => {
+    if (e.target === dialog) dialog.close();
+  });
+</script>
