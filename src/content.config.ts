@@ -14,7 +14,7 @@ const blog = defineCollection({
     platform: z.string().optional(),
     topic: z.string().optional(),
     draft: z.boolean().default(false),
-    // Tistory에서 가져온 글이면 원본 주소
+    // Tistory에서 가져온 글이면 원본 주소 (화면에는 표시하지 않음, 다시 가져오기용)
     source: z.string().url().optional(),
   }),
 });
