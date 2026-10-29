@@ -1,7 +1,11 @@
 import { DEFAULT_PLATFORM, DB_TOPICS, OS_TOPICS, PLATFORMS, topicsOf, type Platform, type Topic } from '../categories';
 
 const norm = (s: string) => s.toLowerCase().replace(/\s+/g, '');
-const ALL_PREFIXES = new Set([...DB_TOPICS, ...OS_TOPICS].flatMap((t) => t.prefixes));
+// 제목에서 떼어 낼 말머리: 주제 말머리 + 분야 이름("[Oracle]", "[MySQL]" 등)
+const ALL_PREFIXES = new Set([
+  ...[...DB_TOPICS, ...OS_TOPICS].flatMap((t) => t.prefixes),
+  ...PLATFORMS.flatMap((p) => [p.slug, norm(p.name), ...p.keywords]),
+]);
 
 export function getPlatform(slug: string): Platform {
   const p = PLATFORMS.find((x) => x.slug === slug);

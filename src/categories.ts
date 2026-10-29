@@ -40,7 +40,8 @@ export const DB_TOPICS: Topic[] = [
   { slug: 'tuning', name: '성능·튜닝', description: '실행 계획, 옵티마이저, 힌트', color: '#8a5cc2', prefixes: ['tuning'] },
   { slug: 'monitoring', name: '모니터링·진단', description: '성능 리포트, 대기 이벤트, 트레이스, 세션', color: '#2a7fa8', prefixes: ['tool'] },
   { slug: 'troubleshooting', name: '트러블슈팅', description: '에러와 장애 대응', color: '#c2414b', prefixes: ['ts'] },
-  { slug: 'sql', name: 'SQL·딕셔너리', description: '자주 쓰는 쿼리, PL/SQL, 딕셔너리 뷰', color: '#2f7d8c', prefixes: ['sql', 'pl/sql', 'view'] },
+  { slug: 'sql-basics', name: 'SQL 문법', description: 'SELECT, 조인, 서브쿼리, 함수 등 SQL 문법', color: '#5a63c8', prefixes: ['sql'] },
+  { slug: 'sql', name: 'DBA 쿼리·딕셔너리', description: '운영 조회 쿼리, PL/SQL, 딕셔너리 뷰', color: '#2f7d8c', prefixes: ['pl/sql', 'view'] },
   { slug: 'script', name: '스크립트·자동화', description: '쉘·배치 스크립트, 스케줄러', color: '#9a6b3f', prefixes: ['shell', 'shellscript', 'scheduler'] },
   { slug: 'etc', name: '기타', description: '그 밖의 글', color: '#9a8f85', prefixes: ['etc'] },
 ];
