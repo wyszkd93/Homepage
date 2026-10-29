@@ -1,6 +1,5 @@
 ---
 import { PROFILE } from '../consts';
-import { url } from '../utils/url';
 const year = new Date().getFullYear();
 ---
 
@@ -8,7 +7,6 @@ const year = new Date().getFullYear();
   <div class="wrap footer-inner">
     <p class="footer-links">
       {PROFILE.links.map((l) => <a href={l.url}>{l.label}</a>)}
-      <a href={url('/rss.xml')}>RSS</a>
     </p>
     <p>© {year} {PROFILE.name}</p>
   </div>
