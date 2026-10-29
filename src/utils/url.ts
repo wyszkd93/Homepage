@@ -1,4 +1,4 @@
-// base 경로("/Homepage")를 고려한 내부 링크 생성기.
+// base 경로(astro.config의 base)를 고려한 내부 링크 생성기.
 const base = import.meta.env.BASE_URL.replace(/\/+$/, '');
 
 export function url(path = '/'): string {

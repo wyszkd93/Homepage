@@ -17,11 +17,11 @@ export const PROFILE = {
     {
       name: '프로젝트 이름',
       description: '프로젝트에 대한 짧은 설명',
-      url: 'https://github.com/wyszkd93',
+      url: 'https://github.com/MoguMogu93',
     },
   ],
   links: [
-    { label: 'GitHub', url: 'https://github.com/wyszkd93' },
+    { label: 'GitHub', url: 'https://github.com/MoguMogu93' },
     { label: 'Email', url: 'mailto:you@example.com' },
   ],
 };

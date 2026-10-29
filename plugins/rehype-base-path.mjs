@@ -1,5 +1,5 @@
 // 마크다운에서 "/"로 시작하는 내부 경로(src/href)에 base 경로를 붙이는 rehype 플러그인.
-// 예: base가 "/Homepage"이면 ![](/images/a.png) → /Homepage/images/a.png
+// 예: base가 "/blog"이면 ![](/images/a.png) → /blog/images/a.png
 export function rehypeBasePath({ base = '/' } = {}) {
   const prefix = base.replace(/\/+$/, '');
   const fix = (url) => {
