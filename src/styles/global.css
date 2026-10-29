@@ -337,13 +337,9 @@ a.cat:hover { text-decoration: none; filter: brightness(0.95); }
 }
 .row-title:hover { color: var(--accent); text-decoration: none; }
 .row-meta { flex: none; display: inline-flex; align-items: center; gap: 8px; color: var(--text-muted); font-size: 0.82rem; font-variant-numeric: tabular-nums; }
-.row-topic { font-size: 0.78rem; padding: 0 7px; border-radius: 5px; background: var(--surface-2); color: var(--text-muted); white-space: nowrap; }
-.row .cat {
-  min-width: 7.2em; justify-content: flex-start; gap: 6px; padding: 0;
-  background: none; border: 0; font-weight: 600; font-size: 0.78rem;
-}
-.row .cat::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--cat); flex: none; }
-:root[data-theme='dark'] .row .cat { background: none; }
+.row-plat { display: inline-flex; align-items: center; gap: 5px; font-size: 0.78rem; white-space: nowrap; }
+.row-plat::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--cat); }
+.row .cat { min-width: 9em; justify-content: center; }
 .row.current .row-title { color: var(--accent); font-weight: 700; }
 .row.current { background: var(--accent-soft); border-radius: 8px; padding-inline: 10px; }
 
@@ -370,9 +366,9 @@ a.cat:hover { text-decoration: none; filter: brightness(0.95); }
   .row-title { flex-basis: 100%; order: 2; white-space: normal; }
   .row .cat { order: 1; min-width: 0; }
   .row-meta { order: 1; margin-left: auto; }
-  .row:not(.has-platform) { flex-wrap: nowrap; align-items: baseline; }
-  .row:not(.has-platform) .row-title { flex-basis: auto; order: 0; }
-  .row:not(.has-platform) .row-meta { order: 0; }
+  .row:not(.has-label) { flex-wrap: nowrap; align-items: baseline; }
+  .row:not(.has-label) .row-title { flex-basis: auto; order: 0; }
+  .row:not(.has-label) .row-meta { order: 0; }
 }
 
 /* 검색 */
@@ -455,5 +451,6 @@ a.cat:hover { text-decoration: none; filter: brightness(0.95); }
 /* 분야 › 주제 경로 라벨 */
 .cat-path { display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap; }
 .cat-sep { color: var(--text-muted); font-size: 0.85em; }
-.cat-topic { font-size: 0.82rem; font-weight: 600; color: var(--ink-muted); }
-.cat-topic:hover { color: var(--accent); }
+.plat { display: inline-flex; align-items: center; gap: 5px; font-size: 0.82rem; font-weight: 700; color: var(--ink-muted); }
+.plat::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--cat); }
+.plat:hover { color: var(--accent); text-decoration: none; }

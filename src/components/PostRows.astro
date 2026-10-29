@@ -1,15 +1,15 @@
 ---
 import type { Post } from '../utils/posts';
 import { url } from '../utils/url';
-import PlatformLabel from './PlatformLabel.astro';
+import TopicLabel from './TopicLabel.astro';
 
 interface Props {
   posts: Post[];
   /** 연도별로 묶어서 보여 줄지 */
   byYear?: boolean;
-  /** 분야 라벨 표시 (분야 페이지에선 생략) */
+  /** 분야 표시 (분야 페이지에선 생략) */
   showPlatform?: boolean;
-  /** 주제 표시 (주제 페이지에선 생략) */
+  /** 주제 색 라벨 표시 (주제 페이지에선 생략) */
   showTopic?: boolean;
   /** 현재 보고 있는 글 id (강조 표시) */
   currentId?: string;
@@ -36,13 +36,13 @@ for (const p of posts) {
       {year && <h2 class="year-head">{year}<span class="count">{list.length}</span></h2>}
       <ul class="rows">
         {list.map((post) => (
-          <li class:list={['row', { current: post.id === currentId, 'has-platform': showPlatform }]}>
-            {showPlatform && <PlatformLabel platform={post.platform} link={false} />}
+          <li class:list={['row', { current: post.id === currentId, 'has-label': showTopic }]}>
+            {showTopic && <TopicLabel platform={post.platform} topic={post.topic} />}
             <a class="row-title" href={url(`/blog/${post.id}/`)} aria-current={post.id === currentId ? 'page' : undefined}>
               {post.displayTitle}
             </a>
             <span class="row-meta">
-              {showTopic && <span class="row-topic">{post.topic.name}</span>}
+              {showPlatform && <span class="row-plat" style={`--cat: ${post.platform.color}`}>{post.platform.name}</span>}
               <time datetime={post.data.date.toISOString()}>{fmt(post.data.date, !byYear)}</time>
             </span>
           </li>
