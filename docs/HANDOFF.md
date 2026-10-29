@@ -4,7 +4,7 @@
 
 - 사이트: https://wyszkd93.github.io/Homepage/
 - 저장소: `wyszkd93/Homepage` (main 브랜치에 push되면 GitHub Actions가 자동 배포)
-- 스냅샷 태그: `backup-2026-10-29` — 이 시점으로 되돌릴 때 사용
+- 백업 시점 커밋: `c985751` (2026-10-29 main) — 이 시점으로 되돌릴 때 기준
 
 ## 지금까지 한 것
 
