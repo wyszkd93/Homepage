@@ -1,0 +1,31 @@
+---
+import Base from '../../layouts/Base.astro';
+import PostList from '../../components/PostList.astro';
+import { getPosts, type Post } from '../../utils/posts';
+import { tagSlug } from '../../utils/url';
+
+export async function getStaticPaths() {
+  const posts = await getPosts();
+  const groups = new Map<string, { name: string; posts: Post[] }>();
+  for (const post of posts) {
+    for (const tag of post.data.tags) {
+      const key = tagSlug(tag);
+      const g = groups.get(key) ?? { name: tag, posts: [] };
+      g.posts.push(post);
+      groups.set(key, g);
+    }
+  }
+  return [...groups.entries()].map(([slug, g]) => ({
+    params: { tag: slug },
+    props: { name: g.name, posts: g.posts },
+  }));
+}
+
+const { name, posts } = Astro.props;
+---
+
+<Base title={`#${name}`} description={`${name} 태그가 달린 글`}>
+  <h1 class="page-title">#{name}</h1>
+  <p class="muted">글 {posts.length}개</p>
+  <PostList posts={posts} />
+</Base>

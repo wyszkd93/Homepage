@@ -1,0 +1,13 @@
+---
+import Base from '../../layouts/Base.astro';
+import PostList from '../../components/PostList.astro';
+import { getPosts } from '../../utils/posts';
+
+const posts = await getPosts();
+---
+
+<Base title="블로그" description="전체 글 목록">
+  <h1 class="page-title">블로그</h1>
+  <p class="muted">글 {posts.length}개</p>
+  <PostList posts={posts} />
+</Base>

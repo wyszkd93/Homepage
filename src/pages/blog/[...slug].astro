@@ -1,0 +1,51 @@
+---
+import { render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import TagList from '../../components/TagList.astro';
+import { getPosts, type Post } from '../../utils/posts';
+import { url, formatDate } from '../../utils/url';
+
+export async function getStaticPaths() {
+  const posts = await getPosts();
+  return posts.map((post, i) => ({
+    params: { slug: post.id },
+    props: { post, newer: posts[i - 1], older: posts[i + 1] },
+  }));
+}
+
+interface Props {
+  post: Post;
+  newer?: Post;
+  older?: Post;
+}
+
+const { post, newer, older } = Astro.props;
+const { Content } = await render(post);
+const { title, description, date, updated, tags, source } = post.data;
+---
+
+<Base title={title} description={description}>
+  <article class="post">
+    <header class="post-header">
+      <h1>{title}</h1>
+      <div class="post-meta">
+        <time datetime={date.toISOString()}>{formatDate(date)}</time>
+        {updated && <span>· 수정 {formatDate(updated)}</span>}
+      </div>
+      <TagList tags={tags} />
+    </header>
+    <div class="prose">
+      <Content />
+    </div>
+    {source && (
+      <p class="muted source-note">
+        이 글은 <a href={source}>Tistory</a>에서 옮겨 온 글입니다.
+      </p>
+    )}
+  </article>
+
+  <nav class="post-nav" aria-label="이전/다음 글">
+    {older ? <a href={url(`/blog/${older.id}/`)}>← {older.data.title}</a> : <span></span>}
+    {newer ? <a href={url(`/blog/${newer.id}/`)}>{newer.data.title} →</a> : <span></span>}
+  </nav>
+</Base>
