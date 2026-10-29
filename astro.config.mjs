@@ -3,6 +3,7 @@ import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 import { unified } from '@astrojs/markdown-remark';
 import { rehypeBasePath } from './plugins/rehype-base-path.mjs';
+import mqsc from './plugins/mqsc.tmLanguage.json' with { type: 'json' };
 
 const site = 'https://wyszkd93.github.io';
 const base = '/Homepage';
@@ -17,6 +18,8 @@ export default defineConfig({
     processor: unified({ rehypePlugins: [[rehypeBasePath, { base }]] }),
     shikiConfig: {
       themes: { light: 'github-light', dark: 'github-dark' },
+      // IBM MQ runmqsc 명령어용 간단한 문법 색
+      langs: [mqsc],
     },
   },
 });

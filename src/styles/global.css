@@ -339,7 +339,7 @@ a.cat:hover { text-decoration: none; filter: brightness(0.95); }
 .row-meta { flex: none; display: inline-flex; align-items: center; gap: 8px; color: var(--text-muted); font-size: 0.82rem; font-variant-numeric: tabular-nums; }
 .row-plat { display: inline-flex; align-items: center; gap: 5px; font-size: 0.78rem; white-space: nowrap; }
 .row-plat::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--cat); }
-.row .cat { min-width: 9em; justify-content: center; }
+.row .cat { min-width: 10.2em; justify-content: center; }
 .row.current .row-title { color: var(--accent); font-weight: 700; }
 .row.current { background: var(--accent-soft); border-radius: 8px; padding-inline: 10px; }
 
@@ -455,3 +455,5 @@ a.cat:hover { text-decoration: none; filter: brightness(0.95); }
 .plat::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--cat); }
 .plat:hover { color: var(--accent); text-decoration: none; }
 .prose :is(h2, h3, h4) { scroll-margin-top: 72px; }
+.prose th, .prose td { min-width: 7em; }
+.prose td code { white-space: nowrap; }
