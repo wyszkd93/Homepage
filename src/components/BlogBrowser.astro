@@ -44,7 +44,7 @@ const activeTree = tree.find((t) => t.platform.slug === platform?.slug);
                   href={url(categoryUrl(p.platform, t.topic))}
                   aria-current={p.platform.slug === platform?.slug && t.topic.slug === topic?.slug ? 'page' : undefined}
                 >
-                  <span>{t.topic.name}</span><span class="count">{t.count}</span>
+                  <span><i class="dot" style={`--cat: ${t.topic.color}`} aria-hidden="true"></i>{t.topic.name}</span><span class="count">{t.count}</span>
                 </a>
               </li>
             ))}

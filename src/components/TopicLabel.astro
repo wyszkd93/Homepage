@@ -1,0 +1,18 @@
+---
+import type { Platform, Topic } from '../categories';
+import { categoryUrl } from '../utils/posts';
+import { url } from '../utils/url';
+
+interface Props {
+  platform: Platform;
+  topic: Topic;
+  link?: boolean;
+}
+const { platform, topic, link = false } = Astro.props;
+---
+
+{link ? (
+  <a class="cat" style={`--cat: ${topic.color}`} href={url(categoryUrl(platform, topic))}>{topic.name}</a>
+) : (
+  <span class="cat" style={`--cat: ${topic.color}`}>{topic.name}</span>
+)}

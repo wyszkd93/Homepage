@@ -17,6 +17,8 @@ export interface Topic {
   slug: string;
   name: string;
   description: string;
+  /** 목록 라벨 색 */
+  color: string;
   /** 자동 분류용 제목 말머리 (소문자, 띄어쓰기 없이) */
   prefixes: string[];
 }
@@ -30,22 +32,22 @@ export const PLATFORMS: Platform[] = [
 ];
 
 export const DB_TOPICS: Topic[] = [
-  { slug: 'concepts', name: '아키텍처·개념', description: '구조와 핵심 개념', prefixes: ['doc'] },
-  { slug: 'install', name: '설치', description: '설치와 초기 구성', prefixes: ['install'] },
-  { slug: 'ha', name: 'RAC·고가용성', description: 'RAC, 복제, 이중화', prefixes: ['rac'] },
-  { slug: 'ops', name: '운영·관리', description: '로그, 데이터파일, 리스너, DB 링크 등 일상 운영', prefixes: ['admin'] },
-  { slug: 'backup', name: '백업·복구·이관', description: '백업·복구, 덤프, 마이그레이션', prefixes: ['backup&recovery', 'datapump', 'migration', 'mig'] },
-  { slug: 'tuning', name: '성능·튜닝', description: '실행 계획, 옵티마이저, 힌트', prefixes: ['tuning'] },
-  { slug: 'monitoring', name: '모니터링·진단', description: '성능 리포트, 대기 이벤트, 트레이스, 세션', prefixes: ['tool'] },
-  { slug: 'troubleshooting', name: '트러블슈팅', description: '에러와 장애 대응', prefixes: ['ts'] },
-  { slug: 'sql', name: 'SQL·딕셔너리', description: '자주 쓰는 쿼리, PL/SQL, 딕셔너리 뷰', prefixes: ['sql', 'pl/sql', 'view'] },
-  { slug: 'script', name: '스크립트·자동화', description: '쉘·배치 스크립트, 스케줄러', prefixes: ['shell', 'shellscript', 'scheduler'] },
-  { slug: 'etc', name: '기타', description: '그 밖의 글', prefixes: ['etc'] },
+  { slug: 'concepts', name: '아키텍처·개념', description: '구조와 핵심 개념', color: '#3b78c4', prefixes: ['doc'] },
+  { slug: 'install', name: '설치', description: '설치와 초기 구성', color: '#2f8f83', prefixes: ['install'] },
+  { slug: 'ha', name: 'RAC·고가용성', description: 'RAC, 복제, 이중화', color: '#c98a12', prefixes: ['rac'] },
+  { slug: 'ops', name: '운영·관리', description: '로그, 데이터파일, 리스너, DB 링크 등 일상 운영', color: '#c0632f', prefixes: ['admin'] },
+  { slug: 'backup', name: '백업·복구·이관', description: '백업·복구, 덤프, 마이그레이션', color: '#4f8a4a', prefixes: ['backup&recovery', 'datapump', 'migration', 'mig'] },
+  { slug: 'tuning', name: '성능·튜닝', description: '실행 계획, 옵티마이저, 힌트', color: '#8a5cc2', prefixes: ['tuning'] },
+  { slug: 'monitoring', name: '모니터링·진단', description: '성능 리포트, 대기 이벤트, 트레이스, 세션', color: '#2a7fa8', prefixes: ['tool'] },
+  { slug: 'troubleshooting', name: '트러블슈팅', description: '에러와 장애 대응', color: '#c2414b', prefixes: ['ts'] },
+  { slug: 'sql', name: 'SQL·딕셔너리', description: '자주 쓰는 쿼리, PL/SQL, 딕셔너리 뷰', color: '#2f7d8c', prefixes: ['sql', 'pl/sql', 'view'] },
+  { slug: 'script', name: '스크립트·자동화', description: '쉘·배치 스크립트, 스케줄러', color: '#9a6b3f', prefixes: ['shell', 'shellscript', 'scheduler'] },
+  { slug: 'etc', name: '기타', description: '그 밖의 글', color: '#9a8f85', prefixes: ['etc'] },
 ];
 
 export const OS_TOPICS: Topic[] = [
-  { slug: 'linux', name: 'Linux', description: '리눅스 서버 설정', prefixes: ['os'] },
-  { slug: 'windows', name: 'Windows', description: '윈도우 서버·배치', prefixes: ['netsh'] },
+  { slug: 'linux', name: 'Linux', description: '리눅스 서버 설정', color: '#5b6b7a', prefixes: ['os'] },
+  { slug: 'windows', name: 'Windows', description: '윈도우 서버·배치', color: '#3d7cc9', prefixes: ['netsh'] },
 ];
 
 export const DEFAULT_PLATFORM = 'oracle';

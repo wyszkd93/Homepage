@@ -2,21 +2,17 @@
 import type { Platform, Topic } from '../categories';
 import { categoryUrl } from '../utils/posts';
 import { url } from '../utils/url';
+import TopicLabel from './TopicLabel.astro';
 
 interface Props {
   platform: Platform;
-  /** 주면 "Oracle › 성능·튜닝"처럼 함께 표시 */
+  /** 주면 "Oracle › [주제]"처럼 함께 표시 */
   topic?: Topic;
-  link?: boolean;
 }
-const { platform, topic, link = true } = Astro.props;
+const { platform, topic } = Astro.props;
 ---
 
-{link ? (
-  <span class="cat-path">
-    <a class="cat" style={`--cat: ${platform.color}`} href={url(categoryUrl(platform))}>{platform.name}</a>
-    {topic && <><span class="cat-sep" aria-hidden="true">›</span><a class="cat-topic" href={url(categoryUrl(platform, topic))}>{topic.name}</a></>}
-  </span>
-) : (
-  <span class="cat" style={`--cat: ${platform.color}`}>{platform.name}</span>
-)}
+<span class="cat-path">
+  <a class="plat" style={`--cat: ${platform.color}`} href={url(categoryUrl(platform))}>{platform.name}</a>
+  {topic && <><span class="cat-sep" aria-hidden="true">›</span><TopicLabel platform={platform} topic={topic} link /></>}
+</span>
