@@ -54,7 +54,8 @@ npm run import:tistory -- <블로그ID>                # https://<블로그ID>.t
 npm run import:tistory -- <블로그ID> --ids 1-300    # RSS에 없는 옛 글: 글 번호로 직접 수집
 ```
 
-- 결과: `src/content/blog/tistory/<글번호>.md`, 이미지는 `public/images/tistory/<글번호>/`
+- 결과: `src/content/blog/tistory/<글번호>.md`, 이미지는 `public/images/tistory/<글번호>/`, 첨부파일은 `public/files/tistory/<글번호>/`
+- 변환 시 정리: 코드 상자·명령어 인용 상자 → 코드 블록, 링크 미리보기 카드 → "참고: [제목](주소)" 한 줄, 첨부파일(만료되는 임시 주소) → 내려받아 로컬 링크, 조각난 굵게 표시 합치기
 - 이미지 다운로드가 실패하면 원본 주소를 그대로 둡니다(`--no-images`로 다운로드 생략).
 - 이미 있는 파일은 건너뜁니다. 다시 받으려면 `--force`. 미리보기만 하려면 `--dry-run`.
 - RSS 본문이 요약만 있으면 `--full`로 각 글 페이지에서 본문을 가져옵니다.
