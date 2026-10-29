@@ -10,7 +10,7 @@
 | `src/consts.ts` | 이름, 소개, 관심 분야, 스택, 프로젝트, 연락처 — **소개 페이지 내용은 여기서 수정** |
 | `src/content/blog/` | 블로그 글 (마크다운). 파일 하나 = 글 하나 |
 | `src/data/snippets.ts` | SQL 스니펫 페이지(`/snippets/`) 구성. 글의 n번째 코드 블록을 그대로 가져옴 |
-| `src/categories.ts` | 블로그 카테고리(목차). 제목 말머리 `[ADMIN]` 등으로 자동 분류 |
+| `src/categories.ts` | 블로그 분류(목차): 분야(Oracle, MySQL·MariaDB, Tibero, OS …) › 주제(설치, 튜닝 …) |
 | `src/pages/` | 페이지: 소개(`/`), 블로그 목록·글, 태그, RSS(`/rss.xml`) |
 | `src/styles/global.css` | 디자인 (라이트/다크 색상 변수) |
 | `public/images/` | 글에 쓰는 이미지 |
@@ -37,7 +37,8 @@ title: 글 제목
 description: 목록에 보일 요약 (선택)
 date: 2026-10-29
 tags: [태그1, 태그2]
-category: admin   # 선택. 없으면 제목 말머리로 자동 분류 (src/categories.ts)
+platform: oracle  # 분야 (src/categories.ts의 PLATFORMS)
+topic: tuning     # 주제 (DB_TOPICS / OS_TOPICS). 둘 다 없으면 제목으로 추정
 draft: false      # true면 배포되지 않음
 ---
 

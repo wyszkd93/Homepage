@@ -1,0 +1,36 @@
+---
+import Base from '../../../layouts/Base.astro';
+import BlogBrowser from '../../../components/BlogBrowser.astro';
+import { PLATFORMS, topicsOf, type Platform, type Topic } from '../../../categories';
+import { getPosts, type Post } from '../../../utils/posts';
+
+// /blog/category/<분야>/ 와 /blog/category/<분야>/<주제>/
+export async function getStaticPaths() {
+  const all = await getPosts();
+  return PLATFORMS.flatMap((platform) => {
+    const inP = all.filter((p) => p.platform.slug === platform.slug);
+    if (!inP.length) return [];
+    return [
+      { params: { path: platform.slug }, props: { all, platform, posts: inP } },
+      ...topicsOf(platform)
+        .map((topic) => ({ topic, posts: inP.filter((p) => p.topic.slug === topic.slug) }))
+        .filter((x) => x.posts.length)
+        .map(({ topic, posts }) => ({ params: { path: `${platform.slug}/${topic.slug}` }, props: { all, platform, topic, posts } })),
+    ];
+  });
+}
+
+interface Props {
+  all: Post[];
+  platform: Platform;
+  topic?: Topic;
+  posts: Post[];
+}
+const { all, platform, topic, posts } = Astro.props;
+const heading = topic ? `${platform.name} · ${topic.name}` : platform.name;
+const desc = topic ? topic.description : platform.description;
+---
+
+<Base title={heading} description={desc} heading={heading} tagline={`${desc} · 글 ${posts.length}개`}>
+  <BlogBrowser all={all} posts={posts} platform={platform} topic={topic} />
+</Base>

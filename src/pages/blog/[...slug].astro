@@ -2,7 +2,7 @@
 import { render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import TagList from '../../components/TagList.astro';
-import CategoryLabel from '../../components/CategoryLabel.astro';
+import PlatformLabel from '../../components/PlatformLabel.astro';
 import PostRows from '../../components/PostRows.astro';
 import { getPosts, type Post } from '../../utils/posts';
 import { url, formatDate } from '../../utils/url';
@@ -11,7 +11,7 @@ export async function getStaticPaths() {
   const posts = await getPosts();
   return posts.map((post) => {
     // 이전/다음 글은 같은 카테고리 안에서 이동 (연재 글을 따라 읽기 쉽게)
-    const siblings = posts.filter((p) => p.category.slug === post.category.slug);
+    const siblings = posts.filter((p) => p.platform.slug === post.platform.slug && p.topic.slug === post.topic.slug);
     const i = siblings.indexOf(post);
     return {
       params: { slug: post.id },
@@ -37,10 +37,10 @@ const { title, description, date, updated, tags, source } = post.data;
   description={description}
   heading={post.displayTitle}
   narrow
-  article={{ published: date, modified: updated, tags, section: post.category.name }}
+  article={{ published: date, modified: updated, tags, section: `${post.platform.name} ${post.topic.name}` }}
 >
   <div class="post-head-meta" slot="hero">
-    <CategoryLabel category={post.category} />
+    <PlatformLabel platform={post.platform} topic={post.topic} />
     <time datetime={date.toISOString()}>{formatDate(date)}</time>
     {updated && <span>· 수정 {formatDate(updated)}</span>}
     <TagList tags={tags} />
@@ -56,7 +56,7 @@ const { title, description, date, updated, tags, source } = post.data;
     </p>
   )}
 
-  <nav class="post-nav" aria-label={`${post.category.name} 카테고리의 이전/다음 글`}>
+  <nav class="post-nav" aria-label={`${post.platform.name} ${post.topic.name}의 이전/다음 글`}>
     {older ? (
       <a class="card" href={url(`/blog/${older.id}/`)}><span class="nav-label">← 이전 글</span>{older.displayTitle}</a>
     ) : <span></span>}
@@ -68,10 +68,10 @@ const { title, description, date, updated, tags, source } = post.data;
   {siblings.length > 1 && (
     <section class="series">
       <div class="section-title section-head">
-        <h2><CategoryLabel category={post.category} /> 카테고리의 글 {siblings.length}개</h2>
+        <h2><PlatformLabel platform={post.platform} topic={post.topic} /> 글 {siblings.length}개</h2>
         <a href={url('/blog/')}>전체 목차 →</a>
       </div>
-      <PostRows posts={siblings} showCategory={false} currentId={post.id} />
+      <PostRows posts={siblings} showPlatform={false} showTopic={false} currentId={post.id} />
     </section>
   )}
 </Base>
