@@ -336,7 +336,7 @@ a.cat:hover { text-decoration: none; filter: brightness(0.95); }
 }
 .row-title:hover { color: var(--accent); text-decoration: none; }
 .row-date { flex: none; color: var(--text-muted); font-size: 0.82rem; font-variant-numeric: tabular-nums; }
-.row .cat { min-width: 6.2em; justify-content: center; }
+.row .cat { min-width: 9.4em; justify-content: center; }
 .row.current .row-title { color: var(--accent); font-weight: 700; }
 .row.current { background: var(--accent-soft); border-radius: 8px; padding-inline: 10px; }
 

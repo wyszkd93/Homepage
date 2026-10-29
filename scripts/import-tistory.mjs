@@ -21,7 +21,7 @@
 //   src/content/blog/tistory/<글번호>.md
 //   public/images/tistory/<글번호>/<n>.<확장자>
 
-import { mkdir, writeFile, access } from 'node:fs/promises';
+import { mkdir, writeFile, access, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { XMLParser } from 'fast-xml-parser';
@@ -335,7 +335,7 @@ function excerpt(markdown, len = 140) {
   return text.length > len ? `${text.slice(0, len).trim()}…` : text;
 }
 
-function frontmatter(post, description) {
+function frontmatter(post, description, category) {
   // JSON 문자열은 그대로 유효한 YAML 문자열입니다.
   const q = (s) => JSON.stringify(s);
   const lines = [
@@ -344,6 +344,7 @@ function frontmatter(post, description) {
     description ? `description: ${q(description)}` : null,
     `date: ${post.date.toISOString()}`,
     `tags: [${post.tags.map(q).join(', ')}]`,
+    category ? `category: ${category}` : null,
     `source: ${q(post.link)}`,
     '---',
   ];
@@ -408,7 +409,10 @@ async function main() {
         summary.imageFailures += r.failed;
       }
 
-      const content = `${frontmatter(post, excerpt(body))}\n\n${body}\n`;
+      // --force로 덮어쓸 때 직접 정해 둔 카테고리는 유지
+      const prev = (await exists(file)) ? await readFile(file, 'utf8') : '';
+      const category = prev.match(/^category:\s*(\S+)\s*$/m)?.[1];
+      const content = `${frontmatter(post, excerpt(body), category)}\n\n${body}\n`;
       if (!opts.dryRun) await writeFile(file, content);
       console.log(`✓ ${rel}  ${post.title}`);
       summary.written++;
