@@ -1,15 +1,15 @@
 ---
-import { PROFILE } from '../consts';
+import { PROFILE, SITE } from '../consts';
 import { url } from '../utils/url';
 const year = new Date().getFullYear();
 ---
 
 <footer class="site-footer">
-  <div class="container footer-inner">
-    <span>© {year} {PROFILE.name}</span>
-    <span class="footer-links">
+  <div class="wrap footer-inner">
+    <p class="footer-links">
       {PROFILE.links.map((l) => <a href={l.url}>{l.label}</a>)}
       <a href={url('/rss.xml')}>RSS</a>
-    </span>
+    </p>
+    <p>© {year} {PROFILE.name} · {SITE.title}</p>
   </div>
 </footer>
