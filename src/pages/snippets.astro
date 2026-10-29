@@ -6,6 +6,7 @@ import { SNIPPET_GROUPS } from '../data/snippets';
 import { getPosts } from '../utils/posts';
 import { codeBlock, cleanSql } from '../utils/snippets';
 import { url } from '../utils/url';
+import mqsc from '../../plugins/mqsc.tmLanguage.json';
 
 const posts = await getPosts();
 const groups = SNIPPET_GROUPS.map((group, gi) => ({
@@ -16,33 +17,54 @@ const groups = SNIPPET_GROUPS.map((group, gi) => ({
     if (!post) throw new Error(`스니펫 "${item.title}": 글 ${item.post}을 찾을 수 없습니다.`);
     const raw = codeBlock(post.body ?? '', item.block);
     if (!raw) throw new Error(`스니펫 "${item.title}": ${item.post}의 ${item.block}번 코드 블록이 없습니다.`);
-    return { ...item, post, sql: item.clean ? cleanSql(raw) : raw };
+    return { ...item, post, code: item.clean ? cleanSql(raw) : raw };
   }),
 }));
+// 분야별로 묶기 (설정 순서 유지)
+const platforms = [...new Set(groups.map((g) => g.platform))].map((name) => ({
+  name,
+  groups: groups.filter((g) => g.platform === name),
+}));
 const total = groups.reduce((n, g) => n + g.items.length, 0);
+const langOf = (lang?: string) => (lang === 'mqsc' ? (mqsc as never) : (lang ?? 'sql'));
 ---
 
-<Base title="SQL 스니펫" description="자주 쓰는 오라클 DBA 쿼리 모음" heading="SQL 스니펫" tagline={`자주 꺼내 쓰는 쿼리 ${total}개 · 복사 버튼으로 바로 가져가세요.`}>
+<Base
+  title="명령어 스니펫"
+  description="자주 쓰는 Oracle 쿼리와 IBM MQ 명령어 모음"
+  heading="명령어 스니펫"
+  tagline={`자주 꺼내 쓰는 쿼리·명령어 ${total}개 · 복사 버튼으로 바로 가져가세요.`}
+>
   <nav class="snippet-toc" aria-label="스니펫 분류">
-    {groups.map((g) => <a class="chip chip-link" href={`#${g.id}`}>{g.name} <span class="count">{g.items.length}</span></a>)}
+    {platforms.map((p) => (
+      <div class="snippet-toc-row">
+        <span class="snippet-toc-platform">{p.name}</span>
+        {p.groups.map((g) => <a class="chip chip-link" href={`#${g.id}`}>{g.name} <span class="count">{g.items.length}</span></a>)}
+      </div>
+    ))}
   </nav>
 
   <div data-pagefind-body>
-    {groups.map((g) => (
-      <section class="section snippet-group" id={g.id}>
-        <h2 class="section-title">{g.name}</h2>
-        {g.items.map((s) => (
-          <article class="snippet">
-            <header class="snippet-head">
-              <h3>{s.title}</h3>
-              <p>{s.description}</p>
-            </header>
-            <Code code={s.sql} lang="sql" themes={{ light: 'github-light', dark: 'github-dark' }} />
-            <p class="snippet-source">
-              <PlatformLabel platform={s.post.platform} topic={s.post.topic} />
-              원문: <a href={url(`/blog/${s.post.id}/`)}>{s.post.displayTitle}</a>
-            </p>
-          </article>
+    {platforms.map((p) => (
+      <section class="snippet-platform">
+        <h2 class="snippet-platform-title">{p.name}</h2>
+        {p.groups.map((g) => (
+          <section class="section snippet-group" id={g.id}>
+            <h3 class="section-title">{g.name}</h3>
+            {g.items.map((s) => (
+              <article class="snippet">
+                <header class="snippet-head">
+                  <h4>{s.title}</h4>
+                  <p>{s.description}</p>
+                </header>
+                <Code code={s.code} lang={langOf(s.lang)} themes={{ light: 'github-light', dark: 'github-dark' }} />
+                <p class="snippet-source">
+                  <PlatformLabel platform={s.post.platform} topic={s.post.topic} />
+                  원문: <a href={url(`/blog/${s.post.id}/`)}>{s.post.displayTitle}</a>
+                </p>
+              </article>
+            ))}
+          </section>
         ))}
       </section>
     ))}

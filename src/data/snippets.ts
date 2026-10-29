@@ -1,5 +1,5 @@
-// ✏️ SQL 스니펫 모음 설정.
-// 쿼리는 원본 글(post)의 n번째 코드 블록(block, 0부터)에서 빌드 때 그대로 읽어 옵니다.
+// ✏️ 명령어 스니펫 모음 설정.
+// 코드는 원본 글(post)의 n번째 코드 블록(block, 0부터)에서 빌드 때 그대로 읽어 옵니다.
 // clean: true 이면 "SQL> " 프롬프트, SQL*Plus 줄 번호, ';' 뒤의 실행 결과를 떼어 냅니다.
 export interface Snippet {
   title: string;
@@ -7,15 +7,20 @@ export interface Snippet {
   post: string;
   block: number;
   clean?: boolean;
+  /** 코드 색 규칙 (기본 sql) */
+  lang?: 'sql' | 'bash' | 'mqsc';
 }
 
 export interface SnippetGroup {
+  /** 분야 (페이지에서 이 이름으로 묶어 보여 줌) */
+  platform: string;
   name: string;
   items: Snippet[];
 }
 
 export const SNIPPET_GROUPS: SnippetGroup[] = [
   {
+    platform: 'Oracle',
     name: '용량·스토리지',
     items: [
       { title: 'Tablespace별 사용량', description: '사용·여유·전체 용량(GB)과 사용률', post: 'tistory/38', block: 0 },
@@ -24,6 +29,7 @@ export const SNIPPET_GROUPS: SnippetGroup[] = [
     ],
   },
   {
+    platform: 'Oracle',
     name: '세션·진행 상황',
     items: [
       { title: '진행 중인 SQL 진행률', description: '남은 시간이 있는 long operation과 SQL 텍스트', post: 'tistory/57', block: 0 },
@@ -32,12 +38,14 @@ export const SNIPPET_GROUPS: SnippetGroup[] = [
     ],
   },
   {
+    platform: 'Oracle',
     name: '실행 계획',
     items: [
       { title: 'SQL 플랜 변경 여부 확인', description: 'sql_id의 PLAN_HASH_VALUE, 로드·무효화 횟수', post: 'tistory/84', block: 0 },
     ],
   },
   {
+    platform: 'Oracle',
     name: '오브젝트·딕셔너리',
     items: [
       { title: '테이블별 인덱스·컬럼·파티션 한눈에', description: '인덱스 컬럼 목록, 파티션 여부, LOCAL 인덱스 여부', post: 'tistory/90', block: 0 },
@@ -45,10 +53,21 @@ export const SNIPPET_GROUPS: SnippetGroup[] = [
     ],
   },
   {
+    platform: 'Oracle',
     name: '로그·자동 작업',
     items: [
       { title: 'Redo log 그룹·멤버 조회', description: '그룹별 멤버 파일, 크기, 상태, 시퀀스', post: 'tistory/16', block: 0, clean: true },
       { title: 'AutoTask 상태', description: '옵티마이저 통계 수집 등 자동 작업 사용 여부', post: 'tistory/70', block: 1, clean: true },
+    ],
+  },
+  {
+    platform: 'IBM MQ',
+    name: 'runmqsc',
+    items: [
+      { title: '자주 쓰는 runmqsc 명령어', description: 'QMGR 정보, 큐 깊이, 실행 중 채널, 리스너·연결 확인', post: 'ibm-mq-runmqsc', block: 22, lang: 'mqsc' },
+      { title: 'runmqsc 실행 방법', description: '로컬·원격 접속, 스크립트·파이프 실행, 결과 파일 저장', post: 'ibm-mq-runmqsc', block: 0, lang: 'bash' },
+      { title: '채널 상태 조회', description: '전체·특정 채널 상태, 실행 중인 채널만', post: 'ibm-mq-runmqsc', block: 10, lang: 'mqsc' },
+      { title: 'MQSC 스크립트 실행 후 오류 확인', description: '결과를 파일로 남기고 AMQ…E / AMQ…W 메시지 검사', post: 'ibm-mq-runmqsc', block: 33, lang: 'bash' },
     ],
   },
 ];
