@@ -314,8 +314,17 @@ a.cat:hover { text-decoration: none; filter: brightness(0.95); }
 .cat-nav a[aria-current='page'] { background: var(--accent-soft); color: var(--accent); font-weight: 700; }
 .cat-nav a[aria-current='page'] .count { color: var(--accent); }
 .cat-platform { margin-top: 6px; }
-.cat-platform > a { font-weight: 700; color: var(--ink); }
-.cat-topics { margin: 2px 0 4px 14px; padding-left: 8px; border-left: 2px solid color-mix(in srgb, var(--cat) 30%, var(--hairline)); display: grid; gap: 1px; }
+.cat-platform summary > a { font-weight: 700; color: var(--ink); }
+.cat-platform summary { display: flex; align-items: center; list-style: none; cursor: pointer; }
+.cat-platform summary::-webkit-details-marker { display: none; }
+.cat-platform summary > a { flex: 1; min-width: 0; }
+.chev {
+  display: grid; place-items: center; flex: none; width: 22px; height: 30px; margin-right: -4px;
+  border-radius: 6px; color: var(--text-muted); transition: transform 0.15s, background 0.15s;
+}
+.chev:hover { background: var(--surface-2); color: var(--ink); }
+.cat-platform details[open] > summary .chev { transform: rotate(90deg); }
+.cat-topics { margin: 2px 0 4px 24px; padding-left: 8px; border-left: 2px solid color-mix(in srgb, var(--cat) 30%, var(--hairline)); display: grid; gap: 1px; }
 .cat-topics a { font-size: 0.86rem; padding: 4px 8px; }
 .cat-topics-mobile { display: none; }
 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--cat, var(--text-muted)); flex: none; }
@@ -356,11 +365,13 @@ a.cat:hover { text-decoration: none; filter: brightness(0.95); }
   .cat-tree::-webkit-scrollbar, .cat-topics-mobile::-webkit-scrollbar { display: none; }
   .cat-topics-mobile { margin-top: 6px; }
   .cat-platform { margin-top: 0; }
+  .cat-platform summary { display: block; }
+  .chev { display: none; }
   .cat-nav a {
     white-space: nowrap; border: 1px solid var(--hairline); border-radius: 999px;
     background: var(--surface-1); padding: 4px 12px; font-size: 0.88rem;
   }
-  .cat-platform > a { font-weight: 600; color: var(--ink-muted); }
+  .cat-platform summary > a { font-weight: 600; color: var(--ink-muted); }
   .cat-topics-mobile a { font-size: 0.82rem; padding: 3px 10px; background: var(--surface-2); }
   .row { flex-wrap: wrap; gap: 4px 8px; }
   .row-title { flex-basis: 100%; order: 2; white-space: normal; }

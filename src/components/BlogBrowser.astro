@@ -33,10 +33,17 @@ const activeTree = tree.find((t) => t.platform.slug === platform?.slug);
         </a>
       </li>
       {tree.map((p) => (
-        <li class:list={['cat-platform', { open: p.platform.slug === platform?.slug }]} style={`--cat: ${p.platform.color}`}>
-          <a href={url(categoryUrl(p.platform))} aria-current={p.platform.slug === platform?.slug && !topic ? 'page' : undefined}>
-            <span><i class="dot" aria-hidden="true"></i>{p.platform.name}</span><span class="count">{p.count}</span>
-          </a>
+        <li class="cat-platform" style={`--cat: ${p.platform.color}`}>
+          <!-- 화살표를 누르면 주제 목록을 접고 펼침. 지금 보고 있는 분야는 펼친 상태로 시작 -->
+          <details open={p.platform.slug === platform?.slug}>
+            <summary>
+              <span class="chev" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="12" height="12"><path d="m9 6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+              <a href={url(categoryUrl(p.platform))} aria-current={p.platform.slug === platform?.slug && !topic ? 'page' : undefined}>
+                <span><i class="dot" aria-hidden="true"></i>{p.platform.name}</span><span class="count">{p.count}</span>
+              </a>
+            </summary>
           <ul class="cat-topics">
             {p.topics.map((t) => (
               <li>
@@ -49,6 +56,7 @@ const activeTree = tree.find((t) => t.platform.slug === platform?.slug);
               </li>
             ))}
           </ul>
+          </details>
         </li>
       ))}
     </ul>
