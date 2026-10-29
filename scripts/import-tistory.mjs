@@ -216,6 +216,65 @@ function cleanHtml(html) {
     if (!p.querySelector('img, iframe, video') && p.text.replace(/[\u00a0\u200b\u200c\u200d\ufeff]|&nbsp;/g, '').trim() === '') p.remove();
   });
 
+  // 네이버 스마트에디터 코드 상자(어두운 배경, 한 줄에 div 하나) → 코드 블록
+  root.querySelectorAll('div').forEach((div) => {
+    const style = div.getAttribute('style') ?? '';
+    if (!/background-color:\s*#272822/i.test(style) || !div.parentNode) return;
+    // 가장 안쪽 div 하나가 코드 한 줄
+    const lines = div.querySelectorAll('div').filter((d) => !d.querySelector('div'));
+    const text = lines.length
+      ? lines.map((d) => d.text.replace(/\u00a0/g, ' ').replace(/[\u200b\ufeff]/g, '').replace(/\s+$/, '')).join('\n').trim()
+      : blockText(div);
+    div.replaceWith(preBlock(text));
+  });
+
+  // 인용 상자에 넣은 명령어·쿼리(첫 줄이 프롬프트나 SQL) → 코드 블록
+  root.querySelectorAll('blockquote').forEach((bq) => {
+    const text = blockText(bq);
+    const first = text.split('\n').find((l) => l.trim()) ?? '';
+    if (CODE_LINE.test(first.trim())) bq.replaceWith(preBlock(text));
+  });
+
+  // 링크 미리보기 카드 → "참고: [제목](주소) · 사이트" 한 줄
+  root.querySelectorAll('figure').forEach((fig) => {
+    if (fig.getAttribute('data-ke-type') !== 'opengraph') return;
+    const href = fig.getAttribute('data-og-url') || fig.querySelector('a')?.getAttribute('href');
+    if (!href) return fig.remove();
+    const ogTitle = decodeEntities(fig.getAttribute('data-og-title') || '');
+    const title = ogTitle && !/^https?:\/\//.test(ogTitle) ? ogTitle : shortUrl(href);
+    const host = decodeEntities(fig.getAttribute('data-og-host') || '');
+    // 바로 앞 문단이 같은 주소의 링크 하나뿐이면 중복이므로 제거
+    let prev = previousElement(fig);
+    if (prev && prev.tagName === 'P') {
+      const links = prev.querySelectorAll('a');
+      if (links.length === 1 && sameUrl(links[0].getAttribute('href'), href) && prev.text.trim() === links[0].text.trim()) {
+        prev.remove();
+        prev = previousElement(fig);
+      }
+    }
+    // "| 참고 url" 같은 머리말 문단도 "참고:"와 겹치므로 제거
+    if (prev && prev.tagName === 'P' && /^\|?\s*참고\s*(url|링크|사이트|자료)?\s*:?$/i.test(prev.text.replace(/\u00a0/g, ' ').trim())) prev.remove();
+    fig.replaceWith(`<p>참고: <a href="${escAttr(href)}">${escHtml(title)}</a>${host ? ` · ${escHtml(host)}` : ''}</p>`);
+  });
+
+  // 첨부파일 상자 → "📎 [파일명](주소) (크기)" (주소는 나중에 내려받아 로컬 경로로 바꿈)
+  root.querySelectorAll('figure.fileblock').forEach((fig) => {
+    const a = fig.querySelector('a');
+    const href = a?.getAttribute('href');
+    if (!href) return fig.remove();
+    const name = fig.querySelector('.name')?.text.trim() || shortUrl(href);
+    const size = fig.querySelector('.size')?.text.trim();
+    fig.replaceWith(`<p>📎 <a href="${escAttr(href)}">${escHtml(name)}</a>${size ? ` (${escHtml(size)})` : ''}</p>`);
+  });
+
+  // 링크 글자가 긴 주소 그대로면 링크 제목(title)이나 짧은 주소로
+  root.querySelectorAll('a').forEach((a) => {
+    const text = a.text.trim();
+    if (!/^https?:\/\//.test(text) || text.length < 50) return;
+    const label = a.getAttribute('title')?.trim() || shortUrl(a.getAttribute('href') || text);
+    a.set_content(escHtml(label));
+  });
+
   // 이미지: 썸네일 프록시 주소를 원본 주소로
   root.querySelectorAll('img').forEach((img) => {
     const src = img.getAttribute('data-src') ?? img.getAttribute('src') ?? '';
@@ -231,10 +290,10 @@ function cleanHtml(html) {
     if (cells.length !== 1) return;
     const html = cells[0].innerHTML;
     // 정렬된 명령 실행 결과처럼 보이면(연속 공백, ----- 구분선) 코드 블록으로
-    if (/(&nbsp;|\u00a0){2,}/.test(html) || /-{5,}/.test(cells[0].text)) {
-      const text = parseHtml(html.replace(/<br\s*\/?>/gi, '\n').replace(/<\/(p|div)>/gi, '\n')).text.replace(/\u00a0/g, ' ');
-      const esc = text.trim().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-      table.replaceWith(`<pre><code>${esc}</code></pre>`);
+    const text = blockText(cells[0]);
+    const first = (text.split('\n').find((l) => l.trim()) ?? '').trim();
+    if (/(&nbsp;|\u00a0){2,}/.test(html) || /-{5,}/.test(cells[0].text) || CODE_LINE.test(first)) {
+      table.replaceWith(preBlock(text));
     } else {
       table.replaceWith(`<blockquote>${html}</blockquote>`);
     }
@@ -261,6 +320,72 @@ function cleanHtml(html) {
   return root.innerHTML;
 }
 
+// 코드로 보이는 줄: 프롬프트(SQL>, $, #), SQL 키워드, 자주 쓰는 명령어로 시작
+const CODE_LINE =
+  /^(?:\[?[\w.-]+@[\w.-]+[^\]]*\]?[#$]|SQL>|ASMCMD>|RMAN>|[#$]\s|--(?=\S)|(?:SELECT|FROM|WHERE|ALTER|CREATE|DROP|INSERT|UPDATE|DELETE|GRANT|REVOKE|EXEC|EXECUTE|BEGIN|DECLARE|COMMIT|ROLLBACK|SAVEPOINT|TRUNCATE|SHOW|STARTUP|SHUTDOWN|SPOOL|SET|DESC|expdp|impdp|srvctl|crsctl|lsnrctl|sqlplus|rman|oradebug|tbboot|tbdown|tbsql)(?=[\s(*;]|$))/i;
+
+/** 블록 요소의 글자를 줄 단위로(<br>, 블록 끝 = 줄바꿈) 꺼냄 */
+function blockText(el) {
+  const html = el.innerHTML
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(div|p|li|tr)>/gi, '\n');
+  return parseHtml(html)
+    .text.replace(/\u00a0/g, ' ')
+    .replace(/[\u200b\u200c\u200d\ufeff]/g, '')
+    .split('\n')
+    .map((l) => l.replace(/\s+$/, ''))
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/^\n+|\n+$/g, '');
+}
+
+const escHtml = (t) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const escAttr = (t) => escHtml(t).replace(/"/g, '&quot;');
+function guessLang(text) {
+  const first = (text.split('\n').find((l) => l.trim()) ?? '').trim();
+  if (/^\[?[\w.-]+@[\w.-]+/.test(first) || /^[#$]\s/.test(first)) return 'shell';
+  if (/^(?:SQL>|--(?=\S)|(?:SELECT|WITH|FROM|ALTER|CREATE|DROP|INSERT|UPDATE|DELETE|GRANT|EXEC|BEGIN|DECLARE|COMMIT|ROLLBACK|SAVEPOINT|TRUNCATE)(?=[\s(*;]|$))/i.test(first)) return 'sql';
+  return '';
+}
+const preBlock = (text) => {
+  const lang = guessLang(text);
+  return `<pre${lang ? ` class="language-${lang}"` : ''}><code>${escHtml(text)}</code></pre>`;
+};
+const decodeEntities = (t) => parseHtml(`<i>${t}</i>`).text.trim();
+
+function previousElement(node) {
+  const siblings = node.parentNode?.childNodes ?? [];
+  for (let i = siblings.indexOf(node) - 1; i >= 0; i--) {
+    const n = siblings[i];
+    if (n.nodeType === 1) return n;
+    if (n.text.trim()) return null;
+  }
+  return null;
+}
+
+function sameUrl(a, b) {
+  const norm = (u) => {
+    try {
+      return decodeURI(u ?? '').replace(/\/+$/, '');
+    } catch {
+      return (u ?? '').replace(/\/+$/, '');
+    }
+  };
+  return norm(a) === norm(b);
+}
+
+/** https://host/very/long/encoded/path → host/very/long/… (디코딩해서 짧게) */
+function shortUrl(u) {
+  try {
+    const url = new URL(u);
+    const path = decodeURIComponent(url.pathname).replace(/\/+$/, '');
+    const full = url.host + path;
+    return full.length > 48 ? `${full.slice(0, 47)}…` : full;
+  } catch {
+    return u.length > 48 ? `${u.slice(0, 47)}…` : u;
+  }
+}
+
 function originalImageUrl(src) {
   if (!src) return src;
   let url = src.startsWith('//') ? `https:${src}` : src;
@@ -272,6 +397,38 @@ function originalImageUrl(src) {
     /* 상대 경로 등은 그대로 */
   }
   return url;
+}
+
+// 마크다운 굵게(**) 정리 — 코드 블록 밖에서만
+//  1) 편집기에서 조각난 굵게를 합침: "**가** **나**" → "**가 나**", "**가****나**" → "**가나**"
+//  2) 한국어에서 "**(괄호)**를"처럼 문장부호로 끝난 굵게 바로 뒤에 글자가 붙으면 마크다운이
+//     굵게로 인식하지 못하므로 그 부분만 <strong>으로 바꿈
+function fixBold(markdown) {
+  return markdown
+    .split(/(^```[\s\S]*?^```|^~~~[\s\S]*?^~~~)/m)
+    .map((part, i) => {
+      if (i % 2 === 1) return part;
+      return part
+        .split('\n')
+        .map((line) => {
+          if (/^\s*\*{4,}\s*$/.test(line)) return line;
+          let l = line
+            .replace(/^(\s*(?:>\s*)?)\*\*\*\*(?=\S)/, '$1') // 줄 앞의 빈 굵게
+            .replace(/(\S)\*\* \*\*(\S)/g, '$1 $2')
+            .replace(/(\S)\*\*\*\*(\S)/g, '$1$2');
+          l = l.replace(/\*\*([^*\n]+?)\*\*/g, (all, inner, offset, str) => {
+            const before = str[offset - 1] ?? ' ';
+            const after = str[offset + all.length] ?? ' ';
+            const word = /[\p{L}\p{N}]/u;
+            const badClose = /[^\p{L}\p{N}\s]$/u.test(inner) && word.test(after);
+            const badOpen = /^[^\p{L}\p{N}\s]/u.test(inner) && word.test(before);
+            return badClose || badOpen ? `<strong>${inner}</strong>` : all;
+          });
+          return l;
+        })
+        .join('\n');
+    })
+    .join('');
 }
 
 // ---------- 이미지 ----------
@@ -315,6 +472,43 @@ async function localizeImages(markdown, slug, opts) {
 
   const replaced = markdown.replace(re, (all, alt, url) => (map.has(url) ? `![${alt}](${map.get(url)})` : all));
   return { markdown: replaced, downloaded: map.size, failed };
+}
+
+// ---------- 첨부파일 ----------
+
+const FILES_DIR = path.join(ROOT, 'public/files/tistory');
+const FILES_URL = '/files/tistory';
+
+// Tistory 첨부파일 주소는 만료 시간이 붙은 임시 주소라 반드시 내려받아 둔다
+async function localizeFiles(markdown, slug, opts) {
+  const re = /📎 \[((?:\\.|[^\]\\])+)\]\((https:\/\/blog\.kakaocdn\.net\/dna\/[^)\s]+)\)/g;
+  const found = [...markdown.matchAll(re)];
+  const map = new Map();
+  let failed = 0;
+  for (const [, label, remote] of found) {
+    if (map.has(remote)) continue;
+    const name = label.replace(/\\(.)/g, '$1');
+    const file = name.replace(/[^\p{L}\p{N}._-]+/gu, '-').replace(/^-+|-+$/g, '') || 'file';
+    try {
+      const res = await fetchWithRetry(remote, { tries: 2 });
+      const type = res.headers.get('content-type') ?? '';
+      if (!res.ok || type.startsWith('text/html')) throw new Error(`${res.status} ${type}`);
+      if (!opts.dryRun) {
+        const dir = path.join(FILES_DIR, slug);
+        await mkdir(dir, { recursive: true });
+        await writeFile(path.join(dir, file), Buffer.from(await res.arrayBuffer()));
+      }
+      map.set(remote, `${FILES_URL}/${slug}/${file}`);
+    } catch (err) {
+      failed++;
+      console.warn(`  ! 첨부파일 다운로드 실패, 원본 주소 유지: ${name} (${err.message})`);
+    }
+  }
+  return {
+    markdown: markdown.replace(re, (all, label, remote) => (map.has(remote) ? `📎 [${label}](${map.get(remote)})` : all)),
+    downloaded: map.size,
+    failed,
+  };
 }
 
 // ---------- 출력 ----------
@@ -388,7 +582,7 @@ async function main() {
 
   if (!opts.dryRun) await mkdir(POSTS_DIR, { recursive: true });
 
-  const summary = { written: 0, skipped: 0, missing: 0, failed: 0, images: 0, imageFailures: 0 };
+  const summary = { written: 0, skipped: 0, missing: 0, failed: 0, images: 0, imageFailures: 0, files: 0, fileFailures: 0 };
 
   for (const [i, src] of sources.entries()) {
     const slug = slugFor(src.link, i + 1);
@@ -419,9 +613,14 @@ async function main() {
       let body = td
         .turndown(cleanHtml(post.html))
         .replace(/[\u200b\u200c\u200d\ufeff]/g, '') // 폭 0 공백
-        .replace(/^[ \t]*(?:\*\*|__)+[ \t]*$/gm, '') // 내용 없이 남은 굵게 표시 "****"
+        .replace(/^[ \t]*(?:\*\*\*\*|____)[ \t]*$/gm, '') // 내용 없이 남은 굵게 표시 "****"
         .replace(/\n{3,}/g, '\n\n')
         .trim();
+      body = fixBold(body);
+      const files = await localizeFiles(body, slug, opts);
+      body = files.markdown;
+      summary.files += files.downloaded;
+      summary.fileFailures += files.failed;
       if (opts.images) {
         const r = await localizeImages(body, slug, opts);
         body = r.markdown;
@@ -444,7 +643,7 @@ async function main() {
 
   console.log(
     `\n완료: 저장 ${summary.written}, 건너뜀 ${summary.skipped}, 없음 ${summary.missing}, 실패 ${summary.failed}, ` +
-      `이미지 ${summary.images}개 저장 / ${summary.imageFailures}개 원본 주소 유지${opts.dryRun ? ' (dry-run: 파일은 쓰지 않음)' : ''}`,
+      `이미지 ${summary.images}개 저장 / ${summary.imageFailures}개 원본 주소 유지, 첨부파일 ${summary.files}개 저장 / ${summary.fileFailures}개 실패${opts.dryRun ? ' (dry-run: 파일은 쓰지 않음)' : ''}`,
   );
   if (summary.failed > 0) process.exitCode = 1;
 }

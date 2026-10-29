@@ -1,0 +1,540 @@
+
+Verifying Physical Memory ...
+  Node Name     Available                 Required                  Status    
+  ------------  ------------------------  ------------------------  ----------
+  ol79rac2      9.7243GB (1.0196648E7KB)  8GB (8388608.0KB)         passed    
+  ol79rac1      9.7243GB (1.0196652E7KB)  8GB (8388608.0KB)         passed    
+Verifying Physical Memory ...PASSED
+Verifying Available Physical Memory ...
+  Node Name     Available                 Required                  Status    
+  ------------  ------------------------  ------------------------  ----------
+  ol79rac2      8.6348GB (9054260.0KB)    50MB (51200.0KB)          passed    
+  ol79rac1      8.5218GB (8935768.0KB)    50MB (51200.0KB)          passed    
+Verifying Available Physical Memory ...PASSED
+Verifying Swap Size ...
+  Node Name     Available                 Required                  Status    
+  ------------  ------------------------  ------------------------  ----------
+  ol79rac2      9.9922GB (1.0477564E7KB)  9.7243GB (1.0196648E7KB)  passed    
+  ol79rac1      9.9961GB (1.048166E7KB)   9.7243GB (1.0196652E7KB)  passed    
+Verifying Swap Size ...PASSED
+Verifying Free Space: ol79rac2:/usr,ol79rac2:/var,ol79rac2:/etc,ol79rac2:/sbin,ol79rac2:/tmp ...
+  Path              Node Name     Mount point   Available     Required      Status      
+  ----------------  ------------  ------------  ------------  ------------  ------------
+  /usr              ol79rac2      /             38.5664GB     25MB          passed      
+  /var              ol79rac2      /             38.5664GB     5MB           passed      
+  /etc              ol79rac2      /             38.5664GB     25MB          passed      
+  /sbin             ol79rac2      /             38.5664GB     10MB          passed      
+  /tmp              ol79rac2      /             38.5664GB     1GB           passed      
+Verifying Free Space: ol79rac2:/usr,ol79rac2:/var,ol79rac2:/etc,ol79rac2:/sbin,ol79rac2:/tmp ...PASSED
+Verifying Free Space: ol79rac1:/usr,ol79rac1:/var,ol79rac1:/etc,ol79rac1:/sbin,ol79rac1:/tmp ...
+  Path              Node Name     Mount point   Available     Required      Status      
+  ----------------  ------------  ------------  ------------  ------------  ------------
+  /usr              ol79rac1      /             27.7693GB     25MB          passed      
+  /var              ol79rac1      /             27.7693GB     5MB           passed      
+  /etc              ol79rac1      /             27.7693GB     25MB          passed      
+  /sbin             ol79rac1      /             27.7693GB     10MB          passed      
+  /tmp              ol79rac1      /             27.7693GB     1GB           passed      
+Verifying Free Space: ol79rac1:/usr,ol79rac1:/var,ol79rac1:/etc,ol79rac1:/sbin,ol79rac1:/tmp ...PASSED
+Verifying User Existence: grid ...
+  Node Name     Status                    Comment                 
+  ------------  ------------------------  ------------------------
+  ol79rac2      passed                    exists(1001)            
+  ol79rac1      passed                    exists(1001)            
+
+  Verifying Users With Same UID: 1001 ...PASSED
+Verifying User Existence: grid ...PASSED
+Verifying Group Existence: asmadmin ...
+  Node Name     Status                    Comment                 
+  ------------  ------------------------  ------------------------
+  ol79rac2      failed                    does not exist          
+  ol79rac1      failed                    does not exist          
+Verifying Group Existence: asmadmin ...FAILED (PRVG-10461)
+Verifying Group Existence: dba ...
+  Node Name     Status                    Comment                 
+  ------------  ------------------------  ------------------------
+  ol79rac2      passed                    exists                  
+  ol79rac1      passed                    exists                  
+Verifying Group Existence: dba ...PASSED
+Verifying Group Membership: asmadmin ...
+  Node Name         User Exists   Group Exists  User in Group  Status          
+  ----------------  ------------  ------------  ------------  ----------------
+  ol79rac2          yes           no            no            failed          
+  ol79rac1          yes           no            no            failed          
+Verifying Group Membership: asmadmin ...FAILED (PRVG-10460)
+Verifying Group Membership: dba(Primary) ...
+  Node Name         User Exists   Group Exists  User in Group  Primary       Status      
+  ----------------  ------------  ------------  ------------  ------------  ------------
+  ol79rac2          yes           yes           yes           yes           passed      
+  ol79rac1          yes           yes           yes           yes           passed      
+Verifying Group Membership: dba(Primary) ...PASSED
+Verifying Run Level ...
+  Node Name     run level                 Required                  Status    
+  ------------  ------------------------  ------------------------  ----------
+  ol79rac2      5                         3,5                       passed    
+  ol79rac1      5                         3,5                       passed    
+Verifying Run Level ...PASSED
+Verifying Hard Limit: maximum open file descriptors ...
+  Node Name         Type          Available     Required      Status          
+  ----------------  ------------  ------------  ------------  ----------------
+  ol79rac2          hard          65536         65536         passed          
+  ol79rac1          hard          65536         65536         passed          
+Verifying Hard Limit: maximum open file descriptors ...PASSED
+Verifying Soft Limit: maximum open file descriptors ...
+  Node Name         Type          Available     Required      Status          
+  ----------------  ------------  ------------  ------------  ----------------
+  ol79rac2          soft          1024          1024          passed          
+  ol79rac1          soft          1024          1024          passed          
+Verifying Soft Limit: maximum open file descriptors ...PASSED
+Verifying Hard Limit: maximum user processes ...
+  Node Name         Type          Available     Required      Status          
+  ----------------  ------------  ------------  ------------  ----------------
+  ol79rac2          hard          16384         16384         passed          
+  ol79rac1          hard          16384         16384         passed          
+Verifying Hard Limit: maximum user processes ...PASSED
+Verifying Soft Limit: maximum user processes ...
+  Node Name         Type          Available     Required      Status          
+  ----------------  ------------  ------------  ------------  ----------------
+  ol79rac2          soft          2047          2047          passed          
+  ol79rac1          soft          2047          2047          passed          
+Verifying Soft Limit: maximum user processes ...PASSED
+Verifying Soft Limit: maximum stack size ...
+  Node Name         Type          Available     Required      Status          
+  ----------------  ------------  ------------  ------------  ----------------
+  ol79rac2          soft          10240         10240         passed          
+  ol79rac1          soft          10240         10240         passed          
+Verifying Soft Limit: maximum stack size ...PASSED
+Verifying Architecture ...
+  Node Name     Available                 Required                  Status    
+  ------------  ------------------------  ------------------------  ----------
+  ol79rac2      x86_64                    x86_64                    passed    
+  ol79rac1      x86_64                    x86_64                    passed    
+Verifying Architecture ...PASSED
+Verifying OS Kernel Version ...
+  Node Name     Available                 Required                  Status    
+  ------------  ------------------------  ------------------------  ----------
+  ol79rac2      5.4.17-2011.6.2.el7uek.x86_64  3.8.13                    passed    
+  ol79rac1      5.4.17-2011.6.2.el7uek.x86_64  3.8.13                    passed    
+Verifying OS Kernel Version ...PASSED
+Verifying OS Kernel Parameter: semmsl ...
+  Node Name         Current       Configured    Required      Status        Comment     
+  ----------------  ------------  ------------  ------------  ------------  ------------
+  ol79rac1          250           250           250           passed          
+  ol79rac2          250           250           250           passed          
+Verifying OS Kernel Parameter: semmsl ...PASSED
+Verifying OS Kernel Parameter: semmns ...
+  Node Name         Current       Configured    Required      Status        Comment     
+  ----------------  ------------  ------------  ------------  ------------  ------------
+  ol79rac1          32000         32000         32000         passed          
+  ol79rac2          32000         32000         32000         passed          
+Verifying OS Kernel Parameter: semmns ...PASSED
+Verifying OS Kernel Parameter: semopm ...
+  Node Name         Current       Configured    Required      Status        Comment     
+  ----------------  ------------  ------------  ------------  ------------  ------------
+  ol79rac1          100           100           100           passed          
+  ol79rac2          100           100           100           passed          
+Verifying OS Kernel Parameter: semopm ...PASSED
+Verifying OS Kernel Parameter: semmni ...
+  Node Name         Current       Configured    Required      Status        Comment     
+  ----------------  ------------  ------------  ------------  ------------  ------------
+  ol79rac1          128           128           128           passed          
+  ol79rac2          128           128           128           passed          
+Verifying OS Kernel Parameter: semmni ...PASSED
+Verifying OS Kernel Parameter: shmmax ...
+  Node Name         Current       Configured    Required      Status        Comment     
+  ----------------  ------------  ------------  ------------  ------------  ------------
+  ol79rac1          5220663296    5220663296    5220685824    failed        Current value incorrect. Configured value incorrect. 
+  ol79rac2          5220663296    5220663296    5220683776    failed        Current value incorrect. Configured value incorrect. 
+Verifying OS Kernel Parameter: shmmax ...FAILED (PRVG-1205, PRVG-1201)
+Verifying OS Kernel Parameter: shmmni ...
+  Node Name         Current       Configured    Required      Status        Comment     
+  ----------------  ------------  ------------  ------------  ------------  ------------
+  ol79rac1          4096          4096          4096          passed          
+  ol79rac2          4096          4096          4096          passed          
+Verifying OS Kernel Parameter: shmmni ...PASSED
+Verifying OS Kernel Parameter: shmall ...
+  Node Name         Current       Configured    Required      Status        Comment     
+  ----------------  ------------  ------------  ------------  ------------  ------------
+  ol79rac1          2549152       2549152       1019665       passed          
+  ol79rac2          2549152       2549152       1019664       passed          
+Verifying OS Kernel Parameter: shmall ...PASSED
+Verifying OS Kernel Parameter: file-max ...
+  Node Name         Current       Configured    Required      Status        Comment     
+  ----------------  ------------  ------------  ------------  ------------  ------------
+  ol79rac1          6815744       6815744       6815744       passed          
+  ol79rac2          6815744       6815744       6815744       passed          
+Verifying OS Kernel Parameter: file-max ...PASSED
+Verifying OS Kernel Parameter: ip_local_port_range ...
+  Node Name         Current       Configured    Required      Status        Comment     
+  ----------------  ------------  ------------  ------------  ------------  ------------
+  ol79rac1          between 9000 & 65500  between 9000 & 65500  between 9000 & 65535  passed          
+  ol79rac2          between 9000 & 65500  between 9000 & 65500  between 9000 & 65535  passed          
+Verifying OS Kernel Parameter: ip_local_port_range ...PASSED
+Verifying OS Kernel Parameter: rmem_default ...
+  Node Name         Current       Configured    Required      Status        Comment     
+  ----------------  ------------  ------------  ------------  ------------  ------------
+  ol79rac1          262144        262144        262144        passed          
+  ol79rac2          262144        262144        262144        passed          
+Verifying OS Kernel Parameter: rmem_default ...PASSED
+Verifying OS Kernel Parameter: rmem_max ...
+  Node Name         Current       Configured    Required      Status        Comment     
+  ----------------  ------------  ------------  ------------  ------------  ------------
+  ol79rac1          4194304       4194304       4194304       passed          
+  ol79rac2          4194304       4194304       4194304       passed          
+Verifying OS Kernel Parameter: rmem_max ...PASSED
+Verifying OS Kernel Parameter: wmem_default ...
+  Node Name         Current       Configured    Required      Status        Comment     
+  ----------------  ------------  ------------  ------------  ------------  ------------
+  ol79rac1          262144        262144        262144        passed          
+  ol79rac2          262144        262144        262144        passed          
+Verifying OS Kernel Parameter: wmem_default ...PASSED
+Verifying OS Kernel Parameter: wmem_max ...
+  Node Name         Current       Configured    Required      Status        Comment     
+  ----------------  ------------  ------------  ------------  ------------  ------------
+  ol79rac1          1048576       1048576       1048576       passed          
+  ol79rac2          1048576       1048576       1048576       passed          
+Verifying OS Kernel Parameter: wmem_max ...PASSED
+Verifying OS Kernel Parameter: aio-max-nr ...
+  Node Name         Current       Configured    Required      Status        Comment     
+  ----------------  ------------  ------------  ------------  ------------  ------------
+  ol79rac1          1048576       1048576       1048576       passed          
+  ol79rac2          1048576       1048576       1048576       passed          
+Verifying OS Kernel Parameter: aio-max-nr ...PASSED
+Verifying OS Kernel Parameter: panic_on_oops ...
+  Node Name         Current       Configured    Required      Status        Comment     
+  ----------------  ------------  ------------  ------------  ------------  ------------
+  ol79rac1          1             1             1             passed          
+  ol79rac2          1             1             1             passed          
+Verifying OS Kernel Parameter: panic_on_oops ...PASSED
+Verifying Package: binutils-2.23.52.0.1 ...
+  Node Name     Available                 Required                  Status    
+  ------------  ------------------------  ------------------------  ----------
+  ol79rac2      binutils-2.27-44.base.0.3.el7_9.1  binutils-2.23.52.0.1      passed    
+  ol79rac1      binutils-2.27-44.base.0.3.el7_9.1  binutils-2.23.52.0.1      passed    
+Verifying Package: binutils-2.23.52.0.1 ...PASSED
+Verifying Package: compat-libcap1-1.10 ...
+  Node Name     Available                 Required                  Status    
+  ------------  ------------------------  ------------------------  ----------
+  ol79rac2      compat-libcap1-1.10-7.el7  compat-libcap1-1.10       passed    
+  ol79rac1      compat-libcap1-1.10-7.el7  compat-libcap1-1.10       passed    
+Verifying Package: compat-libcap1-1.10 ...PASSED
+Verifying Package: libgcc-4.8.2 (x86_64) ...
+  Node Name     Available                 Required                  Status    
+  ------------  ------------------------  ------------------------  ----------
+  ol79rac2      libgcc(x86_64)-4.8.5-44.0.3.el7  libgcc(x86_64)-4.8.2      passed    
+  ol79rac1      libgcc(x86_64)-4.8.5-44.0.3.el7  libgcc(x86_64)-4.8.2      passed    
+Verifying Package: libgcc-4.8.2 (x86_64) ...PASSED
+Verifying Package: libstdc++-4.8.2 (x86_64) ...
+  Node Name     Available                 Required                  Status    
+  ------------  ------------------------  ------------------------  ----------
+  ol79rac2      libstdc++(x86_64)-4.8.5-44.0.3.el7  libstdc++(x86_64)-4.8.2   passed    
+  ol79rac1      libstdc++(x86_64)-4.8.5-44.0.3.el7  libstdc++(x86_64)-4.8.2   passed    
+Verifying Package: libstdc++-4.8.2 (x86_64) ...PASSED
+Verifying Package: libstdc++-devel-4.8.2 (x86_64) ...
+  Node Name     Available                 Required                  Status    
+  ------------  ------------------------  ------------------------  ----------
+  ol79rac2      libstdc++-devel(x86_64)-4.8.5-44.0.3.el7  libstdc++-devel(x86_64)-4.8.2  passed    
+  ol79rac1      libstdc++-devel(x86_64)-4.8.5-44.0.3.el7  libstdc++-devel(x86_64)-4.8.2  passed    
+Verifying Package: libstdc++-devel-4.8.2 (x86_64) ...PASSED
+Verifying Package: sysstat-10.1.5 ...
+  Node Name     Available                 Required                  Status    
+  ------------  ------------------------  ------------------------  ----------
+  ol79rac2      sysstat-10.1.5-20.0.1.el7_9  sysstat-10.1.5            passed    
+  ol79rac1      sysstat-10.1.5-20.0.1.el7_9  sysstat-10.1.5            passed    
+Verifying Package: sysstat-10.1.5 ...PASSED
+Verifying Package: ksh ...
+  Node Name     Available                 Required                  Status    
+  ------------  ------------------------  ------------------------  ----------
+  ol79rac2      ksh                       ksh                       passed    
+  ol79rac1      ksh                       ksh                       passed    
+Verifying Package: ksh ...PASSED
+Verifying Package: make-3.82 ...
+  Node Name     Available                 Required                  Status    
+  ------------  ------------------------  ------------------------  ----------
+  ol79rac2      make-3.82-24.el7          make-3.82                 passed    
+  ol79rac1      make-3.82-24.el7          make-3.82                 passed    
+Verifying Package: make-3.82 ...PASSED
+Verifying Package: glibc-2.17 (x86_64) ...
+  Node Name     Available                 Required                  Status    
+  ------------  ------------------------  ------------------------  ----------
+  ol79rac2      glibc(x86_64)-2.17-326.0.1.el7_9  glibc(x86_64)-2.17        passed    
+  ol79rac1      glibc(x86_64)-2.17-326.0.1.el7_9  glibc(x86_64)-2.17        passed    
+Verifying Package: glibc-2.17 (x86_64) ...PASSED
+Verifying Package: glibc-devel-2.17 (x86_64) ...
+  Node Name     Available                 Required                  Status    
+  ------------  ------------------------  ------------------------  ----------
+  ol79rac2      glibc-devel(x86_64)-2.17-326.0.1.el7_9  glibc-devel(x86_64)-2.17  passed    
+  ol79rac1      glibc-devel(x86_64)-2.17-326.0.1.el7_9  glibc-devel(x86_64)-2.17  passed    
+Verifying Package: glibc-devel-2.17 (x86_64) ...PASSED
+Verifying Package: libaio-0.3.109 (x86_64) ...
+  Node Name     Available                 Required                  Status    
+  ------------  ------------------------  ------------------------  ----------
+  ol79rac2      libaio(x86_64)-0.3.109-13.el7  libaio(x86_64)-0.3.109    passed    
+  ol79rac1      libaio(x86_64)-0.3.109-13.el7  libaio(x86_64)-0.3.109    passed    
+Verifying Package: libaio-0.3.109 (x86_64) ...PASSED
+Verifying Package: libaio-devel-0.3.109 (x86_64) ...
+  Node Name     Available                 Required                  Status    
+  ------------  ------------------------  ------------------------  ----------
+  ol79rac2      libaio-devel(x86_64)-0.3.109-13.el7  libaio-devel(x86_64)-0.3.109  passed    
+  ol79rac1      libaio-devel(x86_64)-0.3.109-13.el7  libaio-devel(x86_64)-0.3.109  passed    
+Verifying Package: libaio-devel-0.3.109 (x86_64) ...PASSED
+Verifying Package: nfs-utils-1.2.3-15 ...
+  Node Name     Available                 Required                  Status    
+  ------------  ------------------------  ------------------------  ----------
+  ol79rac2      nfs-utils-1.3.0-0.68.0.1.el7.2  nfs-utils-1.2.3-15        passed    
+  ol79rac1      nfs-utils-1.3.0-0.68.0.1.el7.2  nfs-utils-1.2.3-15        passed    
+Verifying Package: nfs-utils-1.2.3-15 ...PASSED
+Verifying Package: smartmontools-6.2-4 ...
+  Node Name     Available                 Required                  Status    
+  ------------  ------------------------  ------------------------  ----------
+  ol79rac2      smartmontools-7.0-2.el7   smartmontools-6.2-4       passed    
+  ol79rac1      smartmontools-7.0-2.el7   smartmontools-6.2-4       passed    
+Verifying Package: smartmontools-6.2-4 ...PASSED
+Verifying Package: net-tools-2.0-0.17 ...
+  Node Name     Available                 Required                  Status    
+  ------------  ------------------------  ------------------------  ----------
+  ol79rac2      net-tools-2.0-0.25.20131004git.el7  net-tools-2.0-0.17        passed    
+  ol79rac1      net-tools-2.0-0.25.20131004git.el7  net-tools-2.0-0.17        passed    
+Verifying Package: net-tools-2.0-0.17 ...PASSED
+Verifying Port Availability for component "Oracle Notification Service (ONS)" ...
+  Node Name         Port Number   Protocol      Available     Status          
+  ----------------  ------------  ------------  ------------  ----------------
+  ol79rac2          6200          TCP           yes           successful      
+  ol79rac1          6200          TCP           yes           successful      
+  ol79rac2          6100          TCP           yes           successful      
+  ol79rac1          6100          TCP           yes           successful      
+Verifying Port Availability for component "Oracle Notification Service (ONS)" ...PASSED
+Verifying Port Availability for component "Oracle Cluster Synchronization Services (CSSD)" ...
+  Node Name         Port Number   Protocol      Available     Status          
+  ----------------  ------------  ------------  ------------  ----------------
+  ol79rac2          42424         TCP           yes           successful      
+  ol79rac1          42424         TCP           yes           successful      
+Verifying Port Availability for component "Oracle Cluster Synchronization Services (CSSD)" ...PASSED
+Verifying Users With Same UID: 0 ...PASSED
+Verifying Current Group ID ...PASSED
+Verifying Root user consistency ...
+  Node Name                             Status                  
+  ------------------------------------  ------------------------
+  ol79rac2                              passed                  
+  ol79rac1                              passed                  
+Verifying Root user consistency ...PASSED
+Verifying Package: cvuqdisk-1.0.10-1 ...
+  Node Name     Available                 Required                  Status    
+  ------------  ------------------------  ------------------------  ----------
+  ol79rac2      cvuqdisk-1.0.10-1         cvuqdisk-1.0.10-1         passed    
+  ol79rac1      cvuqdisk-1.0.10-1         cvuqdisk-1.0.10-1         passed    
+Verifying Package: cvuqdisk-1.0.10-1 ...PASSED
+Verifying Node Connectivity ...
+  Verifying Hosts File ...
+  Node Name                             Status                  
+  ------------------------------------  ------------------------
+  ol79rac1                              passed                  
+  ol79rac2                              passed                  
+  Verifying Hosts File ...PASSED
+
+Interface information for node "ol79rac1"
+
+ Name   IP Address      Subnet          Gateway         Def. Gateway    HW Address        MTU   
+ ------ --------------- --------------- --------------- --------------- ----------------- ------
+ enp0s3 10.0.2.10       10.0.2.0        0.0.0.0         192.168.56.2    08:00:27:25:B6:59 1500  
+ enp0s8 192.168.56.101  192.168.56.0    0.0.0.0         192.168.56.2    08:00:27:A4:AF:F1 1500  
+ virbr0 192.168.122.1   192.168.122.0   0.0.0.0         192.168.56.2    52:54:00:43:1A:99 1500  
+
+Interface information for node "ol79rac2"
+
+ Name   IP Address      Subnet          Gateway         Def. Gateway    HW Address        MTU   
+ ------ --------------- --------------- --------------- --------------- ----------------- ------
+ enp0s3 10.0.2.11       10.0.2.0        0.0.0.0         192.168.56.2    08:00:27:53:A8:C9 1500  
+ enp0s8 192.168.56.102  192.168.56.0    0.0.0.0         192.168.56.2    08:00:27:48:81:31 1500  
+ virbr0 192.168.122.1   192.168.122.0   0.0.0.0         192.168.56.2    52:54:00:7A:90:EA 1500  
+
+Check: MTU consistency of the subnet "192.168.56.0".
+
+  Node              Name          IP Address    Subnet        MTU             
+  ----------------  ------------  ------------  ------------  ----------------
+  ol79rac1          enp0s8        192.168.56.101  192.168.56.0  1500            
+  ol79rac2          enp0s8        192.168.56.102  192.168.56.0  1500            
+
+Check: MTU consistency of the subnet "192.168.122.0".
+
+  Node              Name          IP Address    Subnet        MTU             
+  ----------------  ------------  ------------  ------------  ----------------
+  ol79rac1          virbr0        192.168.122.1  192.168.122.0  1500            
+  ol79rac2          virbr0        192.168.122.1  192.168.122.0  1500            
+
+Check: MTU consistency of the subnet "10.0.2.0".
+
+  Node              Name          IP Address    Subnet        MTU             
+  ----------------  ------------  ------------  ------------  ----------------
+  ol79rac1          enp0s3        10.0.2.10     10.0.2.0      1500            
+  ol79rac2          enp0s3        10.0.2.11     10.0.2.0      1500            
+  Verifying Check that maximum (MTU) size packet goes through subnet ...PASSED
+
+  Source                          Destination                     Connected?      
+  ------------------------------  ------------------------------  ----------------
+  ol79rac1[enp0s8:192.168.56.101]  ol79rac2[enp0s8:192.168.56.102]  yes             
+
+  Source                          Destination                     Connected?      
+  ------------------------------  ------------------------------  ----------------
+  ol79rac1[virbr0:192.168.122.1]  ol79rac2[virbr0:192.168.122.1]  yes             
+
+  Source                          Destination                     Connected?      
+  ------------------------------  ------------------------------  ----------------
+  ol79rac1[enp0s3:10.0.2.10]      ol79rac2[enp0s3:10.0.2.11]      yes             
+  Verifying subnet mask consistency for subnet "192.168.56.0" ...PASSED
+  Verifying subnet mask consistency for subnet "192.168.122.0" ...PASSED
+  Verifying subnet mask consistency for subnet "10.0.2.0" ...PASSED
+Verifying Node Connectivity ...FAILED (PRVG-1172, PRVG-11067, PRVG-11095)
+Verifying Multicast check ...
+Checking subnet "192.168.56.0" for multicast communication with multicast group "224.0.0.251"
+Verifying Multicast check ...PASSED
+Verifying Network Time Protocol (NTP) ...
+  Verifying '/etc/chrony.conf' ...
+  Node Name                             File exists?            
+  ------------------------------------  ------------------------
+  ol79rac2                              yes                     
+  ol79rac1                              yes                     
+
+  Verifying '/etc/chrony.conf' ...PASSED
+  Verifying '/var/run/ntpd.pid' ...
+  Node Name                             File exists?            
+  ------------------------------------  ------------------------
+  ol79rac2                              no                      
+  ol79rac1                              no                      
+
+  Verifying '/var/run/ntpd.pid' ...PASSED
+  Verifying '/var/run/chronyd.pid' ...
+  Node Name                             File exists?            
+  ------------------------------------  ------------------------
+  ol79rac2                              no                      
+  ol79rac1                              no                      
+
+  Verifying '/var/run/chronyd.pid' ...PASSED
+Verifying Network Time Protocol (NTP) ...FAILED
+Verifying Same core file name pattern ...PASSED
+Verifying User Mask ...
+  Node Name     Available                 Required                  Comment   
+  ------------  ------------------------  ------------------------  ----------
+  ol79rac2      0022                      0022                      passed    
+  ol79rac1      0022                      0022                      passed    
+Verifying User Mask ...PASSED
+Verifying User Not In Group "root": grid ...
+  Node Name     Status                    Comment                 
+  ------------  ------------------------  ------------------------
+  ol79rac2      passed                    does not exist          
+  ol79rac1      passed                    does not exist          
+Verifying User Not In Group "root": grid ...PASSED
+Verifying Time zone consistency ...PASSED
+Verifying resolv.conf Integrity ...
+  Verifying (Linux) resolv.conf Integrity ...
+  Node Name                             Status                  
+  ------------------------------------  ------------------------
+  ol79rac1                              passed                  
+  ol79rac2                              passed                  
+
+  checking response for name "ol79rac1" from each of the name servers specified
+  in "/etc/resolv.conf"
+
+  Node Name     Source                    Comment                   Status    
+  ------------  ------------------------  ------------------------  ----------
+  ol79rac1      168.126.63.1              IPv4                      passed    
+
+  checking response for name "ol79rac2" from each of the name servers specified
+  in "/etc/resolv.conf"
+
+  Node Name     Source                    Comment                   Status    
+  ------------  ------------------------  ------------------------  ----------
+  ol79rac2      168.126.63.1              IPv4                      passed    
+  Verifying (Linux) resolv.conf Integrity ...PASSED
+Verifying resolv.conf Integrity ...PASSED
+Verifying DNS/NIS name service ...PASSED
+Verifying Domain Sockets ...PASSED
+Verifying /boot mount ...PASSED
+Verifying Daemon "avahi-daemon" not configured and running ...
+  Node Name     Configured                Status                  
+  ------------  ------------------------  ------------------------
+  ol79rac2      no                        passed                  
+  ol79rac1      no                        passed                  
+
+  Node Name     Running?                  Status                  
+  ------------  ------------------------  ------------------------
+  ol79rac2      no                        passed                  
+  ol79rac1      no                        passed                  
+Verifying Daemon "avahi-daemon" not configured and running ...PASSED
+Verifying Daemon "proxyt" not configured and running ...
+  Node Name     Configured                Status                  
+  ------------  ------------------------  ------------------------
+  ol79rac2      no                        passed                  
+  ol79rac1      no                        passed                  
+
+  Node Name     Running?                  Status                  
+  ------------  ------------------------  ------------------------
+  ol79rac2      no                        passed                  
+  ol79rac1      no                        passed                  
+Verifying Daemon "proxyt" not configured and running ...PASSED
+Verifying User Equivalence ...PASSED
+Verifying File system mount options for path /var ...PASSED
+Verifying zeroconf check ...FAILED (PRVE-10077)
+Verifying ASM Filter Driver configuration ...PASSED
+
+Pre-check for cluster services setup was unsuccessful on all the nodes. 
+
+
+Failures were encountered during execution of CVU verification request "stage -pre crsinst".
+
+Verifying Group Existence: asmadmin ...FAILED
+ol79rac2: PRVG-10461 : Group "asmadmin" selected for privileges "OSASM" does
+          not exist on node "ol79rac2".
+
+ol79rac1: PRVG-10461 : Group "asmadmin" selected for privileges "OSASM" does
+          not exist on node "ol79rac1".
+
+Verifying Group Membership: asmadmin ...FAILED
+ol79rac2: PRVG-10460 : User "grid" does not belong to group "asmadmin" selected
+          for privileges "OSASM" on node "ol79rac2".
+
+ol79rac1: PRVG-10460 : User "grid" does not belong to group "asmadmin" selected
+          for privileges "OSASM" on node "ol79rac1".
+
+Verifying OS Kernel Parameter: shmmax ...FAILED
+ol79rac2: PRVG-1205 : OS kernel parameter "shmmax" does not have expected
+          current value on node "ol79rac2" [Expected = "5220683776" ; Current =
+          "5220663296"; Configured = "5220663296"].
+ol79rac2: PRVG-1201 : OS kernel parameter "shmmax" does not have expected
+          configured value on node "ol79rac2" [Expected = "5220683776" ;
+          Current = "5220663296"; Configured = "5220663296"].
+
+ol79rac1: PRVG-1205 : OS kernel parameter "shmmax" does not have expected
+          current value on node "ol79rac1" [Expected = "5220685824" ; Current =
+          "5220663296"; Configured = "5220663296"].
+ol79rac1: PRVG-1201 : OS kernel parameter "shmmax" does not have expected
+          configured value on node "ol79rac1" [Expected = "5220685824" ;
+          Current = "5220663296"; Configured = "5220663296"].
+
+Verifying Node Connectivity ...FAILED
+PRVG-1172 : The IP address "192.168.122.1" is on multiple interfaces "virbr0"
+on nodes "ol79rac1,ol79rac2"
+
+ol79rac1: PRVG-11067 : TCP connectivity from node "ol79rac1": "192.168.122.1"
+          to node "ol79rac1": "192.168.122.1" failed.
+          PRVG-11095 : The TCP system call "connect" failed with error "111"
+          while executing exectask on node "ol79rac1"
+          Connection refused
+ol79rac1: PRVG-11067 : TCP connectivity from node "ol79rac1": "192.168.122.1"
+          to node "ol79rac2": "192.168.122.1" failed.
+          PRVG-11095 : The TCP system call "connect" failed with error "111"
+          while executing exectask on node "ol79rac1"
+          Connection refused
+
+Verifying Network Time Protocol (NTP) ...FAILED
+Verifying zeroconf check ...FAILED
+ol79rac2: PRVE-10077 : NOZEROCONF parameter was not  specified or was not set
+          to 'yes' in file "/etc/sysconfig/network" on node "ol79rac2"
+
+ol79rac1: PRVE-10077 : NOZEROCONF parameter was not  specified or was not set
+          to 'yes' in file "/etc/sysconfig/network" on node "ol79rac1"
+
+
+CVU operation performed:      stage -pre crsinst
+Date:                         Dec 27, 2022 7:22:11 PM
+CVU home:                     /grid_engine/12c/grid/
+User:                         grid
