@@ -29,7 +29,7 @@ interface Props {
 
 const { post, siblings, newer, older } = Astro.props;
 const { Content } = await render(post);
-const { title, description, date, updated, tags, source } = post.data;
+const { title, description, date, updated, tags } = post.data;
 ---
 
 <Base
@@ -49,12 +49,6 @@ const { title, description, date, updated, tags, source } = post.data;
   <article class="prose" data-pagefind-body>
     <Content />
   </article>
-
-  {source && (
-    <p class="source-note">
-      이 글은 <a href={source}>Tistory</a>에서 옮겨 온 글입니다.
-    </p>
-  )}
 
   <nav class="post-nav" aria-label={`${post.platform.name} ${post.topic.name}의 이전/다음 글`}>
     {older ? (
