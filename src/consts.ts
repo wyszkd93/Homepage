@@ -13,22 +13,19 @@ export const SITE = {
 };
 
 export const PROFILE = {
-  name: 'mogu',
-  tagline: 'AI와 데이터를 공부하고 기록하는 모구입니다.',
+  name: '모구 (mogu)',
+  tagline: 'Oracle·오픈소스 DB와 미들웨어를 다루며 배운 것을 기록하는 DBA, 모구입니다.',
   about: [
-    '자기소개 문단입니다. 하는 일, 관심사, 이 블로그에서 다루는 주제 등을 적어 주세요.',
+    'Oracle을 중심으로 데이터베이스를 운영하는 DBA입니다. 오라클 엔지니어로 구축과 기술지원을 하며 시작했고, 지금은 운영 DBA로 DB와 함께 EAI(IBM MQ), 백업(NetBackup)까지 맡고 있습니다.',
+    '이 블로그에는 설치부터 RAC, 백업·복구, 튜닝, 장애 대응까지 직접 해 보며 배운 것을 다시 꺼내 볼 수 있게 정리합니다. 앞으로는 MySQL·MariaDB 같은 오픈소스 DB도 함께 다룰 예정입니다.',
   ],
-  interests: ['관심 분야 1', '관심 분야 2', '관심 분야 3'],
-  stack: ['TypeScript', 'Python', 'Astro'],
-  projects: [
-    {
-      name: '프로젝트 이름',
-      description: '프로젝트에 대한 짧은 설명',
-      url: 'https://github.com/wyszkd93',
-    },
-  ],
+  interests: ['성능 튜닝', '고가용성 (RAC·ASM)', '마이그레이션·오픈소스 DB', '운영 자동화·AI'],
+  stack: ['Oracle', 'RAC · ASM', 'Data Pump', 'Tibero', 'MySQL · MariaDB', 'IBM MQ', 'NetBackup', 'Linux', 'Shell', 'SQL · PL/SQL'],
+  // 비어 있으면 소개 페이지에 프로젝트 섹션을 표시하지 않습니다.
+  projects: [] as { name: string; description: string; url?: string }[],
   links: [
     { label: 'GitHub', url: 'https://github.com/wyszkd93' },
-    { label: 'Email', url: 'mailto:you@example.com' },
+    { label: 'LinkedIn', url: 'https://www.linkedin.com/in/%EC%A7%80%EC%97%B0-%EA%B0%95-1a068a264/' },
+    { label: 'Email', url: 'mailto:minggaeng12@gmail.com' },
   ],
 };
