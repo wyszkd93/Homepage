@@ -1,7 +1,7 @@
-# mogu
+# Homepage
 
 [Astro](https://astro.build)로 만든 개인 홈페이지 + 블로그입니다.
-배포 주소: https://mogumogu93.github.io/
+배포 주소: https://wyszkd93.github.io/Homepage/
 
 ## 구조
 
@@ -20,7 +20,7 @@
 
 ```bash
 npm install
-npm run dev      # http://localhost:4321/
+npm run dev      # http://localhost:4321/Homepage/
 npm run build    # dist/ 에 정적 파일 생성
 ```
 
@@ -40,7 +40,7 @@ draft: false      # true면 배포되지 않음
 본문. 이미지는 public/images/ 에 두고 ![설명](/images/파일.png)
 ```
 
-마크다운 안의 `/images/...` 같은 경로는 `astro.config.mjs`의 `base`에 맞춰 자동으로 고쳐집니다.
+마크다운 안의 `/images/...` 같은 경로에는 `/Homepage`가 자동으로 붙습니다.
 
 ## Tistory 글 가져오기
 
