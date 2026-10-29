@@ -211,9 +211,9 @@ function cleanHtml(html) {
 
   root.querySelectorAll('script, style, .another_category, .container_postbtn, .revenue_unit_wrap, ins.adsbygoogle').forEach((n) => n.remove());
 
-  // 빈 문단(&nbsp;만 있는 <p data-ke-size>) 제거
+  // 빈 문단(&nbsp;나 폭 0 공백만 있는 <p data-ke-size>) 제거
   root.querySelectorAll('p').forEach((p) => {
-    if (!p.querySelector('img, iframe, video') && p.text.replace(/ |&nbsp;/g, '').trim() === '') p.remove();
+    if (!p.querySelector('img, iframe, video') && p.text.replace(/[\u00a0\u200b\u200c\u200d\ufeff]|&nbsp;/g, '').trim() === '') p.remove();
   });
 
   // 이미지: 썸네일 프록시 주소를 원본 주소로
@@ -222,6 +222,21 @@ function cleanHtml(html) {
     img.setAttribute('src', originalImageUrl(src));
     for (const attr of ['srcset', 'data-src', 'onerror', 'data-origin-width', 'data-origin-height', 'data-filename']) {
       img.removeAttribute(attr);
+    }
+  });
+
+  // 칸이 하나뿐인 표는 편집기의 "상자" 서식이므로 인용 상자로 바꿈
+  root.querySelectorAll('table').forEach((table) => {
+    const cells = table.querySelectorAll('td, th');
+    if (cells.length !== 1) return;
+    const html = cells[0].innerHTML;
+    // 정렬된 명령 실행 결과처럼 보이면(연속 공백, ----- 구분선) 코드 블록으로
+    if (/(&nbsp;|\u00a0){2,}/.test(html) || /-{5,}/.test(cells[0].text)) {
+      const text = parseHtml(html.replace(/<br\s*\/?>/gi, '\n').replace(/<\/(p|div)>/gi, '\n')).text.replace(/\u00a0/g, ' ');
+      const esc = text.trim().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      table.replaceWith(`<pre><code>${esc}</code></pre>`);
+    } else {
+      table.replaceWith(`<blockquote>${html}</blockquote>`);
     }
   });
 
@@ -401,7 +416,12 @@ async function main() {
         }
       }
 
-      let body = td.turndown(cleanHtml(post.html)).replace(/\n{3,}/g, '\n\n').trim();
+      let body = td
+        .turndown(cleanHtml(post.html))
+        .replace(/[\u200b\u200c\u200d\ufeff]/g, '') // 폭 0 공백
+        .replace(/^[ \t]*(?:\*\*|__)+[ \t]*$/gm, '') // 내용 없이 남은 굵게 표시 "****"
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
       if (opts.images) {
         const r = await localizeImages(body, slug, opts);
         body = r.markdown;
