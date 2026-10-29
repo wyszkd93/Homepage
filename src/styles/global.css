@@ -426,10 +426,16 @@ a.cat:hover { text-decoration: none; filter: brightness(0.95); }
 @media (hover: none) { .copy-btn { opacity: 1; } }
 
 /* 스니펫 */
-.snippet-toc { display: flex; flex-wrap: wrap; gap: 6px; }
+.snippet-toc { display: grid; gap: 8px; }
+.snippet-toc-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.snippet-toc-platform { min-width: 5.5em; font-size: 0.82rem; font-weight: 700; color: var(--text-muted); }
+.snippet-platform + .snippet-platform { margin-top: 56px; }
+.snippet-platform-title {
+  margin: 32px 0 0; font-size: 1.45rem; font-weight: 800; letter-spacing: -0.03em;
+}
 .snippet-group { scroll-margin-top: 72px; }
 .snippet { margin-bottom: 26px; }
-.snippet-head h3 { margin: 0; font-size: 1.02rem; font-weight: 700; letter-spacing: -0.02em; }
+.snippet-head h4 { margin: 0; font-size: 1.02rem; font-weight: 700; letter-spacing: -0.02em; }
 .snippet-head p { margin: 0 0 8px; color: var(--text-muted); font-size: 0.9rem; }
 .snippet pre {
   margin: 0; font-size: 0.85rem; line-height: 1.6; padding: 14px 16px; border-radius: 10px;
@@ -437,7 +443,7 @@ a.cat:hover { text-decoration: none; filter: brightness(0.95); }
 }
 .snippet-source { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; font-size: 0.85rem; color: var(--text-muted); }
 .theme-toggle, .search-btn { flex: none; }
-.snippet-group:first-child { margin-top: 28px; }
+.snippet-group:first-of-type { margin-top: 16px; }
 @media (max-width: 560px) {
   .global-nav-inner { gap: 8px; }
   .global-nav-links { gap: 0; }

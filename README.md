@@ -9,7 +9,7 @@
 | --- | --- |
 | `src/consts.ts` | 이름, 소개, 관심 분야, 스택, 프로젝트, 연락처 — **소개 페이지 내용은 여기서 수정** |
 | `src/content/blog/` | 블로그 글 (마크다운). 파일 하나 = 글 하나 |
-| `src/data/snippets.ts` | SQL 스니펫 페이지(`/snippets/`) 구성. 글의 n번째 코드 블록을 그대로 가져옴 |
+| `src/data/snippets.ts` | 명령어 스니펫 페이지(`/snippets/`) 구성 (Oracle 쿼리, IBM MQ 명령어). 글의 n번째 코드 블록을 그대로 가져옴 |
 | `src/categories.ts` | 블로그 분류(목차): 분야(Oracle, MySQL·MariaDB, Tibero, OS …) › 주제(설치, 튜닝 …) |
 | `src/pages/` | 페이지: 소개(`/`), 블로그 목록·글, 태그, RSS(`/rss.xml`) |
 | `src/styles/global.css` | 디자인 (라이트/다크 색상 변수) |
