@@ -3,6 +3,13 @@ export const SITE = {
   title: 'mogu',
   description: '모구(mogu)의 홈페이지와 블로그',
   lang: 'ko',
+  author: 'mogu',
+  // 검색 엔진 소유 확인 코드. 구글 Search Console / 네이버 서치어드바이저에서 받은
+  // "HTML 태그" 방식의 content 값을 넣으세요. 비워 두면 태그를 넣지 않습니다.
+  verification: {
+    google: '',
+    naver: '',
+  },
 };
 
 export const PROFILE = {
