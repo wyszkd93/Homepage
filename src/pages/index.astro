@@ -1,13 +1,13 @@
 ---
 import Base from '../layouts/Base.astro';
-import PostList from '../components/PostList.astro';
+import PostRows from '../components/PostRows.astro';
 import { PROFILE } from '../consts';
 import { getPosts } from '../utils/posts';
 import { url } from '../utils/url';
 import { Image } from 'astro:assets';
 import mogu from '../assets/mogu.webp';
 
-const recent = (await getPosts()).slice(0, 5);
+const recent = (await getPosts()).slice(0, 6);
 ---
 
 <Base heading={PROFILE.name} tagline={PROFILE.tagline}>
@@ -59,6 +59,6 @@ const recent = (await getPosts()).slice(0, 5);
       <h2>최근 글</h2>
       <a href={url('/blog/')}>전체 보기 →</a>
     </div>
-    <PostList posts={recent} />
+    <PostRows posts={recent} />
   </section>
 </Base>

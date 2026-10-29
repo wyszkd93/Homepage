@@ -1,6 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro';
-import PostList from '../../components/PostList.astro';
+import PostRows from '../../components/PostRows.astro';
 import { getPosts, type Post } from '../../utils/posts';
 import { tagSlug } from '../../utils/url';
 
@@ -25,5 +25,5 @@ const { name, posts } = Astro.props;
 ---
 
 <Base title={`#${name}`} description={`${name} 태그가 달린 글`} heading={`#${name}`} tagline={`이 태그가 달린 글 ${posts.length}개`}>
-  <PostList posts={posts} />
+  <PostRows posts={posts} />
 </Base>

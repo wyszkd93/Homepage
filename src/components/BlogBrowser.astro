@@ -1,0 +1,38 @@
+---
+import { CATEGORIES } from '../categories';
+import type { Post } from '../utils/posts';
+import { url } from '../utils/url';
+import PostRows from './PostRows.astro';
+
+interface Props {
+  all: Post[];
+  posts: Post[];
+  /** 현재 카테고리 슬러그, 전체면 없음 */
+  active?: string;
+}
+const { all, posts, active } = Astro.props;
+const counts = new Map(CATEGORIES.map((c) => [c.slug, all.filter((p) => p.category.slug === c.slug).length]));
+---
+
+<div class="blog-layout">
+  <nav class="cat-nav" aria-label="카테고리">
+    <p class="cat-nav-title">카테고리</p>
+    <ul>
+      <li>
+        <a href={url('/blog/')} aria-current={!active ? 'page' : undefined}>
+          <span>전체</span><span class="count">{all.length}</span>
+        </a>
+      </li>
+      {CATEGORIES.filter((c) => counts.get(c.slug)).map((c) => (
+        <li>
+          <a href={url(`/blog/category/${c.slug}/`)} aria-current={active === c.slug ? 'page' : undefined} style={`--cat: ${c.color}`}>
+            <span><i class="dot" aria-hidden="true"></i>{c.name}</span><span class="count">{counts.get(c.slug)}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </nav>
+  <div class="blog-main">
+    <PostRows posts={posts} byYear showCategory={!active} />
+  </div>
+</div>

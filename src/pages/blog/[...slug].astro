@@ -2,30 +2,39 @@
 import { render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import TagList from '../../components/TagList.astro';
+import CategoryLabel from '../../components/CategoryLabel.astro';
+import PostRows from '../../components/PostRows.astro';
 import { getPosts, type Post } from '../../utils/posts';
 import { url, formatDate } from '../../utils/url';
 
 export async function getStaticPaths() {
   const posts = await getPosts();
-  return posts.map((post, i) => ({
-    params: { slug: post.id },
-    props: { post, newer: posts[i - 1], older: posts[i + 1] },
-  }));
+  return posts.map((post) => {
+    // 이전/다음 글은 같은 카테고리 안에서 이동 (연재 글을 따라 읽기 쉽게)
+    const siblings = posts.filter((p) => p.category.slug === post.category.slug);
+    const i = siblings.indexOf(post);
+    return {
+      params: { slug: post.id },
+      props: { post, siblings, newer: siblings[i - 1], older: siblings[i + 1] },
+    };
+  });
 }
 
 interface Props {
   post: Post;
+  siblings: Post[];
   newer?: Post;
   older?: Post;
 }
 
-const { post, newer, older } = Astro.props;
+const { post, siblings, newer, older } = Astro.props;
 const { Content } = await render(post);
 const { title, description, date, updated, tags, source } = post.data;
 ---
 
-<Base title={title} description={description} heading={title} narrow>
+<Base title={title} description={description} heading={post.displayTitle} narrow>
   <div class="post-head-meta" slot="hero">
+    <CategoryLabel category={post.category} />
     <time datetime={date.toISOString()}>{formatDate(date)}</time>
     {updated && <span>· 수정 {formatDate(updated)}</span>}
     <TagList tags={tags} />
@@ -41,12 +50,22 @@ const { title, description, date, updated, tags, source } = post.data;
     </p>
   )}
 
-  <nav class="post-nav" aria-label="이전/다음 글">
+  <nav class="post-nav" aria-label={`${post.category.name} 카테고리의 이전/다음 글`}>
     {older ? (
-      <a class="card" href={url(`/blog/${older.id}/`)}><span class="nav-label">← 이전 글</span>{older.data.title}</a>
+      <a class="card" href={url(`/blog/${older.id}/`)}><span class="nav-label">← 이전 글</span>{older.displayTitle}</a>
     ) : <span></span>}
     {newer ? (
-      <a class="card next" href={url(`/blog/${newer.id}/`)}><span class="nav-label">다음 글 →</span>{newer.data.title}</a>
+      <a class="card next" href={url(`/blog/${newer.id}/`)}><span class="nav-label">다음 글 →</span>{newer.displayTitle}</a>
     ) : <span></span>}
   </nav>
+
+  {siblings.length > 1 && (
+    <section class="series">
+      <div class="section-title section-head">
+        <h2><CategoryLabel category={post.category} /> 카테고리의 글 {siblings.length}개</h2>
+        <a href={url('/blog/')}>전체 목차 →</a>
+      </div>
+      <PostRows posts={siblings} showCategory={false} currentId={post.id} />
+    </section>
+  )}
 </Base>
