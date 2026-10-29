@@ -16,12 +16,11 @@ for (const post of posts) {
 const tags = [...counts.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'ko'));
 ---
 
-<Base title="태그" description="태그 목록">
-  <h1 class="page-title">태그</h1>
+<Base title="태그" description="태그 목록" heading="태그" tagline={`태그 ${tags.length}개`}>
   {tags.length === 0 ? <p class="muted">아직 태그가 없습니다.</p> : (
     <ul class="tag-cloud">
       {tags.map((t) => (
-        <li><a class="tag" href={tagUrl(t.name)}>#{t.name} <span class="count">{t.count}</span></a></li>
+        <li><a class="chip chip-link" href={tagUrl(t.name)}>#{t.name} <span class="count">{t.count}</span></a></li>
       ))}
     </ul>
   )}

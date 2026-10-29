@@ -8,9 +8,15 @@ import { url } from '../utils/url';
 interface Props {
   title?: string;
   description?: string;
+  /** 머리띠(초록 띠)에 크게 보일 제목. 없으면 머리띠를 그리지 않습니다. */
+  heading?: string;
+  /** 머리띠 제목 아래 한 줄 설명 */
+  tagline?: string;
+  /** 본문 폭을 글 읽기용으로 좁힙니다. */
+  narrow?: boolean;
 }
 
-const { title, description = SITE.description } = Astro.props;
+const { title, description = SITE.description, heading, tagline, narrow = false } = Astro.props;
 const fullTitle = title ? `${title} | ${SITE.title}` : SITE.title;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 ---
@@ -47,7 +53,16 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
   <body>
     <a class="skip-link" href="#main">본문으로 건너뛰기</a>
     <Header />
-    <main id="main" class="container">
+    {heading && (
+      <header class="page-head">
+        <div class="wrap page-head-inner">
+          <h1>{heading}</h1>
+          {tagline && <p class="tagline">{tagline}</p>}
+          <slot name="hero" />
+        </div>
+      </header>
+    )}
+    <main id="main" class:list={['wrap', { narrow }]}>
       <slot />
     </main>
     <Footer />
