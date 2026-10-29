@@ -4,6 +4,8 @@ import PostList from '../components/PostList.astro';
 import { PROFILE } from '../consts';
 import { getPosts } from '../utils/posts';
 import { url } from '../utils/url';
+import { Image } from 'astro:assets';
+import mogu from '../assets/mogu.webp';
 
 const recent = (await getPosts()).slice(0, 5);
 ---
@@ -12,6 +14,15 @@ const recent = (await getPosts()).slice(0, 5);
   <ul class="hero-links" slot="hero">
     {PROFILE.links.map((l) => <li><a class="cta-btn" href={l.url}>{l.label}</a></li>)}
   </ul>
+  <Image
+    slot="aside"
+    class="hero-art"
+    src={mogu}
+    widths={[320, 480, 720]}
+    sizes="(max-width: 720px) 240px, 320px"
+    alt="안경과 나비넥타이를 한 포메라니안 캐릭터 모구가 노트북으로 코딩하는 그림"
+    loading="eager"
+  />
 
   <section class="section">
     <h2 class="section-title">소개</h2>

@@ -12,6 +12,7 @@
 | `src/pages/` | 페이지: 소개(`/`), 블로그 목록·글, 태그, RSS(`/rss.xml`) |
 | `src/styles/global.css` | 디자인 (라이트/다크 색상 변수) |
 | `public/images/` | 글에 쓰는 이미지 |
+| `src/assets/` | 모구 캐릭터 그림 (`mogu.webp`, 얼굴 `mogu-face.webp`) |
 | `scripts/import-tistory.mjs` | Tistory 글 가져오기 스크립트 |
 | `.github/workflows/deploy.yml` | `main`에 push하면 GitHub Pages로 자동 배포 |
 
