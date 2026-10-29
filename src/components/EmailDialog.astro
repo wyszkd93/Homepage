@@ -1,0 +1,54 @@
+---
+// mailto 링크를 누르면 기본 메일 앱이 없는 환경에서도 쓸 수 있도록 선택 창을 띄웁니다.
+---
+
+<dialog class="email-dialog" aria-label="이메일 보내기">
+  <form method="dialog" class="email-panel">
+    <p class="email-title">이메일</p>
+    <p class="email-addr"><span data-email-addr></span></p>
+    <div class="email-actions">
+      <button type="button" class="email-btn primary" data-email-copy>주소 복사</button>
+      <a class="email-btn" data-email-gmail target="_blank" rel="noopener">Gmail로 보내기</a>
+      <a class="email-btn" data-email-mailto>메일 앱으로 열기</a>
+    </div>
+    <button class="email-close" aria-label="닫기">✕</button>
+  </form>
+</dialog>
+
+<script>
+  const dialog = document.querySelector<HTMLDialogElement>('.email-dialog')!;
+  const addrEl = dialog.querySelector<HTMLElement>('[data-email-addr]')!;
+  const copyBtn = dialog.querySelector<HTMLButtonElement>('[data-email-copy]')!;
+  const gmail = dialog.querySelector<HTMLAnchorElement>('[data-email-gmail]')!;
+  const mailto = dialog.querySelector<HTMLAnchorElement>('[data-email-mailto]')!;
+
+  document.addEventListener('click', (e) => {
+    const a = (e.target as Element).closest?.('a[href^="mailto:"]') as HTMLAnchorElement | null;
+    if (!a || a === mailto) return;
+    e.preventDefault();
+    const addr = decodeURIComponent(a.getAttribute('href')!.slice(7).split('?')[0]);
+    addrEl.textContent = addr;
+    gmail.href = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(addr)}`;
+    mailto.href = `mailto:${addr}`;
+    copyBtn.textContent = '주소 복사';
+    dialog.showModal();
+  });
+
+  copyBtn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(addrEl.textContent ?? '');
+      copyBtn.textContent = '복사됨 ✓';
+    } catch {
+      // 클립보드 권한이 없으면 주소를 선택해 두어 직접 복사할 수 있게
+      const range = document.createRange();
+      range.selectNodeContents(addrEl);
+      getSelection()?.removeAllRanges();
+      getSelection()?.addRange(range);
+      copyBtn.textContent = 'Ctrl+C로 복사하세요';
+    }
+  });
+
+  dialog.addEventListener('click', (e) => {
+    if (e.target === dialog) dialog.close();
+  });
+</script>

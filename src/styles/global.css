@@ -463,3 +463,29 @@ a.cat:hover { text-decoration: none; filter: brightness(0.95); }
 .prose :is(h2, h3, h4) { scroll-margin-top: 72px; }
 .prose th, .prose td { min-width: 7em; }
 .prose td code { white-space: nowrap; }
+
+/* 이메일 선택 창 */
+.email-dialog {
+  width: min(380px, calc(100vw - 32px)); padding: 0; margin: auto;
+  border: 1px solid var(--hairline); border-radius: 16px;
+  background: var(--surface-1); color: var(--ink); box-shadow: 0 24px 64px rgb(0 0 0 / 22%);
+}
+.email-dialog::backdrop { background: rgb(20 14 10 / 35%); backdrop-filter: blur(2px); }
+.email-panel { position: relative; padding: 22px 22px 20px; }
+.email-title { margin: 0; font-size: 0.82rem; font-weight: 700; color: var(--text-muted); }
+.email-addr { margin: 4px 0 16px; font-size: 1.1rem; font-weight: 700; word-break: break-all; user-select: all; }
+.email-actions { display: grid; gap: 8px; }
+.email-btn {
+  display: block; text-align: center; padding: 9px 12px; border-radius: 10px;
+  border: 1px solid var(--hairline); background: var(--surface-1); color: var(--ink);
+  font: inherit; font-size: 0.92rem; font-weight: 600; cursor: pointer;
+}
+.email-btn:hover { text-decoration: none; border-color: var(--accent-line); color: var(--accent); }
+.email-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+:root[data-theme='dark'] .email-btn.primary { color: #181412; }
+.email-btn.primary:hover { color: #fff; filter: brightness(1.08); }
+.email-close {
+  position: absolute; top: 10px; right: 10px; width: 30px; height: 30px; border: 0; border-radius: 8px;
+  background: transparent; color: var(--text-muted); font-size: 0.95rem; cursor: pointer;
+}
+.email-close:hover { background: var(--surface-2); color: var(--ink); }
