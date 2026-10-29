@@ -4,6 +4,8 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import { SITE } from '../consts';
 import { url } from '../utils/url';
+import { getImage } from 'astro:assets';
+import mogu from '../assets/mogu.webp';
 
 interface Props {
   title?: string;
@@ -19,6 +21,8 @@ interface Props {
 const { title, description = SITE.description, heading, tagline, narrow = false } = Astro.props;
 const fullTitle = title ? `${title} | ${SITE.title}` : SITE.title;
 const canonical = new URL(Astro.url.pathname, Astro.site);
+const ogImage = await getImage({ src: mogu, width: 1200, height: 1200, format: 'jpeg', quality: 82 });
+const hasAside = Astro.slots.has('aside');
 ---
 
 <!doctype html>
@@ -29,13 +33,15 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
-    <link rel="icon" type="image/svg+xml" href={url('/favicon.svg')} />
+    <link rel="icon" type="image/png" href={url('/favicon.png')} />
+    <link rel="apple-touch-icon" href={url('/apple-touch-icon.png')} />
     <link rel="alternate" type="application/rss+xml" title={SITE.title} href={url('/rss.xml')} />
     <link rel="sitemap" href={url('/sitemap-index.xml')} />
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
     <meta property="og:type" content="website" />
+    <meta property="og:image" content={new URL(ogImage.src, Astro.site)} />
     <link
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
@@ -55,10 +61,13 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <Header />
     {heading && (
       <header class="page-head">
-        <div class="wrap page-head-inner">
-          <h1>{heading}</h1>
-          {tagline && <p class="tagline">{tagline}</p>}
-          <slot name="hero" />
+        <div class:list={['wrap page-head-inner', { 'has-aside': hasAside }]}>
+          <div class="page-head-text">
+            <h1>{heading}</h1>
+            {tagline && <p class="tagline">{tagline}</p>}
+            <slot name="hero" />
+          </div>
+          <slot name="aside" />
         </div>
       </header>
     )}

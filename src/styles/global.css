@@ -1,45 +1,50 @@
 /* 색·글꼴 토큰: 밝은 지면 + 하늘빛 포인트 */
+/* 색 토큰: 모구 캐릭터에서 따온 살구색(털) + 청록(나비넥타이), 밝은 지면 */
 :root {
-  --plane: #fcfcfa;
+  --plane: #fffdf9;
   --surface-1: #ffffff;
-  --surface-2: #f5f6f3;
-  --ink: #1e2430;
-  --ink-muted: #3b4351;
-  --text-muted: #6a7280;
-  --hairline: #e6e7e2;
-  --gridline: #eef0eb;
-  --link: #2c64d8;
-  --accent: #2c64d8;
-  --accent-soft: #edf3ff;
-  --accent-line: #c9d9fb;
-  --warm: #f4a259;
-  --hero-from: #eef4ff;
-  --hero-to: #fdf6ec;
-  --code-bg: #f6f7f4;
-  --shadow: 0 1px 2px rgb(30 36 48 / 4%), 0 6px 20px rgb(30 36 48 / 5%);
+  --surface-2: #faf6f0;
+  --ink: #2b2420;
+  --ink-muted: #4a403a;
+  --text-muted: #7a6f67;
+  --hairline: #eee6dc;
+  --gridline: #f4eee6;
+  --link: #b85a28;
+  --accent: #c0632f;
+  --accent-soft: #fff1e4;
+  --accent-line: #f3cfae;
+  --warm: #f2a65e;
+  --teal: #49696c;
+  --teal-soft: #eaf1f1;
+  --hero-from: #ffefdc;
+  --hero-to: #eaf3f2;
+  --code-bg: #faf6f0;
+  --shadow: 0 1px 2px rgb(60 40 20 / 5%), 0 8px 24px rgb(60 40 20 / 7%);
   --wrap: 980px;
   --read: 760px;
   color-scheme: light;
 }
 
 :root[data-theme='dark'] {
-  --plane: #14161a;
-  --surface-1: #1b1e23;
-  --surface-2: #20242a;
-  --ink: #e8eaed;
-  --ink-muted: #cfd3d9;
-  --text-muted: #9aa1ab;
-  --hairline: #2b2f36;
-  --gridline: #24282e;
-  --link: #8fb1ff;
-  --accent: #8fb1ff;
-  --accent-soft: #1f2a40;
-  --accent-line: #33446a;
-  --warm: #f4a259;
-  --hero-from: #1a2233;
-  --hero-to: #221f1b;
-  --code-bg: #1e2126;
-  --shadow: 0 1px 2px rgb(0 0 0 / 30%), 0 6px 20px rgb(0 0 0 / 25%);
+  --plane: #181412;
+  --surface-1: #211c19;
+  --surface-2: #26201c;
+  --ink: #f1ebe4;
+  --ink-muted: #d9d0c7;
+  --text-muted: #a69a90;
+  --hairline: #332b26;
+  --gridline: #2a2420;
+  --link: #f5b77e;
+  --accent: #f2a65e;
+  --accent-soft: #3a2a1d;
+  --accent-line: #5c4029;
+  --warm: #f2a65e;
+  --teal: #8fb5b7;
+  --teal-soft: #1f2b2b;
+  --hero-from: #2c2118;
+  --hero-to: #1a2524;
+  --code-bg: #221d1a;
+  --shadow: 0 1px 2px rgb(0 0 0 / 30%), 0 8px 24px rgb(0 0 0 / 28%);
   color-scheme: dark;
 }
 
@@ -87,13 +92,13 @@ main.narrow > * { max-width: var(--read); }
 }
 .global-nav-inner { display: flex; align-items: center; gap: 20px; height: 56px; }
 .site-title {
-  display: inline-flex; align-items: center; gap: 8px;
-  color: var(--ink); font-weight: 700; font-size: 1rem; white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 10px;
+  color: var(--ink); font-weight: 800; font-size: 1.1rem; letter-spacing: -0.02em; white-space: nowrap;
 }
 .site-title:hover { text-decoration: none; color: var(--accent); }
-.logo-dot {
-  width: 12px; height: 12px; border-radius: 4px;
-  background: linear-gradient(135deg, var(--accent), var(--warm));
+.logo-img {
+  width: 30px; height: 30px; border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--surface-1), 0 0 0 3px var(--accent-line);
 }
 .global-nav-links { display: flex; gap: 4px; list-style: none; margin: 0 0 0 auto; padding: 0; }
 .global-nav-links a {
@@ -126,6 +131,16 @@ main.narrow > * { max-width: var(--read); }
   margin: 0 0 6px; font-size: clamp(1.75rem, 5vw, 2.4rem); font-weight: 800;
   line-height: 1.3; letter-spacing: -0.035em; color: var(--ink);
 }
+.page-head-inner.has-aside {
+  display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 32px;
+  padding-block: 36px 32px;
+}
+.hero-art {
+  display: block; width: 300px; height: auto; aspect-ratio: 1;
+  border-radius: 28px; box-shadow: var(--shadow);
+  border: 4px solid var(--surface-1);
+  transform: rotate(2deg);
+}
 .page-head .tagline { margin: 0; color: var(--text-muted); font-size: 1.05rem; line-height: 1.6; max-width: 40em; }
 
 .hero-links { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; margin: 20px 0 0; padding: 0; }
@@ -136,7 +151,7 @@ a.cta-btn {
 }
 a.cta-btn:hover { text-decoration: none; color: var(--accent); border-color: var(--accent-line); }
 .hero-links li:first-child a.cta-btn { background: var(--accent); border-color: var(--accent); color: #fff; }
-:root[data-theme='dark'] .hero-links li:first-child a.cta-btn { color: #14161a; }
+:root[data-theme='dark'] .hero-links li:first-child a.cta-btn { color: #181412; }
 .hero-links li:first-child a.cta-btn:hover { filter: brightness(1.08); }
 
 .post-head-meta {
@@ -180,7 +195,7 @@ a.cta-btn:hover { text-decoration: none; color: var(--accent); border-color: var
 .tag {
   display: inline-block; font-size: 0.78rem; font-weight: 600;
   border-radius: 999px; padding: 1px 9px; line-height: 1.6;
-  color: var(--accent); background: var(--accent-soft);
+  color: var(--teal); background: var(--teal-soft);
 }
 .tag:hover { text-decoration: none; filter: brightness(0.96); }
 
@@ -255,6 +270,11 @@ code, pre, kbd { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, mon
 .post-nav a:hover { color: var(--accent); text-decoration: none; }
 .post-nav .next { text-align: right; }
 .nav-label { display: block; color: var(--text-muted); font-size: 0.78rem; font-weight: 500; }
+
+@media (max-width: 720px) {
+  .page-head-inner.has-aside { grid-template-columns: 1fr; gap: 20px; }
+  .hero-art { order: -1; width: 168px; border-radius: 24px; }
+}
 
 @media (max-width: 560px) {
   .wrap { padding-inline: 16px; }

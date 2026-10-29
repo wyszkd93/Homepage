@@ -1,13 +1,13 @@
 // ✏️ 사이트 정보는 대부분 이 파일에서 수정합니다.
 export const SITE = {
-  title: '홈페이지',
-  description: '개인 홈페이지와 블로그',
+  title: 'mogu',
+  description: '모구(mogu)의 홈페이지와 블로그',
   lang: 'ko',
 };
 
 export const PROFILE = {
-  name: '이름 (닉네임)',
-  tagline: '한 줄 소개를 여기에 적어 주세요.',
+  name: 'mogu',
+  tagline: 'AI와 데이터를 공부하고 기록하는 모구입니다.',
   about: [
     '자기소개 문단입니다. 하는 일, 관심사, 이 블로그에서 다루는 주제 등을 적어 주세요.',
   ],
