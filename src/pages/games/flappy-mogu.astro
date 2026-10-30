@@ -42,101 +42,198 @@ import Base from '../../layouts/Base.astro';
   const FEET = 11; // 중심에서 발끝까지
   const BEST_KEY = 'game:flappy-mogu';
 
-  // 옆에서 본 날개 달린 모구 도트 (34x28). 날개 위·가운데·아래 장면을 돌려 파닥거린다.
+  // 고개를 살짝 돌린(3/4) 날개 달린 모구 도트 (34x28). 날개 위·가운데·아래 장면을 돌려 파닥거린다.
   const PAL: Record<string, string> = {
     o: '#f6b26b', O: '#e89650', c: '#fff1dc', e: '#3a2a24', w: '#ffffff', b: '#ffa0a0', n: '#462d23', p: '#ff8787',
     k: '#ffc8c8', W: '#ffffff', s: '#cde2f2', D: '#8a522d', B: '#6e8ca8',
   };
-  const WING_UP = [
-    '..........B.......................',
-    '.........BsB.B....................',
-    '........BsWsBsB.......D...........',
-    '.........BWWsWWBB....DoD..........',
-    '.........BWWWWWWsB...DkkDDDD......',
-    '.........BsWWWWWWB...DokooooD.....',
-    '.....D....BWWWWWWB..DooooooooDD...',
-    '..DDDODDD.BWWWWWWB.DoooooooooooD..',
-    '.DOOOOOOOD.BWWWWWBDooooooooooooD..',
-    '.DOOcccOOD.BBWWWWBDooooooooweooD..',
-    'DOOcccccOODDoBWWBDDooooooooeeoooD.',
-    'DOOOcccOooooooBBoooooooooooocccnD.',
-    '.DOOOOOOoooooooooooocccoobbccccnD.',
-    '.DOOOooooooooooooooccccccooocnpcD.',
-    '..DDDOoooooooooooocccccccooooDnD..',
-    '....DooooooooooooccccccccoooD.D...',
-    '....DooooooooooooccccccccDDD......',
-    '.....DoooooooooocccccccccD........',
-    '....DooooooooooocccccccccD........',
-    '.....DDoooooooooocccccccoD........',
-    '.....DoooooooooooocccccoooD.......',
-    '.....DooDDoooDDDoDDDooDDooD.......',
-    '....DoooDoooD...D..DoooDoooD......',
-    '...DoooDDooD........DoooDoD.......',
-    '....DoDDoooD........DoooDD........',
-    '.....D..DoD..........DDD..........',
-    '.........D........................',
-    '..................................',
-  ];
-  const WING_MID = [
-    '..................................',
-    '..................................',
-    '......................D...........',
-    '.....................DoD..........',
-    '.....................DkkDDDD......',
-    '.......B.BBB.........DokooooD.....',
-    '.....DBsBsWsB.......DooooooooDD...',
-    '..DDDODWWWWWWB.....DoooooooooooD..',
-    '.DOOBBWsWWWWWWB...DooooooooooooD..',
-    '.DOOBWWWWWWWWWWBD.DooooooooweooD..',
-    'DOOccBBWWWWWWWWBoDDooooooooeeoooD.',
-    'DOOOcccBBBBWWWWBoooooooooooocccnD.',
-    '.DOOOOOOoooBBBBooooocccoobbccccnD.',
-    '.DOOOooooooooooooooccccccooocnpcD.',
-    '..DDDOoooooooooooocccccccooooDnD..',
-    '....DooooooooooooccccccccoooD.D...',
-    '....DooooooooooooccccccccDDD......',
-    '.....DoooooooooocccccccccD........',
-    '....DooooooooooocccccccccD........',
-    '.....DDoooooooooocccccccoD........',
-    '.....DoooooooooooocccccoooD.......',
-    '.....DooDDoooDDDoDDDooDDooD.......',
-    '....DoooDoooD...D..DoooDoooD......',
-    '...DoooDDooD........DoooDoD.......',
-    '....DoDDoooD........DoooDD........',
-    '.....D..DoD..........DDD..........',
-    '.........D........................',
-    '..................................',
-  ];
-  const WING_DOWN = [
-    '..................................',
-    '..................................',
-    '......................D...........',
-    '.....................DoD..........',
-    '.....................DkkDDDD......',
-    '.....................DokooooD.....',
-    '.....D..............DooooooooDD...',
-    '..DDDODDD..........DoooooooooooD..',
-    '.DOOOOOOOD........DooooooooooooD..',
-    '.DOOcccOODBBB...D.DooooooooweooD..',
-    'DOOcccccOBsssBBDoDDooooooooeeoooD.',
-    'DOOOcccBBWWWWWBooooooooooooocccnD.',
-    '.DOOOOOBWWWWWWWBoooocccoobbccccnD.',
-    '.DOOOoBWWWWWWWBooooccccccooocnpcD.',
-    '..DDDOBWWWWWWBoooocccccccooooDnD..',
-    '....DooBWWWBBooooccccccccoooD.D...',
-    '....DoBWWBBooooooccccccccDDD......',
-    '....BBBBBooooooocccccccccD........',
-    '....DooooooooooocccccccccD........',
-    '.....DDoooooooooocccccccoD........',
-    '.....DoooooooooooocccccoooD.......',
-    '.....DooDDoooDDDoDDDooDDooD.......',
-    '....DoooDoooD...D..DoooDoooD......',
-    '...DoooDDooD........DoooDoD.......',
-    '....DoDDoooD........DoooDD........',
-    '.....D..DoD..........DDD..........',
-    '.........D........................',
-    '..................................',
-  ];
+  // 표정(normal: 반짝 눈, happy: 점수 얻을 때 눈웃음) × 날개 장면(up·mid·down)
+  const FRAMES = {
+    normal: {
+      up: [
+        '..........B.......................',
+        '.........BsB.B....................',
+        '........BsWsBsB.....D........D....',
+        '.........BWWsWWBB..DoD...D..DoD...',
+        '.........BWWWWWWsB.DkoDDDoDDooD...',
+        '.........BsWWWWWWB.DkkooooookkD...',
+        '.....D....BWWWWWWBDooooooooooooD..',
+        '..DDDODDD.BWWWWWWBDoooooooooooooD.',
+        '.DOOOOOOOD.BWWWWWDooooooooooooooD.',
+        '.DOOcccOOD.BBWWWWBDoooewoooooewoD.',
+        'DOOcccccOODDoBWWBDooooeeoooooeeooD',
+        'DOOOcccOooooooBBooooooeeoooooeeooD',
+        '.DOOOOOOoooooooooooobbooooccccobD.',
+        '.DOOOooooooooooooooooooooccnnccoD.',
+        '..DDDOooooooooooooooccccocnccncoD.',
+        '....DooooooooooooccccccccccppccD..',
+        '....DoooooooooooocccccccccoccoD...',
+        '.....DoooooooooocccccccccooDoD....',
+        '....DooooooooooocccccccccDD.D.....',
+        '.....DDoooooooooocccccccoD........',
+        '.....DoooooooooooocccccoooD.......',
+        '.....DooDDoooDDDoDDDooDDooD.......',
+        '....DoooDoooD...D..DoooDoooD......',
+        '...DoooDDooD........DoooDoD.......',
+        '....DoDDoooD........DoooDD........',
+        '.....D..DoD..........DDD..........',
+        '.........D........................',
+        '..................................',
+      ],
+      mid: [
+        '..................................',
+        '..................................',
+        '....................D........D....',
+        '...................DoD...D..DoD...',
+        '...................DkoDDDoDDooD...',
+        '.......B.BBB.......DkkooooookkD...',
+        '.....DBsBsWsB.....DooooooooooooD..',
+        '..DDDODWWWWWWB....DoooooooooooooD.',
+        '.DOOBBWsWWWWWWB..DooooooooooooooD.',
+        '.DOOBWWWWWWWWWWBD.DoooewoooooewoD.',
+        'DOOccBBWWWWWWWWBoDooooeeoooooeeooD',
+        'DOOOcccBBBBWWWWBooooooeeoooooeeooD',
+        '.DOOOOOOoooBBBBooooobbooooccccobD.',
+        '.DOOOooooooooooooooooooooccnnccoD.',
+        '..DDDOooooooooooooooccccocnccncoD.',
+        '....DooooooooooooccccccccccppccD..',
+        '....DoooooooooooocccccccccoccoD...',
+        '.....DoooooooooocccccccccooDoD....',
+        '....DooooooooooocccccccccDD.D.....',
+        '.....DDoooooooooocccccccoD........',
+        '.....DoooooooooooocccccoooD.......',
+        '.....DooDDoooDDDoDDDooDDooD.......',
+        '....DoooDoooD...D..DoooDoooD......',
+        '...DoooDDooD........DoooDoD.......',
+        '....DoDDoooD........DoooDD........',
+        '.....D..DoD..........DDD..........',
+        '.........D........................',
+        '..................................',
+      ],
+      down: [
+        '..................................',
+        '..................................',
+        '....................D........D....',
+        '...................DoD...D..DoD...',
+        '...................DkoDDDoDDooD...',
+        '...................DkkooooookkD...',
+        '.....D............DooooooooooooD..',
+        '..DDDODDD.........DoooooooooooooD.',
+        '.DOOOOOOOD.......DooooooooooooooD.',
+        '.DOOcccOODBBB...D.DoooewoooooewoD.',
+        'DOOcccccOBsssBBDoDooooeeoooooeeooD',
+        'DOOOcccBBWWWWWBoooooooeeoooooeeooD',
+        '.DOOOOOBWWWWWWWBoooobbooooccccobD.',
+        '.DOOOoBWWWWWWWBooooooooooccnnccoD.',
+        '..DDDOBWWWWWWBooooooccccocnccncoD.',
+        '....DooBWWWBBooooccccccccccppccD..',
+        '....DoBWWBBoooooocccccccccoccoD...',
+        '....BBBBBooooooocccccccccooDoD....',
+        '....DooooooooooocccccccccDD.D.....',
+        '.....DDoooooooooocccccccoD........',
+        '.....DoooooooooooocccccoooD.......',
+        '.....DooDDoooDDDoDDDooDDooD.......',
+        '....DoooDoooD...D..DoooDoooD......',
+        '...DoooDDooD........DoooDoD.......',
+        '....DoDDoooD........DoooDD........',
+        '.....D..DoD..........DDD..........',
+        '.........D........................',
+        '..................................',
+      ],
+    },
+    happy: {
+      up: [
+        '..........B.......................',
+        '.........BsB.B....................',
+        '........BsWsBsB.....D........D....',
+        '.........BWWsWWBB..DoD...D..DoD...',
+        '.........BWWWWWWsB.DkoDDDoDDooD...',
+        '.........BsWWWWWWB.DkkooooookkD...',
+        '.....D....BWWWWWWBDooooooooooooD..',
+        '..DDDODDD.BWWWWWWBDoooooooooooooD.',
+        '.DOOOOOOOD.BWWWWWDooooooooooooooD.',
+        '.DOOcccOOD.BBWWWWBDoooooooooooooD.',
+        'DOOcccccOODDoBWWBDooooeeoooooeeooD',
+        'DOOOcccOooooooBBoooooeooeoooeooeoD',
+        '.DOOOOOOoooooooooooobbooooccccobD.',
+        '.DOOOooooooooooooooooooooccnnccoD.',
+        '..DDDOooooooooooooooccccocnccncoD.',
+        '....DooooooooooooccccccccccppccD..',
+        '....DoooooooooooocccccccccoppoD...',
+        '.....DoooooooooocccccccccooDoD....',
+        '....DooooooooooocccccccccDD.D.....',
+        '.....DDoooooooooocccccccoD........',
+        '.....DoooooooooooocccccoooD.......',
+        '.....DooDDoooDDDoDDDooDDooD.......',
+        '....DoooDoooD...D..DoooDoooD......',
+        '...DoooDDooD........DoooDoD.......',
+        '....DoDDoooD........DoooDD........',
+        '.....D..DoD..........DDD..........',
+        '.........D........................',
+        '..................................',
+      ],
+      mid: [
+        '..................................',
+        '..................................',
+        '....................D........D....',
+        '...................DoD...D..DoD...',
+        '...................DkoDDDoDDooD...',
+        '.......B.BBB.......DkkooooookkD...',
+        '.....DBsBsWsB.....DooooooooooooD..',
+        '..DDDODWWWWWWB....DoooooooooooooD.',
+        '.DOOBBWsWWWWWWB..DooooooooooooooD.',
+        '.DOOBWWWWWWWWWWBD.DoooooooooooooD.',
+        'DOOccBBWWWWWWWWBoDooooeeoooooeeooD',
+        'DOOOcccBBBBWWWWBoooooeooeoooeooeoD',
+        '.DOOOOOOoooBBBBooooobbooooccccobD.',
+        '.DOOOooooooooooooooooooooccnnccoD.',
+        '..DDDOooooooooooooooccccocnccncoD.',
+        '....DooooooooooooccccccccccppccD..',
+        '....DoooooooooooocccccccccoppoD...',
+        '.....DoooooooooocccccccccooDoD....',
+        '....DooooooooooocccccccccDD.D.....',
+        '.....DDoooooooooocccccccoD........',
+        '.....DoooooooooooocccccoooD.......',
+        '.....DooDDoooDDDoDDDooDDooD.......',
+        '....DoooDoooD...D..DoooDoooD......',
+        '...DoooDDooD........DoooDoD.......',
+        '....DoDDoooD........DoooDD........',
+        '.....D..DoD..........DDD..........',
+        '.........D........................',
+        '..................................',
+      ],
+      down: [
+        '..................................',
+        '..................................',
+        '....................D........D....',
+        '...................DoD...D..DoD...',
+        '...................DkoDDDoDDooD...',
+        '...................DkkooooookkD...',
+        '.....D............DooooooooooooD..',
+        '..DDDODDD.........DoooooooooooooD.',
+        '.DOOOOOOOD.......DooooooooooooooD.',
+        '.DOOcccOODBBB...D.DoooooooooooooD.',
+        'DOOcccccOBsssBBDoDooooeeoooooeeooD',
+        'DOOOcccBBWWWWWBooooooeooeoooeooeoD',
+        '.DOOOOOBWWWWWWWBoooobbooooccccobD.',
+        '.DOOOoBWWWWWWWBooooooooooccnnccoD.',
+        '..DDDOBWWWWWWBooooooccccocnccncoD.',
+        '....DooBWWWBBooooccccccccccppccD..',
+        '....DoBWWBBoooooocccccccccoppoD...',
+        '....BBBBBooooooocccccccccooDoD....',
+        '....DooooooooooocccccccccDD.D.....',
+        '.....DDoooooooooocccccccoD........',
+        '.....DoooooooooooocccccoooD.......',
+        '.....DooDDoooDDDoDDDooDDooD.......',
+        '....DoooDoooD...D..DoooDoooD......',
+        '...DoooDDooD........DoooDoD.......',
+        '....DoDDoooD........DoooDD........',
+        '.....D..DoD..........DDD..........',
+        '.........D........................',
+        '..................................',
+      ],
+    },
+  };
   const SW = 34;
   const SH = 28;
 
@@ -166,8 +263,12 @@ import Base from '../../layouts/Base.astro';
     );
     return c;
   };
-  const [UP, MID, DOWN] = [makeSprite(WING_UP), makeSprite(WING_MID), makeSprite(WING_DOWN)];
-  const FLAP_CYCLE = [UP, MID, DOWN, MID];
+  const SPRITES = Object.fromEntries(
+    Object.entries(FRAMES).map(([face, f]) => {
+      const [up, mid, down] = [makeSprite(f.up), makeSprite(f.mid), makeSprite(f.down)];
+      return [face, { up, down, cycle: [up, mid, down, mid] }];
+    }),
+  ) as Record<keyof typeof FRAMES, { up: HTMLCanvasElement; down: HTMLCanvasElement; cycle: HTMLCanvasElement[] }>;
 
   const overlay = document.getElementById('fl-overlay')!;
   const title = document.getElementById('fl-title')!;
@@ -185,6 +286,7 @@ import Base from '../../layouts/Base.astro';
   let scroll = 0; // 누적 이동 거리 (배경·땅 무늬용)
   let deadAt = 0;
   let flapAt = 0; // 마지막 날갯짓 시각 (날개를 잠깐 내린 모양으로)
+  let happyAt = -1e9; // 마지막 득점 시각 (잠깐 눈웃음)
   let sound = true;
   let audio: AudioContext | null = null;
   const stars = Array.from({ length: 28 }, () => [Math.random() * VW, Math.random() * 225, Math.random()]);
@@ -302,6 +404,7 @@ import Base from '../../layouts/Base.astro';
         p.passed = true;
         score++;
         sfx.point();
+        happyAt = performance.now();
       }
     }
     if (pipes[0].x < -PIPE_W - 4) {
@@ -396,12 +499,13 @@ import Base from '../../layouts/Base.astro';
     //  준비: 천천히 파닥 · 날갯짓 직후: 빠르게 한 바퀴 · 떨어질 때: 날개 펴고 활공 · 끝: 날개 내림
     const now = performance.now();
     const since = now - flapAt;
+    const face = SPRITES[state === 'play' && now - happyAt < 600 ? 'happy' : 'normal'];
     const sprite =
-      state === 'dead' ? DOWN
-      : state === 'ready' ? FLAP_CYCLE[Math.floor(now / 160) % 4]
-      : since < 240 ? FLAP_CYCLE[Math.floor(since / 60) % 4]
-      : vy > 120 ? UP
-      : FLAP_CYCLE[Math.floor(now / 110) % 4];
+      state === 'dead' ? face.down
+      : state === 'ready' ? face.cycle[Math.floor(now / 160) % 4]
+      : since < 240 ? face.cycle[Math.floor(since / 60) % 4]
+      : vy > 120 ? face.up
+      : face.cycle[Math.floor(now / 110) % 4];
     g.drawImage(sprite, Math.round(MX - SW / 2), Math.round(y - SH / 2));
     if (state === 'play') drawNumber(score, VW / 2, 24, 4);
   }
