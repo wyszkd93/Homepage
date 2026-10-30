@@ -1,5 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro';
+import sprite from '../../assets/flappy-mogu.png';
 ---
 
 <Base
@@ -14,7 +15,7 @@ import Base from '../../layouts/Base.astro';
       <button id="fl-sound" class="tool-btn" type="button" aria-pressed="true">🔊 소리 켬</button>
     </div>
     <div id="fl-stage" class="fl-stage">
-      <canvas id="fl-canvas" aria-label="플래피 모구 게임 화면" role="img"></canvas>
+      <canvas id="fl-canvas" data-sprite={sprite.src} aria-label="플래피 모구 게임 화면" role="img"></canvas>
       <div id="fl-overlay" class="fl-overlay">
         <p id="fl-title" class="fl-title">플래피 모구</p>
         <p id="fl-sub" class="fl-sub">눌러서 시작</p>
@@ -24,218 +25,23 @@ import Base from '../../layouts/Base.astro';
 </Base>
 
 <script>
-  // 저해상도(216x384) 버퍼에 그린 뒤 화면에 정수 배 확대 없이 늘려 붙여 도트 느낌을 낸다.
-  const VW = 216;
-  const VH = 384;
-  const GROUND = 336;
-  const PIPE_W = 36;
-  const GAP = 105;
-  const SPACING = 129;
-  const SPEED = 93; // px/s
-  const GRAVITY = 930;
-  const FLAP = -300;
-  const MAX_FALL = 450;
-  const MX = 60; // 모구 중심 x
-  const START_Y = 165;
-  // 충돌 상자: 몸통과 머리만 (날개·꼬리·다리 끝은 봐줌). 모구 중심 기준
-  const HIT = { l: -10, r: 15, t: -6, b: 8 };
-  const FEET = 11; // 중심에서 발끝까지
+  // 저해상도(288x512) 버퍼에 그린 뒤 스무딩 없이 늘려 붙여 도트 느낌을 낸다.
+  const VW = 288;
+  const VH = 512;
+  const GROUND = 448;
+  const PIPE_W = 48;
+  const GAP = 150;
+  const SPACING = 172;
+  const SPEED = 124; // px/s
+  const GRAVITY = 1240;
+  const FLAP = -400;
+  const MAX_FALL = 600;
+  const MX = 80; // 모구 중심 x
+  const START_Y = 220;
+  // 충돌 상자: 머리와 몸통만 (날개·꼬리·발끝은 봐줌). 스프라이트 중심 기준
+  const HIT = { l: -12, r: 22, t: -10, b: 14 };
+  const FEET = 25; // 중심에서 발끝까지
   const BEST_KEY = 'game:flappy-mogu';
-
-  // 고개를 살짝 돌린(3/4) 날개 달린 모구 도트 (34x28). 날개 위·가운데·아래 장면을 돌려 파닥거린다.
-  const PAL: Record<string, string> = {
-    o: '#f6b26b', O: '#e89650', c: '#fff1dc', e: '#3a2a24', w: '#ffffff', b: '#ffa0a0', n: '#462d23', p: '#ff8787',
-    k: '#ffc8c8', W: '#ffffff', s: '#cde2f2', D: '#8a522d', B: '#6e8ca8',
-  };
-  // 표정(normal: 반짝 눈, happy: 점수 얻을 때 눈웃음) × 날개 장면(up·mid·down)
-  const FRAMES = {
-    normal: {
-      up: [
-        '..........B.......................',
-        '.........BsB.B....................',
-        '........BsWsBsB.....D........D....',
-        '.........BWWsWWBB..DoD...D..DoD...',
-        '.........BWWWWWWsB.DkoDDDoDDooD...',
-        '.........BsWWWWWWB.DkkooooookkD...',
-        '.....D....BWWWWWWBDooooooooooooD..',
-        '..DDDODDD.BWWWWWWBDoooooooooooooD.',
-        '.DOOOOOOOD.BWWWWWDooooooooooooooD.',
-        '.DOOcccOOD.BBWWWWBDoooewoooooewoD.',
-        'DOOcccccOODDoBWWBDooooeeoooooeeooD',
-        'DOOOcccOooooooBBooooooeeoooooeeooD',
-        '.DOOOOOOoooooooooooobbooooccccobD.',
-        '.DOOOooooooooooooooooooooccnnccoD.',
-        '..DDDOooooooooooooooccccocnccncoD.',
-        '....DooooooooooooccccccccccppccD..',
-        '....DoooooooooooocccccccccoccoD...',
-        '.....DoooooooooocccccccccooDoD....',
-        '....DooooooooooocccccccccDD.D.....',
-        '.....DDoooooooooocccccccoD........',
-        '.....DoooooooooooocccccoooD.......',
-        '.....DooDDoooDDDoDDDooDDooD.......',
-        '....DoooDoooD...D..DoooDoooD......',
-        '...DoooDDooD........DoooDoD.......',
-        '....DoDDoooD........DoooDD........',
-        '.....D..DoD..........DDD..........',
-        '.........D........................',
-        '..................................',
-      ],
-      mid: [
-        '..................................',
-        '..................................',
-        '....................D........D....',
-        '...................DoD...D..DoD...',
-        '...................DkoDDDoDDooD...',
-        '.......B.BBB.......DkkooooookkD...',
-        '.....DBsBsWsB.....DooooooooooooD..',
-        '..DDDODWWWWWWB....DoooooooooooooD.',
-        '.DOOBBWsWWWWWWB..DooooooooooooooD.',
-        '.DOOBWWWWWWWWWWBD.DoooewoooooewoD.',
-        'DOOccBBWWWWWWWWBoDooooeeoooooeeooD',
-        'DOOOcccBBBBWWWWBooooooeeoooooeeooD',
-        '.DOOOOOOoooBBBBooooobbooooccccobD.',
-        '.DOOOooooooooooooooooooooccnnccoD.',
-        '..DDDOooooooooooooooccccocnccncoD.',
-        '....DooooooooooooccccccccccppccD..',
-        '....DoooooooooooocccccccccoccoD...',
-        '.....DoooooooooocccccccccooDoD....',
-        '....DooooooooooocccccccccDD.D.....',
-        '.....DDoooooooooocccccccoD........',
-        '.....DoooooooooooocccccoooD.......',
-        '.....DooDDoooDDDoDDDooDDooD.......',
-        '....DoooDoooD...D..DoooDoooD......',
-        '...DoooDDooD........DoooDoD.......',
-        '....DoDDoooD........DoooDD........',
-        '.....D..DoD..........DDD..........',
-        '.........D........................',
-        '..................................',
-      ],
-      down: [
-        '..................................',
-        '..................................',
-        '....................D........D....',
-        '...................DoD...D..DoD...',
-        '...................DkoDDDoDDooD...',
-        '...................DkkooooookkD...',
-        '.....D............DooooooooooooD..',
-        '..DDDODDD.........DoooooooooooooD.',
-        '.DOOOOOOOD.......DooooooooooooooD.',
-        '.DOOcccOODBBB...D.DoooewoooooewoD.',
-        'DOOcccccOBsssBBDoDooooeeoooooeeooD',
-        'DOOOcccBBWWWWWBoooooooeeoooooeeooD',
-        '.DOOOOOBWWWWWWWBoooobbooooccccobD.',
-        '.DOOOoBWWWWWWWBooooooooooccnnccoD.',
-        '..DDDOBWWWWWWBooooooccccocnccncoD.',
-        '....DooBWWWBBooooccccccccccppccD..',
-        '....DoBWWBBoooooocccccccccoccoD...',
-        '....BBBBBooooooocccccccccooDoD....',
-        '....DooooooooooocccccccccDD.D.....',
-        '.....DDoooooooooocccccccoD........',
-        '.....DoooooooooooocccccoooD.......',
-        '.....DooDDoooDDDoDDDooDDooD.......',
-        '....DoooDoooD...D..DoooDoooD......',
-        '...DoooDDooD........DoooDoD.......',
-        '....DoDDoooD........DoooDD........',
-        '.....D..DoD..........DDD..........',
-        '.........D........................',
-        '..................................',
-      ],
-    },
-    happy: {
-      up: [
-        '..........B.......................',
-        '.........BsB.B....................',
-        '........BsWsBsB.....D........D....',
-        '.........BWWsWWBB..DoD...D..DoD...',
-        '.........BWWWWWWsB.DkoDDDoDDooD...',
-        '.........BsWWWWWWB.DkkooooookkD...',
-        '.....D....BWWWWWWBDooooooooooooD..',
-        '..DDDODDD.BWWWWWWBDoooooooooooooD.',
-        '.DOOOOOOOD.BWWWWWDooooooooooooooD.',
-        '.DOOcccOOD.BBWWWWBDoooooooooooooD.',
-        'DOOcccccOODDoBWWBDooooeeoooooeeooD',
-        'DOOOcccOooooooBBoooooeooeoooeooeoD',
-        '.DOOOOOOoooooooooooobbooooccccobD.',
-        '.DOOOooooooooooooooooooooccnnccoD.',
-        '..DDDOooooooooooooooccccocnccncoD.',
-        '....DooooooooooooccccccccccppccD..',
-        '....DoooooooooooocccccccccoppoD...',
-        '.....DoooooooooocccccccccooDoD....',
-        '....DooooooooooocccccccccDD.D.....',
-        '.....DDoooooooooocccccccoD........',
-        '.....DoooooooooooocccccoooD.......',
-        '.....DooDDoooDDDoDDDooDDooD.......',
-        '....DoooDoooD...D..DoooDoooD......',
-        '...DoooDDooD........DoooDoD.......',
-        '....DoDDoooD........DoooDD........',
-        '.....D..DoD..........DDD..........',
-        '.........D........................',
-        '..................................',
-      ],
-      mid: [
-        '..................................',
-        '..................................',
-        '....................D........D....',
-        '...................DoD...D..DoD...',
-        '...................DkoDDDoDDooD...',
-        '.......B.BBB.......DkkooooookkD...',
-        '.....DBsBsWsB.....DooooooooooooD..',
-        '..DDDODWWWWWWB....DoooooooooooooD.',
-        '.DOOBBWsWWWWWWB..DooooooooooooooD.',
-        '.DOOBWWWWWWWWWWBD.DoooooooooooooD.',
-        'DOOccBBWWWWWWWWBoDooooeeoooooeeooD',
-        'DOOOcccBBBBWWWWBoooooeooeoooeooeoD',
-        '.DOOOOOOoooBBBBooooobbooooccccobD.',
-        '.DOOOooooooooooooooooooooccnnccoD.',
-        '..DDDOooooooooooooooccccocnccncoD.',
-        '....DooooooooooooccccccccccppccD..',
-        '....DoooooooooooocccccccccoppoD...',
-        '.....DoooooooooocccccccccooDoD....',
-        '....DooooooooooocccccccccDD.D.....',
-        '.....DDoooooooooocccccccoD........',
-        '.....DoooooooooooocccccoooD.......',
-        '.....DooDDoooDDDoDDDooDDooD.......',
-        '....DoooDoooD...D..DoooDoooD......',
-        '...DoooDDooD........DoooDoD.......',
-        '....DoDDoooD........DoooDD........',
-        '.....D..DoD..........DDD..........',
-        '.........D........................',
-        '..................................',
-      ],
-      down: [
-        '..................................',
-        '..................................',
-        '....................D........D....',
-        '...................DoD...D..DoD...',
-        '...................DkoDDDoDDooD...',
-        '...................DkkooooookkD...',
-        '.....D............DooooooooooooD..',
-        '..DDDODDD.........DoooooooooooooD.',
-        '.DOOOOOOOD.......DooooooooooooooD.',
-        '.DOOcccOODBBB...D.DoooooooooooooD.',
-        'DOOcccccOBsssBBDoDooooeeoooooeeooD',
-        'DOOOcccBBWWWWWBooooooeooeoooeooeoD',
-        '.DOOOOOBWWWWWWWBoooobbooooccccobD.',
-        '.DOOOoBWWWWWWWBooooooooooccnnccoD.',
-        '..DDDOBWWWWWWBooooooccccocnccncoD.',
-        '....DooBWWWBBooooccccccccccppccD..',
-        '....DoBWWBBoooooocccccccccoppoD...',
-        '....BBBBBooooooocccccccccooDoD....',
-        '....DooooooooooocccccccccDD.D.....',
-        '.....DDoooooooooocccccccoD........',
-        '.....DoooooooooooocccccoooD.......',
-        '.....DooDDoooDDDoDDDooDDooD.......',
-        '....DoooDoooD...D..DoooDoooD......',
-        '...DoooDDooD........DoooDoD.......',
-        '....DoDDoooD........DoooDD........',
-        '.....D..DoD..........DDD..........',
-        '.........D........................',
-        '..................................',
-      ],
-    },
-  };
-  const SW = 34;
-  const SH = 28;
 
   const DIGITS = [
     '111101101101111', '010110010010111', '111001111100111', '111001111001111', '101101111001001',
@@ -248,27 +54,12 @@ import Base from '../../layouts/Base.astro';
   buf.width = VW;
   buf.height = VH;
   const g = buf.getContext('2d')!;
-  const makeSprite = (rows: string[]) => {
-    const c = document.createElement('canvas');
-    c.width = SW;
-    c.height = SH;
-    const s = c.getContext('2d')!;
-    rows.forEach((row, y) =>
-      [...row].forEach((ch, x) => {
-        if (PAL[ch]) {
-          s.fillStyle = PAL[ch];
-          s.fillRect(x, y, 1, 1);
-        }
-      }),
-    );
-    return c;
-  };
-  const SPRITES = Object.fromEntries(
-    Object.entries(FRAMES).map(([face, f]) => {
-      const [up, mid, down] = [makeSprite(f.up), makeSprite(f.mid), makeSprite(f.down)];
-      return [face, { up, down, cycle: [up, mid, down, mid] }];
-    }),
-  ) as Record<keyof typeof FRAMES, { up: HTMLCanvasElement; down: HTMLCanvasElement; cycle: HTMLCanvasElement[] }>;
+  // 모구 스프라이트 시트: 날개 위·가운데·아래 3장이 가로로 이어져 있음
+  const sheet = new Image();
+  sheet.src = canvas.dataset.sprite!;
+  const FW = 64;
+  const FH = 57;
+  const FLAP_CYCLE = [0, 1, 2, 1];
 
   const overlay = document.getElementById('fl-overlay')!;
   const title = document.getElementById('fl-title')!;
@@ -286,10 +77,9 @@ import Base from '../../layouts/Base.astro';
   let scroll = 0; // 누적 이동 거리 (배경·땅 무늬용)
   let deadAt = 0;
   let flapAt = 0; // 마지막 날갯짓 시각 (날개를 잠깐 내린 모양으로)
-  let happyAt = -1e9; // 마지막 득점 시각 (잠깐 눈웃음)
-  let sound = true;
+    let sound = true;
   let audio: AudioContext | null = null;
-  const stars = Array.from({ length: 28 }, () => [Math.random() * VW, Math.random() * 225, Math.random()]);
+  const stars = Array.from({ length: 28 }, () => [Math.random() * VW, Math.random() * 300, Math.random()]);
 
   try {
     const s = JSON.parse(localStorage.getItem(BEST_KEY) ?? '{}');
@@ -336,10 +126,10 @@ import Base from '../../layouts/Base.astro';
     vy = 0;
     pipes = [];
     score = 0;
-    for (let i = 0; i < 3; i++) addPipe(VW + 60 + i * SPACING);
+    for (let i = 0; i < 3; i++) addPipe(VW + 80 + i * SPACING);
   }
   function addPipe(x: number) {
-    pipes.push({ x, gapY: 78 + Math.random() * (GROUND - 156 - 78) + GAP / 2, passed: false });
+    pipes.push({ x, gapY: 104 + Math.random() * (GROUND - 208 - 104) + GAP / 2, passed: false });
   }
 
   function flap() {
@@ -380,14 +170,14 @@ import Base from '../../layouts/Base.astro';
   }
 
   function hitsPipe(p: Pipe) {
-    // 입구 테두리(좌우 3칸 더 넓음)까지 포함한 기둥 상자와 겹치는지
-    if (MX + HIT.r <= p.x - 3 || MX + HIT.l >= p.x + PIPE_W + 3) return false;
+    // 입구 테두리(좌우 4칸 더 넓음)까지 포함한 기둥 상자와 겹치는지
+    if (MX + HIT.r <= p.x - 4 || MX + HIT.l >= p.x + PIPE_W + 4) return false;
     return y + HIT.t < p.gapY - GAP / 2 || y + HIT.b > p.gapY + GAP / 2;
   }
 
   function update(dt: number) {
     if (state === 'ready') {
-      y = START_Y + Math.sin(performance.now() / 260) * 6;
+      y = START_Y + Math.sin(performance.now() / 260) * 8;
       scroll += SPEED * dt;
       return;
     }
@@ -404,14 +194,13 @@ import Base from '../../layouts/Base.astro';
         p.passed = true;
         score++;
         sfx.point();
-        happyAt = performance.now();
       }
     }
     if (pipes[0].x < -PIPE_W - 4) {
       pipes.shift();
       addPipe(pipes[pipes.length - 1].x + SPACING);
     }
-    if (y < -30) y = -30;
+    if (y < -40) y = -40;
     if (y + FEET >= GROUND || pipes.some(hitsPipe)) die();
   }
 
@@ -422,9 +211,9 @@ import Base from '../../layouts/Base.astro';
   };
 
   function cloud(x: number, cy: number, c: string) {
-    px(x + 6, cy, 21, 6, c);
-    px(x, cy + 5, 36, 7, c);
-    px(x + 12, cy - 5, 12, 6, c);
+    px(x + 8, cy, 28, 8, c);
+    px(x, cy + 7, 48, 9, c);
+    px(x + 16, cy - 7, 16, 8, c);
   }
 
   function drawPipe(p: Pipe, night: boolean) {
@@ -435,20 +224,20 @@ import Base from '../../layouts/Base.astro';
     const bot = p.gapY + GAP / 2;
     for (const [y0, h] of [[0, top], [bot, GROUND - bot]]) {
       px(p.x + 1, y0, PIPE_W - 2, h, body);
-      px(p.x + 4, y0, 4, h, light);
-      px(p.x + PIPE_W - 7, y0, 4, h, dark);
+      px(p.x + 5, y0, 5, h, light);
+      px(p.x + PIPE_W - 9, y0, 5, h, dark);
       px(p.x, y0, 1, h, dark);
       px(p.x + PIPE_W - 1, y0, 1, h, dark);
     }
     // 입구 테두리
-    for (const capY of [top - 14, bot]) {
-      px(p.x - 3, capY, PIPE_W + 6, 14, body);
-      px(p.x, capY + 1, 4, 12, light);
-      px(p.x + PIPE_W - 3, capY + 1, 4, 12, dark);
-      px(p.x - 3, capY, PIPE_W + 6, 1, dark);
-      px(p.x - 3, capY + 13, PIPE_W + 6, 1, dark);
-      px(p.x - 3, capY, 1, 14, dark);
-      px(p.x + PIPE_W + 2, capY, 1, 14, dark);
+    for (const capY of [top - 18, bot]) {
+      px(p.x - 4, capY, PIPE_W + 8, 18, body);
+      px(p.x, capY + 1, 5, 16, light);
+      px(p.x + PIPE_W - 4, capY + 1, 5, 16, dark);
+      px(p.x - 4, capY, PIPE_W + 8, 1, dark);
+      px(p.x - 4, capY + 17, PIPE_W + 8, 1, dark);
+      px(p.x - 4, capY, 1, 18, dark);
+      px(p.x + PIPE_W + 3, capY, 1, 18, dark);
     }
   }
 
@@ -473,41 +262,40 @@ import Base from '../../layouts/Base.astro';
     const night = document.documentElement.dataset.theme === 'dark';
     // 하늘
     const bands = night ? ['#141b33', '#18213d', '#1d2848', '#233056'] : ['#8fd3f4', '#9edaf6', '#afe1f7', '#c2e9f9'];
-    bands.forEach((c, i) => px(0, i * 60, VW, i === 3 ? GROUND : 60, c));
+    bands.forEach((c, i) => px(0, i * 80, VW, i === 3 ? GROUND : 80, c));
     if (night) for (const [sx, sy, tw] of stars) if ((performance.now() / 600 + tw * 10) % 3 > 0.4) px(sx, sy, 1, 1, '#fff6d8');
     // 구름
     const cc = night ? '#2c3a62' : '#ffffff';
-    const c1 = (scroll * 0.15) % (VW + 60);
-    cloud(VW - c1, 50, cc);
-    cloud(VW - ((c1 + 135) % (VW + 60)), 105, cc);
+    const c1 = (scroll * 0.15) % (VW + 80);
+    cloud(VW - c1, 67, cc);
+    cloud(VW - ((c1 + 180) % (VW + 80)), 140, cc);
     // 먼 언덕
     const hc = night ? '#22405a' : '#9fd8a8';
     const hd = night ? '#1b3349' : '#86c793';
     for (let x = 0; x < VW; x++) {
       const wx = x + scroll * 0.35;
-      const h = 27 + Math.round(Math.sin(wx / 34) * 9 + Math.sin(wx / 13) * 3);
+      const h = 36 + Math.round(Math.sin(wx / 45) * 12 + Math.sin(wx / 17) * 4);
       px(x, GROUND - h, 1, h, (Math.floor(wx / 2) % 9 === 0 ? hd : hc));
     }
     for (const p of pipes) drawPipe(p, night);
     // 땅
     px(0, GROUND, VW, VH - GROUND, night ? '#5a4a3a' : '#e2c38f');
-    px(0, GROUND, VW, 6, night ? '#3f8f5a' : '#6cc24a');
+    px(0, GROUND, VW, 8, night ? '#3f8f5a' : '#6cc24a');
     const off = Math.floor(scroll) % 8;
-    for (let x = -off; x < VW; x += 8) px(x, GROUND + 6, 4, 3, night ? '#2e6b44' : '#4e9a36');
-    for (let x = -off; x < VW; x += 12) px(x + 3, GROUND + 20, 3, 3, night ? '#4a3c2f' : '#cfa86e');
+    for (let x = -off; x < VW; x += 8) px(x, GROUND + 8, 4, 4, night ? '#2e6b44' : '#4e9a36');
+    for (let x = -off; x < VW; x += 12) px(x + 3, GROUND + 27, 4, 4, night ? '#4a3c2f' : '#cfa86e');
     // 모구: 굴러가지 않게 회전하지 않고, 날개 장면으로만 움직임을 표현
     //  준비: 천천히 파닥 · 날갯짓 직후: 빠르게 한 바퀴 · 떨어질 때: 날개 펴고 활공 · 끝: 날개 내림
     const now = performance.now();
     const since = now - flapAt;
-    const face = SPRITES[state === 'play' && now - happyAt < 600 ? 'happy' : 'normal'];
-    const sprite =
-      state === 'dead' ? face.down
-      : state === 'ready' ? face.cycle[Math.floor(now / 160) % 4]
-      : since < 240 ? face.cycle[Math.floor(since / 60) % 4]
-      : vy > 120 ? face.up
-      : face.cycle[Math.floor(now / 110) % 4];
-    g.drawImage(sprite, Math.round(MX - SW / 2), Math.round(y - SH / 2));
-    if (state === 'play') drawNumber(score, VW / 2, 24, 4);
+    const frame =
+      state === 'dead' ? 2
+      : state === 'ready' ? FLAP_CYCLE[Math.floor(now / 160) % 4]
+      : since < 240 ? FLAP_CYCLE[Math.floor(since / 60) % 4]
+      : vy > 160 ? 0
+      : FLAP_CYCLE[Math.floor(now / 110) % 4];
+    if (sheet.complete) g.drawImage(sheet, frame * FW, 0, FW, FH, Math.round(MX - FW / 2), Math.round(y - FH / 2), FW, FH);
+    if (state === 'play') drawNumber(score, VW / 2, 32, 5);
   }
 
   function present() {
@@ -555,12 +343,12 @@ import Base from '../../layouts/Base.astro';
 </script>
 
 <style>
-  .fl-wrap { max-width: 380px; margin: 0 auto; }
+  .fl-wrap { max-width: 400px; margin: 0 auto; }
   .fl-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
   .fl-best { font-size: 0.95rem; color: var(--text-muted); }
   .fl-best strong { color: var(--ink); font-variant-numeric: tabular-nums; }
   .fl-stage { position: relative; border-radius: 12px; overflow: hidden; border: 3px solid #2b2420; touch-action: manipulation; cursor: pointer; user-select: none; }
-  #fl-canvas { display: block; width: 100%; aspect-ratio: 216 / 384; image-rendering: pixelated; }
+  #fl-canvas { display: block; width: 100%; aspect-ratio: 288 / 512; image-rendering: pixelated; }
   .fl-overlay {
     position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
     padding-top: 22%; gap: 6px; pointer-events: none;
