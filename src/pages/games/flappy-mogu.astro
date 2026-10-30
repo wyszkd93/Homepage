@@ -11,6 +11,7 @@ import Leaderboard from '../../components/Leaderboard.astro';
   tagline="누를 때마다 모구가 파닥! 기둥 사이를 지나가요 · 스페이스, 클릭, 터치"
 >
   <div class="fl-wrap">
+    <Leaderboard game="flappy-mogu" />
     <div class="fl-bar">
       <span class="fl-best">최고 <strong id="fl-best">0</strong></span>
       <button id="fl-sound" class="tool-btn" type="button" aria-pressed="true">🔊 소리 켬</button>
@@ -22,7 +23,6 @@ import Leaderboard from '../../components/Leaderboard.astro';
         <p id="fl-sub" class="fl-sub">눌러서 시작</p>
       </div>
     </div>
-    <Leaderboard game="flappy-mogu" />
   </div>
 </Base>
 
@@ -151,15 +151,23 @@ import Leaderboard from '../../components/Leaderboard.astro';
     sfx.flap();
   }
 
-  // 랭킹 패널(Leaderboard)로 점수 보내기
-  const report = (score: number) => window.dispatchEvent(new CustomEvent('game:score', { detail: { game: 'flappy-mogu', score } }));
+  // 랭킹(Leaderboard)으로 점수 보내기. final: 판이 끝남 → 결과 창이 뜸
+  const report = (score: number, final = false) =>
+    window.dispatchEvent(new CustomEvent('game:score', { detail: { game: 'flappy-mogu', score, final } }));
+  const onRetry = (fn: () => void) =>
+    window.addEventListener('game:retry', (e) => (e as CustomEvent<{ game: string }>).detail.game === 'flappy-mogu' && fn());
+  onRetry(() => {
+    if (state !== 'dead') return;
+    deadAt = 0; // 결과 창에서 '다시 하기' → 바로 시작 대기 화면으로
+    flap();
+  });
 
   function die() {
     if (state !== 'play') return;
     state = 'dead';
     deadAt = performance.now();
     sfx.hit();
-    report(score);
+    report(score, true);
     const record = score > best;
     if (record) {
       best = score;
