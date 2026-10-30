@@ -1,0 +1,162 @@
+---
+import Base from '../../layouts/Base.astro';
+---
+
+<Base
+  title="뽁뽁이"
+  description="에어캡을 톡톡 터뜨리며 쉬어 가는 미니게임"
+  heading="뽁뽁이"
+  tagline="누르거나 쓸어서 톡톡 · 다 터뜨리면 새 뽁뽁이를 깔아 드려요"
+>
+  <div class="bw-wrap">
+    <div class="bw-bar">
+      <span class="bw-count">이번 장 <strong id="bw-left">0</strong>개 남음</span>
+      <span class="bw-count">지금까지 <strong id="bw-total">0</strong>개</span>
+      <button id="bw-sound" class="tool-btn" type="button" aria-pressed="true">🔊 소리 켬</button>
+      <button id="bw-new" class="tool-btn" type="button">새 뽁뽁이</button>
+    </div>
+    <div id="bw-sheet" class="bw-sheet" aria-label="뽁뽁이 시트"></div>
+    <p id="bw-done" class="bw-done" aria-live="polite"></p>
+  </div>
+</Base>
+
+<script>
+  const sheet = document.getElementById('bw-sheet')!;
+  const leftEl = document.getElementById('bw-left')!;
+  const totalEl = document.getElementById('bw-total')!;
+  const soundBtn = document.getElementById('bw-sound')!;
+  const done = document.getElementById('bw-done')!;
+  const KEY = 'game:bubble-wrap';
+
+  let total = 0;
+  let left = 0;
+  let sound = true;
+  let audio: AudioContext | null = null;
+  let refill = 0;
+
+  try {
+    const s = JSON.parse(localStorage.getItem(KEY) ?? '{}');
+    total = s.total ?? 0;
+    sound = s.sound ?? true;
+  } catch {}
+  const save = () => {
+    try {
+      localStorage.setItem(KEY, JSON.stringify({ total, sound }));
+    } catch {}
+  };
+
+  function setSound(on: boolean) {
+    sound = on;
+    soundBtn.textContent = on ? '🔊 소리 켬' : '🔇 소리 끔';
+    soundBtn.setAttribute('aria-pressed', String(on));
+    save();
+  }
+
+  // 짧은 잡음을 대역 통과 필터로 깎아 '뽁' 소리를 만든다
+  function popSound() {
+    if (!sound) return;
+    audio ??= new AudioContext();
+    const t = audio.currentTime;
+    const len = Math.floor(audio.sampleRate * 0.06);
+    const buf = audio.createBuffer(1, len, audio.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / len) ** 3;
+    const src = audio.createBufferSource();
+    src.buffer = buf;
+    const bp = audio.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = 900 + Math.random() * 900;
+    bp.Q.value = 1.4;
+    const gain = audio.createGain();
+    gain.gain.setValueAtTime(0.9, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
+    src.connect(bp).connect(gain).connect(audio.destination);
+    src.start(t);
+  }
+
+  function newSheet() {
+    clearTimeout(refill);
+    done.textContent = '';
+    const size = window.innerWidth < 520 ? 44 : 54;
+    const cols = Math.max(5, Math.min(12, Math.floor((sheet.clientWidth - 24) / (size + 8))));
+    const rows = window.innerWidth < 520 ? 9 : 7;
+    sheet.style.setProperty('--cols', String(cols));
+    sheet.style.setProperty('--size', `${size}px`);
+    sheet.replaceChildren();
+    for (let i = 0; i < cols * rows; i++) {
+      const b = document.createElement('span');
+      b.className = 'bw-bubble';
+      sheet.append(b);
+    }
+    left = cols * rows;
+    leftEl.textContent = String(left);
+  }
+
+  function pop(el: Element | null) {
+    if (!el || !el.classList.contains('bw-bubble') || el.classList.contains('is-popped')) return;
+    el.classList.add('is-popped');
+    popSound();
+    navigator.vibrate?.(8);
+    left--;
+    total++;
+    leftEl.textContent = String(left);
+    totalEl.textContent = total.toLocaleString();
+    save();
+    if (left === 0) {
+      done.textContent = '다 터뜨렸어요! 새 뽁뽁이를 깔아 드릴게요 🫧';
+      refill = window.setTimeout(newSheet, 1400);
+    }
+  }
+
+  let pressing = false;
+  sheet.addEventListener('pointerdown', (e) => {
+    pressing = true;
+    sheet.setPointerCapture(e.pointerId);
+    pop(document.elementFromPoint(e.clientX, e.clientY));
+  });
+  sheet.addEventListener('pointermove', (e) => {
+    if (pressing) pop(document.elementFromPoint(e.clientX, e.clientY));
+  });
+  const stop = () => (pressing = false);
+  sheet.addEventListener('pointerup', stop);
+  sheet.addEventListener('pointercancel', stop);
+
+  soundBtn.addEventListener('click', () => setSound(!sound));
+  document.getElementById('bw-new')!.addEventListener('click', newSheet);
+
+  setSound(sound);
+  totalEl.textContent = total.toLocaleString();
+  newSheet();
+</script>
+
+<style>
+  .bw-wrap { max-width: 760px; margin: 0 auto; }
+  .bw-bar { display: flex; align-items: center; gap: 8px 16px; flex-wrap: wrap; margin-bottom: 12px; }
+  .bw-count { font-size: 0.9rem; color: var(--text-muted); }
+  .bw-count strong { color: var(--ink); font-variant-numeric: tabular-nums; }
+  .bw-bar .tool-btn:first-of-type { margin-left: auto; }
+  .bw-sheet {
+    display: grid; grid-template-columns: repeat(var(--cols, 8), var(--size, 54px)); justify-content: center;
+    gap: 8px; padding: 14px; border-radius: 16px;
+    background: linear-gradient(135deg, #e6f2fa, #f4f9fd);
+    border: 1px solid #cfe3f1; touch-action: none; user-select: none; -webkit-user-select: none; cursor: pointer;
+  }
+  :global([data-theme='dark']) .bw-sheet { background: linear-gradient(135deg, #1d2a33, #222f38); border-color: #2f4250; }
+  .bw-sheet :global(.bw-bubble) {
+    width: var(--size, 54px); height: var(--size, 54px); border-radius: 50%;
+    background:
+      radial-gradient(circle at 32% 28%, rgb(255 255 255 / 95%) 0 12%, transparent 13%),
+      radial-gradient(circle at 50% 55%, rgb(196 226 245 / 50%), rgb(140 190 225 / 55%) 70%, rgb(110 165 205 / 70%));
+    box-shadow: inset 0 -3px 6px rgb(60 120 170 / 25%), 0 2px 4px rgb(60 120 170 / 18%);
+    transition: transform 0.08s;
+  }
+  .bw-sheet :global(.bw-bubble:hover) { transform: scale(1.04); }
+  .bw-sheet :global(.bw-bubble.is-popped) {
+    transform: scale(0.88);
+    background: radial-gradient(circle at 50% 50%, rgb(190 215 232 / 35%), rgb(160 195 220 / 30%) 70%);
+    box-shadow: inset 0 1px 3px rgb(60 120 170 / 20%);
+    animation: bw-pop 0.16s ease-out;
+  }
+  @keyframes bw-pop { 0% { transform: scale(1.12); } 100% { transform: scale(0.88); } }
+  .bw-done { text-align: center; margin: 12px 0 0; min-height: 1.5em; color: var(--ink-muted); font-weight: 600; }
+</style>
