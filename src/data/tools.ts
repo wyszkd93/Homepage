@@ -43,7 +43,7 @@ export const TOOLS: Tool[] = [
     kind: 'game',
     slug: 'flappy-mogu',
     title: '플래피 모구',
-    description: '도트 모구가 파닥파닥! 기둥 사이를 지나가요.',
+    description: '날개 달린 도트 모구가 파닥파닥! 기둥 사이를 지나가요.',
     color: '#4e9a36',
     icon: '<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 12h4M8 10v4"/><path d="M15 13h.01M18 11h.01"/>',
     badge: 'NEW',
