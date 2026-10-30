@@ -25,5 +25,8 @@
     "node-html-parser": "^9.0.5",
     "pagefind": "^1.5.2",
     "turndown": "^7.2.4"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "^1.13.6"
   }
 }
