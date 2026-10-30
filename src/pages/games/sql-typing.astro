@@ -1,0 +1,223 @@
+---
+import Base from '../../layouts/Base.astro';
+---
+
+<Base
+  title="SQL 타자 연습"
+  description="실무에서 자주 쓰는 SQL·리눅스·IBM MQ 명령어로 하는 타자 연습"
+  heading="SQL 타자 연습"
+  tagline="한 판에 다섯 문장 · 정확하게 다 치면 다음 문장으로 넘어가요."
+>
+  <div class="tool-panel">
+    <div class="tool-row">
+      <label>분야
+        <select id="ty-set" class="tool-select">
+          <option value="all">전체</option>
+          <option value="oracle">Oracle SQL</option>
+          <option value="linux">Linux</option>
+          <option value="mq">IBM MQ</option>
+        </select>
+      </label>
+      <button id="ty-restart" class="tool-btn" type="button">새 판</button>
+      <span class="ty-stats tool-mono">
+        <span>문장 <strong id="ty-step">1/5</strong></span>
+        <span>타수 <strong id="ty-cpm">0</strong></span>
+        <span>정확도 <strong id="ty-acc">100%</strong></span>
+        <span>최고 <strong id="ty-best">0</strong></span>
+      </span>
+    </div>
+
+    <p id="ty-target" class="ty-target tool-mono" aria-live="polite"></p>
+    <label for="ty-in" class="visually-hidden">여기에 입력</label>
+    <input id="ty-in" class="tool-input tool-mono ty-input" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="위 문장을 그대로 입력하세요" />
+    <p id="ty-msg" class="tool-msg"></p>
+  </div>
+
+  <div id="ty-result" class="tool-panel ty-result" hidden>
+    <h2>결과</h2>
+    <dl class="ty-result-grid">
+      <div><dt>타수 (분당 글자)</dt><dd id="ty-r-cpm"></dd></div>
+      <div><dt>정확도</dt><dd id="ty-r-acc"></dd></div>
+      <div><dt>걸린 시간</dt><dd id="ty-r-time"></dd></div>
+    </dl>
+    <p id="ty-r-note" class="tool-hint"></p>
+    <button id="ty-again" class="tool-btn tool-btn-primary" type="button">한 판 더</button>
+  </div>
+</Base>
+
+<script>
+  import { SENTENCES as SETS } from '../../data/typing';
+
+  const ROUND = 5;
+  const BEST_KEY = 'game:sql-typing:best';
+  const $ = (id: string) => document.getElementById(id)!;
+  const input = $('ty-in') as HTMLInputElement;
+  const target = $('ty-target');
+  const setSel = $('ty-set') as HTMLSelectElement;
+  const msg = $('ty-msg');
+
+  let lines: string[] = [];
+  let idx = 0;
+  let startedAt = 0;
+  let doneChars = 0; // 끝낸 문장의 글자 수
+  let keys = 0;
+  let correctKeys = 0;
+  let best = 0;
+  let timer = 0;
+
+  try {
+    best = Number(localStorage.getItem(BEST_KEY)) || 0;
+    const set = localStorage.getItem(BEST_KEY + ':set');
+    if (set) setSel.value = set;
+  } catch {}
+  $('ty-best').textContent = String(best);
+
+  function pick() {
+    const pool = setSel.value === 'all' ? Object.values(SETS).flat() : SETS[setSel.value];
+    const copy = [...pool];
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    return copy.slice(0, ROUND);
+  }
+
+  function newRound() {
+    lines = pick();
+    idx = 0;
+    startedAt = 0;
+    doneChars = 0;
+    keys = 0;
+    correctKeys = 0;
+    clearInterval(timer);
+    input.value = '';
+    input.disabled = false;
+    $('ty-result').hidden = true;
+    msg.textContent = '';
+    render();
+    stats();
+    input.focus();
+  }
+
+  function render() {
+    const t = lines[idx] ?? '';
+    const v = input.value;
+    target.replaceChildren();
+    for (let i = 0; i < t.length; i++) {
+      const span = document.createElement('span');
+      span.textContent = t[i];
+      if (i < v.length) span.className = v[i] === t[i] ? 'ok' : 'bad';
+      else if (i === v.length) span.className = 'cur';
+      target.append(span);
+    }
+    if (v.length > t.length) {
+      const extra = document.createElement('span');
+      extra.className = 'bad extra';
+      extra.textContent = v.slice(t.length);
+      target.append(extra);
+    }
+  }
+
+  const minutes = () => (startedAt ? (performance.now() - startedAt) / 60000 : 0);
+  function cpm() {
+    const m = minutes();
+    const typedOk = [...input.value].filter((c, i) => c === lines[idx]?.[i]).length;
+    return m > 0 ? Math.round((doneChars + typedOk) / m) : 0;
+  }
+  const acc = () => (keys ? Math.round((correctKeys / keys) * 100) : 100);
+
+  function stats() {
+    $('ty-step').textContent = `${Math.min(idx + 1, ROUND)}/${ROUND}`;
+    $('ty-cpm').textContent = String(cpm());
+    $('ty-acc').textContent = `${acc()}%`;
+  }
+
+  function finish() {
+    clearInterval(timer);
+    const m = minutes();
+    const final = Math.round(doneChars / m);
+    input.disabled = true;
+    $('ty-r-cpm').textContent = `${final}타`;
+    $('ty-r-acc').textContent = `${acc()}%`;
+    const sec = Math.round(m * 60);
+    $('ty-r-time').textContent = sec >= 60 ? `${Math.floor(sec / 60)}분 ${sec % 60}초` : `${sec}초`;
+    let note = '';
+    if (final > best) {
+      note = best ? `최고 기록 경신! (이전 ${best}타)` : '첫 기록이에요!';
+      best = final;
+      $('ty-best').textContent = String(best);
+      try {
+        localStorage.setItem(BEST_KEY, String(best));
+      } catch {}
+    } else {
+      note = `최고 기록은 ${best}타예요.`;
+    }
+    $('ty-r-note').textContent = note;
+    $('ty-step').textContent = `${ROUND}/${ROUND}`;
+    $('ty-cpm').textContent = String(final);
+    $('ty-result').hidden = false;
+    ($('ty-again') as HTMLButtonElement).focus();
+  }
+
+  input.addEventListener('beforeinput', (e) => {
+    if (!e.data || !e.inputType.startsWith('insert')) return;
+    if (!startedAt) {
+      startedAt = performance.now();
+      timer = window.setInterval(stats, 500);
+    }
+    const pos = input.selectionStart ?? input.value.length;
+    for (let k = 0; k < e.data.length; k++) {
+      keys++;
+      if (e.data[k] === lines[idx]?.[pos + k]) correctKeys++;
+    }
+  });
+
+  input.addEventListener('input', () => {
+    msg.textContent = /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(input.value) ? '한글이 입력되고 있어요. 한/영 키로 영문으로 바꿔 주세요.' : '';
+    if (input.value === lines[idx]) {
+      doneChars += lines[idx].length;
+      idx++;
+      input.value = '';
+      if (idx >= ROUND) {
+        render();
+        finish();
+        return;
+      }
+    }
+    render();
+    stats();
+  });
+
+  input.addEventListener('paste', (e) => {
+    e.preventDefault();
+    msg.textContent = '붙여넣기는 안 돼요. 직접 쳐 주세요 🙂';
+  });
+  input.addEventListener('drop', (e) => e.preventDefault());
+  setSel.addEventListener('change', () => {
+    try {
+      localStorage.setItem(BEST_KEY + ':set', setSel.value);
+    } catch {}
+    newRound();
+  });
+  $('ty-restart').addEventListener('click', newRound);
+  $('ty-again').addEventListener('click', newRound);
+  newRound();
+</script>
+
+<style>
+  .ty-stats { display: inline-flex; flex-wrap: wrap; gap: 4px 16px; margin-left: auto; font-size: 0.88rem; color: var(--text-muted); }
+  .ty-stats strong { color: var(--ink); font-variant-numeric: tabular-nums; }
+  .ty-target {
+    margin: 4px 0 12px; padding: 14px 16px; border-radius: 10px;
+    background: var(--code-bg); border: 1px solid var(--hairline);
+    font-size: 1.12rem; line-height: 1.7; white-space: pre-wrap; word-break: break-all; color: var(--text-muted);
+  }
+  .ty-target :global(.ok) { color: var(--ink); }
+  .ty-target :global(.bad) { color: #fff; background: #c2414b; border-radius: 2px; }
+  .ty-target :global(.cur) { border-bottom: 2px solid var(--accent); color: var(--ink); }
+  .ty-input { width: 100%; font-size: 1.05rem; padding: 10px 14px; }
+  .ty-result-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: 10px; margin: 0 0 10px; }
+  .ty-result-grid div { background: var(--surface-2); border-radius: 10px; padding: 10px 14px; }
+  .ty-result-grid dt { font-size: 0.82rem; color: var(--text-muted); }
+  .ty-result-grid dd { margin: 2px 0 0; font-size: 1.5rem; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
+</style>
