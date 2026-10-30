@@ -1,0 +1,127 @@
+---
+import Base from '../../layouts/Base.astro';
+---
+
+<Base
+  title="SQL 포매터"
+  description="한 줄로 뭉친 SQL을 들여쓰기와 키워드 대소문자를 맞춰 정리하는 도구"
+  heading="SQL 포매터"
+  tagline="붙여넣고 정리하기 · 입력한 SQL은 브라우저 밖으로 나가지 않아요."
+>
+  <div class="tool-panel">
+    <div class="tool-row">
+      <label>DB
+        <select id="sf-lang" class="tool-select">
+          <option value="plsql">Oracle (PL/SQL)</option>
+          <option value="mysql">MySQL</option>
+          <option value="mariadb">MariaDB</option>
+          <option value="postgresql">PostgreSQL</option>
+          <option value="sql">표준 SQL</option>
+        </select>
+      </label>
+      <label>키워드
+        <select id="sf-case" class="tool-select">
+          <option value="upper">대문자</option>
+          <option value="lower">소문자</option>
+          <option value="preserve">그대로</option>
+        </select>
+      </label>
+      <label>들여쓰기
+        <select id="sf-indent" class="tool-select">
+          <option value="2">2칸</option>
+          <option value="4">4칸</option>
+        </select>
+      </label>
+    </div>
+    <label for="sf-in" class="visually-hidden">정리할 SQL</label>
+    <textarea id="sf-in" class="tool-textarea" spellcheck="false" placeholder="여기에 SQL을 붙여넣으세요."
+>select owner, segment_name, round(sum(bytes)/1024/1024) mb from dba_segments where owner not in ('SYS','SYSTEM') group by owner, segment_name having sum(bytes) > 100*1024*1024 order by mb desc fetch first 20 rows only;</textarea>
+    <div class="tool-row" style="margin: 12px 0 0">
+      <button id="sf-run" class="tool-btn tool-btn-primary" type="button">정리하기</button>
+      <button id="sf-copy" class="tool-btn" type="button">결과 복사</button>
+      <button id="sf-clear" class="tool-btn" type="button">비우기</button>
+      <span class="tool-hint">Ctrl+Enter로도 정리돼요.</span>
+    </div>
+  </div>
+
+  <div class="tool-panel">
+    <h2>결과</h2>
+    <pre id="sf-out" class="tool-out" aria-live="polite"></pre>
+    <p id="sf-msg" class="tool-msg"></p>
+  </div>
+</Base>
+
+<script>
+  import { formatDialect, plsql, mysql, mariadb, postgresql, sql } from 'sql-formatter';
+
+  const dialects = { plsql, mysql, mariadb, postgresql, sql };
+  const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+  const input = $<HTMLTextAreaElement>('sf-in');
+  const out = $<HTMLPreElement>('sf-out');
+  const msg = $<HTMLParagraphElement>('sf-msg');
+  const lang = $<HTMLSelectElement>('sf-lang');
+  const kcase = $<HTMLSelectElement>('sf-case');
+  const indent = $<HTMLSelectElement>('sf-indent');
+
+  const KEY = 'tool:sql-format';
+  try {
+    const saved = JSON.parse(localStorage.getItem(KEY) ?? '{}');
+    if (saved.lang) lang.value = saved.lang;
+    if (saved.kcase) kcase.value = saved.kcase;
+    if (saved.indent) indent.value = saved.indent;
+  } catch {}
+
+  function show(text: string, isError = false) {
+    msg.textContent = text;
+    msg.classList.toggle('is-error', isError);
+  }
+
+  function run() {
+    try {
+      localStorage.setItem(KEY, JSON.stringify({ lang: lang.value, kcase: kcase.value, indent: indent.value }));
+    } catch {}
+    const src = input.value.trim();
+    if (!src) {
+      out.textContent = '';
+      show('정리할 SQL을 입력하세요.');
+      return;
+    }
+    try {
+      out.textContent = formatDialect(src, {
+        dialect: dialects[lang.value as keyof typeof dialects],
+        keywordCase: kcase.value as 'upper' | 'lower' | 'preserve',
+        tabWidth: Number(indent.value),
+        linesBetweenQueries: 1,
+      });
+      show('정리했어요.');
+    } catch (e) {
+      out.textContent = '';
+      show(`해석하지 못했어요: ${(e as Error).message.split('\n')[0]}`, true);
+    }
+  }
+
+  $('sf-run').addEventListener('click', run);
+  [lang, kcase, indent].forEach((el) => el.addEventListener('change', run));
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      run();
+    }
+  });
+  $('sf-copy').addEventListener('click', async () => {
+    if (!out.textContent) return show('복사할 결과가 없어요.');
+    try {
+      await navigator.clipboard.writeText(out.textContent);
+      show('클립보드에 복사했어요.');
+    } catch {
+      show('복사하지 못했어요. 결과를 직접 선택해 복사해 주세요.', true);
+    }
+  });
+  $('sf-clear').addEventListener('click', () => {
+    input.value = '';
+    out.textContent = '';
+    show('');
+    input.focus();
+  });
+  run();
+</script>

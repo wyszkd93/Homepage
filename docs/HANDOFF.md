@@ -17,6 +17,9 @@
   - 블로그 사이드바는 분야별로 접고 펼치는 방식입니다.
 - **직접 쓴 글**: IBM MQ runmqsc 명령어 모음 (`src/content/blog/ibm-mq-runmqsc.md`)
 - **스니펫 페이지**: Oracle 11개, IBM MQ 4개 (`src/data/snippets.ts`)
+- **유용한 기능 (홈 카드)**: SQL 포매터, Cron 해석기, 퇴근·주말 타이머 (`/tools/...`)
+  - 카드 목록은 `src/data/tools.ts`에 있습니다. 도구를 추가할 때는 `src/pages/tools/<slug>.astro` 파일을 만들고 이 목록에 한 줄을 넣습니다.
+  - 모두 브라우저에서만 동작하며, 설정값은 그 브라우저에만 저장됩니다.
 - **소개 페이지**: `src/consts.ts`의 `PROFILE`
   - 회사명, 재직 기간 같은 회사 관련 내용은 넣지 않기로 했습니다.
   - 프로젝트 섹션은 내용이 비어 있어서 숨겨 두었습니다.
