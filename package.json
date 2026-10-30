@@ -15,6 +15,7 @@
     "@astrojs/sitemap": "^3.7.4",
     "astro": "^7.4.1",
     "cronstrue": "^2.59.0",
+    "firebase": "^13.1.0",
     "matter-js": "^0.20.0",
     "sql-formatter": "^15.9.0"
   },
@@ -24,5 +25,8 @@
     "node-html-parser": "^9.0.5",
     "pagefind": "^1.5.2",
     "turndown": "^7.2.4"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "^1.13.6"
   }
 }

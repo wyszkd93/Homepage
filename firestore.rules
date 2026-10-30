@@ -1,0 +1,39 @@
+rules_version = '2';
+
+// 게임 랭킹 보안 규칙. Firebase 콘솔 → Firestore Database → 규칙 탭에 그대로 붙여넣고 게시한다.
+//   leaderboards/{game}/scores/{uid} : 사용자별 게임 최고 기록 1개 { name, score, updatedAt }
+//   - 읽기: 누구나 (등록된 게임만)
+//   - 쓰기: 로그인한 본인 문서만, 점수는 기존 기록 이상일 때만 (닉네임만 바꾸는 건 같은 점수로 허용)
+//   - 그 밖의 경로는 모두 막힘 (규칙이 없으면 기본 거부)
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 게임별 점수 상한 (말이 안 되는 점수 차단). 등록되지 않은 게임은 -1
+    function maxScore(game) {
+      return game == 'flappy-mogu' ? 100000
+        : game == 'fruit-merge' ? 1000000
+        : game == '2048' ? 10000000
+        : -1;
+    }
+
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    function validEntry(game) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['name', 'score', 'updatedAt'])
+        && d.keys().hasAll(['name', 'score', 'updatedAt'])
+        && d.name is string && d.name.size() >= 1 && d.name.size() <= 12
+        && d.score is int && d.score >= 0 && d.score <= maxScore(game)
+        && d.updatedAt == request.time;
+    }
+
+    match /leaderboards/{game}/scores/{uid} {
+      allow read: if maxScore(game) > 0;
+      allow create: if isOwner(uid) && validEntry(game);
+      allow update: if isOwner(uid) && validEntry(game)
+        && request.resource.data.score >= resource.data.score;
+      allow delete: if isOwner(uid);
+    }
+  }
+}

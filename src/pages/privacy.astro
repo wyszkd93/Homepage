@@ -1,0 +1,68 @@
+---
+import Base from '../layouts/Base.astro';
+import { PROFILE } from '../consts';
+
+const email = PROFILE.links.find((l) => l.url.startsWith('mailto:'))?.url.replace('mailto:', '') ?? '';
+---
+
+<Base title="개인정보 처리방침" description="mogu 사이트의 개인정보 처리방침" heading="개인정보 처리방침" tagline="시행일 2026년 10월 30일" narrow>
+  <div class="prose">
+    <p>
+      이 사이트(이하 ‘사이트’)는 대부분의 기능을 로그인 없이 브라우저 안에서만 제공합니다. 다만
+      <strong>쉬어가기 게임의 랭킹</strong>에 기록을 남기려는 경우에 한해 Google 로그인을 사용하며, 이때 아래와 같이 개인정보를 처리합니다.
+    </p>
+
+    <h2>1. 처리하는 항목과 목적</h2>
+    <table>
+      <thead><tr><th>구분</th><th>항목</th><th>목적</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>로그인 (Firebase Authentication)</td>
+          <td>Google 계정 고유 식별자, 이메일 주소, 이름, 프로필 사진 주소</td>
+          <td>본인 확인 및 본인 기록만 수정·삭제할 수 있도록 하기 위함</td>
+        </tr>
+        <tr>
+          <td>게임 랭킹 (Cloud Firestore)</td>
+          <td>사용자 식별자(uid), 닉네임, 게임 점수, 기록 시각</td>
+          <td>게임별 랭킹 표시</td>
+        </tr>
+      </tbody>
+    </table>
+    <ul>
+      <li>랭킹 화면에 <strong>공개되는 정보는 닉네임과 점수뿐</strong>입니다. 이메일·이름·사진은 랭킹에 저장하거나 공개하지 않습니다.</li>
+      <li>닉네임은 기본으로 ‘모구팬1234’ 형태가 정해지며, 직접 바꿀 수 있습니다. 실명 등 개인을 알아볼 수 있는 닉네임은 쓰지 않기를 권합니다.</li>
+    </ul>
+
+    <h2>2. 보관 기간과 파기</h2>
+    <ul>
+      <li>랭킹 기록은 이용자가 삭제하거나 사이트가 랭킹 기능을 종료할 때까지 보관합니다.</li>
+      <li>각 게임 페이지의 랭킹 영역에서 로그인 후 <strong>‘내 기록 삭제’</strong>를 누르면 모든 게임의 내 기록이 즉시 삭제됩니다.</li>
+      <li>로그인 계정 정보(Firebase Authentication)의 삭제를 원하면 아래 문의처로 요청해 주세요. 확인 후 지체 없이 삭제합니다.</li>
+    </ul>
+
+    <h2>3. 처리 위탁 및 국외 이전</h2>
+    <p>
+      로그인과 랭킹 저장에는 Google LLC의 Firebase 서비스를 이용합니다. 랭킹 데이터베이스는 서울 리전(asia-northeast3)에 저장되며,
+      로그인 처리 과정에서 Google의 국외 서버를 거칠 수 있습니다. 자세한 내용은
+      <a href="https://firebase.google.com/support/privacy">Firebase 개인정보 보호 안내</a>를 참고해 주세요.
+    </p>
+
+    <h2>4. 브라우저에만 저장되는 정보</h2>
+    <p>
+      게임 최고 점수, 진행 중인 2048 판, 소리·화면 설정, 도구 설정 등은 이용자 브라우저의 저장소(localStorage)에만 저장되며 서버로 보내지 않습니다.
+      브라우저의 사이트 데이터를 지우면 함께 삭제됩니다. 이 사이트는 별도의 방문 분석·광고 도구를 사용하지 않습니다.
+    </p>
+
+    <h2>5. 이용자의 권리</h2>
+    <p>
+      이용자는 언제든지 자신의 개인정보 열람·정정·삭제·처리 정지를 요청할 수 있습니다. 랭킹 닉네임 변경과 기록 삭제는 게임 페이지에서 직접 할 수 있고,
+      그 밖의 요청은 아래 문의처로 연락해 주세요.
+    </p>
+
+    <h2>6. 문의처</h2>
+    <p>운영자: {PROFILE.name}{email && <> · 이메일: <a href={`mailto:${email}`}>{email}</a></>}</p>
+
+    <h2>7. 변경</h2>
+    <p>이 방침이 바뀌면 이 페이지에 시행일과 함께 알립니다.</p>
+  </div>
+</Base>
