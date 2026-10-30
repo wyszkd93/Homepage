@@ -25,12 +25,23 @@
   - 과일 합치기는 물리 엔진 `matter-js`를 씁니다.
   - 플래피 모구 캐릭터는 사용자가 Gemini로 만든 도트 그림을 줄여 쓴 스프라이트 시트(`src/assets/flappy-mogu.png`)입니다. 날개 위·가운데·아래 3장(각 64×57)이 들어 있습니다. 그림을 바꿀 때는 같은 크기의 3장짜리 시트로 교체합니다.
   - 최고 점수, 진행 중인 2048 판, 뽁뽁이 누적 개수는 그 브라우저에만 저장됩니다.
-- **게임 공용 랭킹 (Firebase)**: 플래피 모구·과일 합치기·2048 아래 `Leaderboard` 패널
+- **게임 공용 랭킹 (Firebase)**: 플래피 모구·과일 합치기·2048 (`src/components/Leaderboard.astro`)
   - Firebase 프로젝트 `mogu-homepage` (무료 Spark 요금제), 로그인은 Google, DB는 Firestore 서울(asia-northeast3)
   - 설정: `src/lib/firebase.ts` (공개용 웹 config), 보안 규칙: 저장소 루트 `firestore.rules` → **콘솔 Firestore → 규칙 탭에 붙여넣고 게시해야 적용**
   - 데이터: `leaderboards/{게임}/scores/{uid}` = { name, score, updatedAt }, 본인 문서만, 기존 이상 점수만 쓰기 가능
   - 게임은 끝날 때 `window`에 `game:score` 이벤트를 보내고 패널이 최고 기록일 때만 저장
   - 개인정보 처리방침: `/privacy/` (푸터 링크)
+  - 화면 흐름: 게임 위 상태 바, 첫 방문 시 로그인 안내 창, 판이 끝나면 결과 창(이번 점수·TOP 10·다시 하기). 게임은 `game:score`에 `final: true`를 붙여 판 종료를 알리고 `game:retry`로 다시 시작
+  - 보안 설정 (2026-10-30)
+    - 암호화: 전송 구간 HTTPS(TLS), 저장 데이터는 Google 기본 암호화(AES-256). 공개 랭킹 데이터라 앱 단 암호화는 하지 않음
+    - Firestore 규칙 게시 완료 (에뮬레이터 22개 경우 통과). 읽기는 공개, 쓰기는 본인·기존 이상 점수·상한 이하만
+    - API 키 제한 (Google Cloud 콘솔 → API 및 서비스 → 사용자 인증 정보 → Browser key)
+      - 웹사이트: `https://wyszkd93.github.io/*`, `https://mogu-homepage.firebaseapp.com/*`
+      - API: Identity Toolkit, Token Service, Cloud Firestore 3개만. 다른 사이트에서 로그인 API 호출은 차단 확인
+    - Authentication 승인된 도메인에서 `localhost` 삭제
+    - Firestore는 API 키 없이도 요청을 받으므로 키 제한이 적용되지 않음 (규칙이 보호)
+    - App Check(reCAPTCHA v3)는 보류. 읽기 급증이나 이상 점수가 보이면 적용
+      - 적용 시 API 키 허용 목록에 `Firebase App Check API`를 추가해야 함
   - 로컬 테스트: `PUBLIC_FIREBASE_EMULATOR=1 npm run build` → Firebase 에뮬레이터(auth 9099, firestore 8080)에 붙고 `window.__testSignIn(uid)`로 로그인. 배포 빌드에는 들어가지 않음
   - 예전 게임(모구 점프, SQL 타자 연습)은 '재미없다'는 의견으로 삭제했습니다.
 - **소개 페이지**: `src/consts.ts`의 `PROFILE`
