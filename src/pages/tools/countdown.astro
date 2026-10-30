@@ -1,0 +1,144 @@
+---
+import Base from '../../layouts/Base.astro';
+---
+
+<Base
+  title="퇴근·주말 타이머"
+  description="퇴근까지, 주말까지 남은 시간을 실시간으로 세어 주는 타이머"
+  heading="퇴근·주말 타이머"
+  tagline="조금만 더 힘내요 · 출퇴근 시각은 이 브라우저에만 저장돼요."
+>
+  <div class="tool-panel">
+    <div class="tool-row" style="margin: 0">
+      <label>출근 <input id="cd-start" class="tool-input tool-mono" type="time" value="09:00" /></label>
+      <label>퇴근 <input id="cd-end" class="tool-input tool-mono" type="time" value="18:00" /></label>
+      <span class="tool-hint" style="margin: 0">월~금 근무 기준</span>
+    </div>
+  </div>
+
+  <div class="cd-grid">
+    <section class="tool-panel cd-card" style="--tool: #c0632f">
+      <h2 id="cd-day-title">퇴근까지</h2>
+      <p id="cd-day" class="cd-time tool-mono">--:--:--</p>
+      <div class="cd-bar" role="progressbar" aria-label="오늘 근무 진행률" aria-valuemin="0" aria-valuemax="100">
+        <span id="cd-day-bar"></span>
+      </div>
+      <p id="cd-day-note" class="tool-hint"></p>
+    </section>
+
+    <section class="tool-panel cd-card" style="--tool: #2f8f83">
+      <h2 id="cd-week-title">주말까지</h2>
+      <p id="cd-week" class="cd-time tool-mono">--:--:--</p>
+      <div class="cd-bar" role="progressbar" aria-label="이번 주 근무 진행률" aria-valuemin="0" aria-valuemax="100">
+        <span id="cd-week-bar"></span>
+      </div>
+      <p id="cd-week-note" class="tool-hint"></p>
+    </section>
+  </div>
+</Base>
+
+<script>
+  const $ = (id: string) => document.getElementById(id)!;
+  const startIn = $('cd-start') as HTMLInputElement;
+  const endIn = $('cd-end') as HTMLInputElement;
+  const KEY = 'tool:countdown';
+
+  try {
+    const saved = JSON.parse(localStorage.getItem(KEY) ?? '{}');
+    if (saved.start) startIn.value = saved.start;
+    if (saved.end) endIn.value = saved.end;
+  } catch {}
+
+  const pad = (n: number) => String(n).padStart(2, '0');
+  function hms(ms: number) {
+    const s = Math.max(0, Math.floor(ms / 1000));
+    const d = Math.floor(s / 86400);
+    const t = `${pad(Math.floor((s % 86400) / 3600))}:${pad(Math.floor((s % 3600) / 60))}:${pad(s % 60)}`;
+    return d ? `${d}일 ${t}` : t;
+  }
+  function at(base: Date, hhmm: string, addDays = 0) {
+    const [h, m] = hhmm.split(':').map(Number);
+    return new Date(base.getFullYear(), base.getMonth(), base.getDate() + addDays, h, m);
+  }
+  function setBar(id: string, ratio: number) {
+    const pct = Math.round(Math.min(1, Math.max(0, ratio)) * 100);
+    const bar = $(id);
+    bar.style.width = `${pct}%`;
+    bar.parentElement!.setAttribute('aria-valuenow', String(pct));
+  }
+  const isWorkday = (d: Date) => d.getDay() >= 1 && d.getDay() <= 5;
+
+  function tick() {
+    const now = new Date();
+    const s = startIn.value || '09:00';
+    const e = endIn.value || '18:00';
+    const start = at(now, s);
+    const end = at(now, e);
+    const valid = end > start;
+
+    // 오늘
+    if (!valid) {
+      $('cd-day-title').textContent = '퇴근까지';
+      $('cd-day').textContent = '--:--:--';
+      $('cd-day-note').textContent = '퇴근 시각이 출근 시각보다 늦어야 해요.';
+      setBar('cd-day-bar', 0);
+    } else if (!isWorkday(now)) {
+      $('cd-day-title').textContent = '오늘은';
+      $('cd-day').textContent = '쉬는 날 🎉';
+      $('cd-day-note').textContent = '푹 쉬어요.';
+      setBar('cd-day-bar', 1);
+    } else if (now < start) {
+      $('cd-day-title').textContent = '출근까지';
+      $('cd-day').textContent = hms(start.getTime() - now.getTime());
+      $('cd-day-note').textContent = `오늘 ${s} 출근`;
+      setBar('cd-day-bar', 0);
+    } else if (now < end) {
+      const ratio = (now.getTime() - start.getTime()) / (end.getTime() - start.getTime());
+      $('cd-day-title').textContent = '퇴근까지';
+      $('cd-day').textContent = hms(end.getTime() - now.getTime());
+      $('cd-day-note').textContent = `오늘 근무 ${Math.floor(ratio * 100)}% 지났어요 · ${e} 퇴근`;
+      setBar('cd-day-bar', ratio);
+    } else {
+      $('cd-day-title').textContent = '오늘은';
+      $('cd-day').textContent = '퇴근 완료 🎉';
+      $('cd-day-note').textContent = '오늘도 수고했어요.';
+      setBar('cd-day-bar', 1);
+    }
+
+    // 이번 주: 월요일 출근 ~ 금요일 퇴근
+    const dow = now.getDay();
+    const monday = at(now, s, -((dow + 6) % 7));
+    const friday = at(now, e, 5 - ((dow + 6) % 7) - 1);
+    if (valid && now >= monday && now < friday) {
+      $('cd-week-title').textContent = '주말까지';
+      $('cd-week').textContent = hms(friday.getTime() - now.getTime());
+      $('cd-week-note').textContent = `금요일 ${e} 퇴근하면 주말이에요.`;
+      setBar('cd-week-bar', (now.getTime() - monday.getTime()) / (friday.getTime() - monday.getTime()));
+    } else if (valid) {
+      const nextMonday = now < monday ? monday : at(now, s, 7 - ((dow + 6) % 7));
+      $('cd-week-title').textContent = '주말이에요 🎉';
+      $('cd-week').textContent = hms(nextMonday.getTime() - now.getTime());
+      $('cd-week-note').textContent = '월요일 출근까지 남은 시간이에요.';
+      setBar('cd-week-bar', 1);
+    }
+  }
+
+  function save() {
+    try {
+      localStorage.setItem(KEY, JSON.stringify({ start: startIn.value, end: endIn.value }));
+    } catch {}
+    tick();
+  }
+  startIn.addEventListener('change', save);
+  endIn.addEventListener('change', save);
+  tick();
+  setInterval(tick, 1000);
+</script>
+
+<style>
+  .cd-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); gap: 16px; }
+  .cd-card h2 { color: var(--tool); }
+  .cd-time { margin: 4px 0 14px; font-size: clamp(2rem, 7vw, 2.8rem); font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .cd-bar { height: 10px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--hairline); overflow: hidden; }
+  .cd-bar span { display: block; height: 100%; width: 0; background: var(--tool); border-radius: inherit; transition: width 0.5s; }
+</style>

@@ -1,0 +1,173 @@
+---
+import Base from '../../layouts/Base.astro';
+
+const examples = [
+  ['0 2 * * 1-5', '평일 새벽 2시'],
+  ['*/10 * * * *', '10분마다'],
+  ['30 23 * * 0', '일요일 23:30'],
+  ['0 0 1 * *', '매월 1일 자정'],
+  ['0 9-18 * * MON-FRI', '평일 업무시간 정각'],
+  ['@daily', '매일 자정'],
+];
+---
+
+<Base
+  title="Cron 해석기"
+  description="crontab 크론식을 우리말로 풀어 주고 다음 실행 시각을 계산하는 도구"
+  heading="Cron 해석기"
+  tagline="크론식을 넣으면 뜻과 다음 실행 시각을 알려줘요 · 리눅스 crontab 5필드 기준"
+>
+  <div class="tool-panel">
+    <label for="cr-in" class="visually-hidden">크론식</label>
+    <input id="cr-in" class="tool-input tool-mono cron-input" value="0 2 * * 1-5" spellcheck="false" autocomplete="off" />
+    <ol id="cr-fields" class="cron-fields" aria-label="필드별 값"></ol>
+    <div class="chips cron-examples">
+      {examples.map(([expr, label]) => (
+        <button class="chip chip-link cron-ex" type="button" data-expr={expr}>
+          <span class="tool-mono">{expr}</span> <span class="count">{label}</span>
+        </button>
+      ))}
+    </div>
+  </div>
+
+  <div class="tool-panel">
+    <h2>뜻</h2>
+    <p id="cr-desc" class="cron-desc" aria-live="polite"></p>
+    <p id="cr-msg" class="tool-msg"></p>
+  </div>
+
+  <div class="tool-panel">
+    <h2>다음 실행 시각</h2>
+    <ol id="cr-next" class="cron-next"></ol>
+    <p class="tool-hint" id="cr-tz"></p>
+  </div>
+
+  <div class="tool-panel">
+    <h2>문법 요약</h2>
+    <table class="cron-help">
+      <tbody>
+        <tr><th class="tool-mono">*</th><td>모든 값</td></tr>
+        <tr><th class="tool-mono">a,b</th><td>여러 값 나열 (예: <code>1,15</code>)</td></tr>
+        <tr><th class="tool-mono">a-b</th><td>범위 (예: <code>9-18</code>)</td></tr>
+        <tr><th class="tool-mono">*/n</th><td>n 간격 (예: 분 자리 <code>*/5</code> = 5분마다)</td></tr>
+        <tr><th class="tool-mono">요일</th><td>0·7 = 일요일, 1 = 월요일 … 또는 <code>MON</code>~<code>SUN</code></td></tr>
+        <tr><th class="tool-mono">일·요일</th><td>둘 다 지정하면 <strong>둘 중 하나</strong>만 맞아도 실행돼요.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</Base>
+
+<script>
+  import cronstrue from 'cronstrue';
+  import 'cronstrue/locales/ko';
+  import { expandMacro, nextRuns, parseCron } from '../../utils/cron';
+
+  const input = document.getElementById('cr-in') as HTMLInputElement;
+  const desc = document.getElementById('cr-desc')!;
+  const msg = document.getElementById('cr-msg')!;
+  const list = document.getElementById('cr-next')!;
+  const tz = document.getElementById('cr-tz')!;
+  const fields = document.getElementById('cr-fields')!;
+  const LABELS = ['분', '시', '일', '월', '요일'];
+
+  // 입력한 식을 필드별로 쪼개 이름표와 함께 보여준다.
+  function renderFields(expr: string) {
+    fields.replaceChildren();
+    const parts = expandMacro(expr).split(/\s+/).filter(Boolean);
+    if (parts.length !== 5) return;
+    parts.forEach((part, i) => {
+      const li = document.createElement('li');
+      const v = document.createElement('code');
+      const k = document.createElement('span');
+      v.textContent = part;
+      k.textContent = LABELS[i];
+      li.append(v, k);
+      fields.append(li);
+    });
+  }
+
+  const WD = '일월화수목금토';
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const fmt = (d: Date) =>
+    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} (${WD[d.getDay()]}) ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+
+  function relative(d: Date, now: Date) {
+    const mins = Math.round((d.getTime() - now.getTime()) / 60000);
+    if (mins < 60) return `${mins}분 후`;
+    const h = Math.floor(mins / 60);
+    if (h < 24) return `${h}시간 ${mins % 60}분 후`;
+    const days = Math.floor(h / 24);
+    return days < 365 ? `${days}일 후` : `${Math.floor(days / 365)}년 이상 후`;
+  }
+
+  tz.textContent = `내 브라우저 시간대(${Intl.DateTimeFormat().resolvedOptions().timeZone}) 기준이에요. 서버 시간대가 다르면 그만큼 어긋나요.`;
+
+  function render() {
+    const expr = input.value.trim();
+    const params = new URL(location.href);
+    params.searchParams.set('e', expr);
+    history.replaceState(null, '', params);
+    list.replaceChildren();
+    renderFields(expr);
+    msg.textContent = '';
+    msg.classList.remove('is-error');
+    if (!expr) {
+      desc.textContent = '크론식을 입력하세요.';
+      return;
+    }
+    try {
+      const spec = parseCron(expr);
+      desc.textContent = cronstrue
+        .toString(expandMacro(expr), { locale: 'ko', use24HourTimeFormat: true })
+        .replace(/^시간 /, '');
+      const now = new Date();
+      const runs = nextRuns(spec, now, 5);
+      if (!runs.length) {
+        msg.textContent = '앞으로 5년 안에는 실행되지 않아요. 존재하지 않는 날짜(예: 4월 31일)인지 확인해 보세요.';
+        msg.classList.add('is-error');
+      }
+      for (const d of runs) {
+        const li = document.createElement('li');
+        li.innerHTML = `<span class="tool-mono"></span><span class="count"></span>`;
+        li.children[0].textContent = fmt(d);
+        li.children[1].textContent = relative(d, now);
+        list.append(li);
+      }
+    } catch (e) {
+      desc.textContent = '—';
+      msg.textContent = (e as Error).message;
+      msg.classList.add('is-error');
+    }
+  }
+
+  const fromUrl = new URL(location.href).searchParams.get('e');
+  if (fromUrl) input.value = fromUrl;
+  input.addEventListener('input', render);
+  document.querySelectorAll<HTMLButtonElement>('.cron-ex').forEach((b) =>
+    b.addEventListener('click', () => {
+      input.value = b.dataset.expr!;
+      render();
+      input.focus();
+    }),
+  );
+  render();
+</script>
+
+<style>
+  .cron-input { width: 100%; font-size: 1.4rem; padding: 10px 14px; letter-spacing: 0.04em; }
+  .cron-fields { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; margin: 10px 0 14px; padding: 0; min-height: 2.6rem; }
+  .cron-fields :global(li) {
+    display: flex; flex-direction: column; align-items: center; min-width: 3.4rem;
+    border: 1px solid var(--hairline); border-radius: 8px; padding: 4px 10px; background: var(--surface-2);
+  }
+  .cron-fields :global(code) { background: none; border: 0; padding: 0; font-size: 0.95rem; font-weight: 600; color: var(--accent); }
+  .cron-fields :global(span) { font-size: 0.75rem; color: var(--text-muted); }
+  .cron-examples button { cursor: pointer; font: inherit; font-size: 0.85rem; }
+  .cron-desc { margin: 0; font-size: 1.15rem; font-weight: 600; color: var(--ink); }
+  .cron-next { margin: 0; padding-left: 1.4em; }
+  .cron-next :global(li) { padding: 3px 0; }
+  .cron-next :global(.count) { margin-left: 12px; }
+  .cron-help { border-collapse: collapse; font-size: 0.92rem; }
+  .cron-help th, .cron-help td { text-align: left; padding: 5px 14px 5px 0; border-bottom: 1px solid var(--gridline); vertical-align: top; }
+  .cron-help th { white-space: nowrap; color: var(--accent); font-weight: 600; }
+</style>
