@@ -15,9 +15,11 @@
     "@astrojs/sitemap": "^3.7.4",
     "astro": "^7.4.1",
     "cronstrue": "^2.59.0",
+    "matter-js": "^0.20.0",
     "sql-formatter": "^15.9.0"
   },
   "devDependencies": {
+    "@types/matter-js": "^0.20.2",
     "fast-xml-parser": "^5.11.2",
     "node-html-parser": "^9.0.5",
     "pagefind": "^1.5.2",

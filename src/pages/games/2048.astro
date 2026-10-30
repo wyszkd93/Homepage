@@ -1,0 +1,328 @@
+---
+import Base from '../../layouts/Base.astro';
+---
+
+<Base
+  title="2048"
+  description="숫자 타일을 밀어 같은 숫자끼리 합치는 퍼즐 게임"
+  heading="2048"
+  tagline="방향키나 스와이프로 타일을 밀어요 · 같은 숫자가 만나면 합쳐져요 · 하던 판은 자동으로 이어져요"
+>
+  <div class="g2-wrap">
+    <div class="g2-bar">
+      <div class="g2-score"><span>점수</span><strong id="g2-score">0</strong></div>
+      <div class="g2-score"><span>최고</span><strong id="g2-best">0</strong></div>
+      <button id="g2-undo" class="tool-btn" type="button" disabled>한 수 무르기</button>
+      <button id="g2-new" class="tool-btn tool-btn-primary" type="button">새 게임</button>
+    </div>
+    <div id="g2-board" class="g2-board" role="application" aria-label="2048 게임판. 방향키로 타일을 밀어요" tabindex="0">
+      {Array.from({ length: 16 }, () => <div class="g2-cell"></div>)}
+      <div id="g2-over" class="g2-over" hidden>
+        <p id="g2-over-title"></p>
+        <div>
+          <button id="g2-continue" class="tool-btn" type="button" hidden>계속하기</button>
+          <button id="g2-retry" class="tool-btn tool-btn-primary" type="button">다시 하기</button>
+        </div>
+      </div>
+    </div>
+    <p class="tool-hint">키보드: ←↑→↓ 또는 WASD · 모바일: 게임판을 쓸어 넘기기</p>
+  </div>
+</Base>
+
+<script>
+  type Tile = { id: number; value: number; r: number; c: number; el?: HTMLDivElement; isNew?: boolean; merged?: boolean };
+  type Saved = { cells: number[]; score: number; won: boolean };
+
+  const N = 4;
+  const KEY = 'game:2048';
+  const board = document.getElementById('g2-board')!;
+  const scoreEl = document.getElementById('g2-score')!;
+  const bestEl = document.getElementById('g2-best')!;
+  const undoBtn = document.getElementById('g2-undo') as HTMLButtonElement;
+  const over = document.getElementById('g2-over')!;
+  const overTitle = document.getElementById('g2-over-title')!;
+  const contBtn = document.getElementById('g2-continue')!;
+
+  let grid: (Tile | null)[][] = [];
+  let score = 0;
+  let best = 0;
+  let won = false; // 2048을 만들고 '계속하기'를 눌렀는지
+  let nextId = 1;
+  let history: Saved | null = null;
+  let busy = false;
+
+  const load = <T,>(k: string, d: T): T => {
+    try {
+      const v = localStorage.getItem(k);
+      return v ? (JSON.parse(v) as T) : d;
+    } catch {
+      return d;
+    }
+  };
+  const store = (k: string, v: unknown) => {
+    try {
+      localStorage.setItem(k, JSON.stringify(v));
+    } catch {}
+  };
+
+  const snapshot = (): Saved => ({ cells: grid.flat().map((t) => t?.value ?? 0), score, won });
+
+  function restore(s: Saved) {
+    board.querySelectorAll('.g2-tile').forEach((el) => el.remove());
+    grid = Array.from({ length: N }, () => Array<Tile | null>(N).fill(null));
+    s.cells.forEach((v, i) => {
+      if (v) grid[Math.floor(i / N)][i % N] = { id: nextId++, value: v, r: Math.floor(i / N), c: i % N };
+    });
+    score = s.score;
+    won = s.won;
+    over.hidden = true;
+    render();
+  }
+
+  function empties() {
+    const out: [number, number][] = [];
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) if (!grid[r][c]) out.push([r, c]);
+    return out;
+  }
+
+  function spawn() {
+    const e = empties();
+    if (!e.length) return;
+    const [r, c] = e[Math.floor(Math.random() * e.length)];
+    grid[r][c] = { id: nextId++, value: Math.random() < 0.9 ? 2 : 4, r, c, isNew: true };
+  }
+
+  function newGame() {
+    grid = Array.from({ length: N }, () => Array<Tile | null>(N).fill(null));
+    board.querySelectorAll('.g2-tile').forEach((el) => el.remove());
+    score = 0;
+    won = false;
+    history = null;
+    over.hidden = true;
+    spawn();
+    spawn();
+    render();
+    save();
+  }
+
+  function save() {
+    store(KEY, snapshot());
+    if (score > best) {
+      best = score;
+      store(KEY + ':best', best);
+    }
+  }
+
+  function place(t: Tile) {
+    if (!t.el) {
+      t.el = document.createElement('div');
+      board.append(t.el);
+    }
+    t.el.className = `g2-tile v${Math.min(t.value, 4096)}${t.isNew ? ' is-new' : ''}${t.merged ? ' is-merged' : ''}`;
+    t.el.textContent = String(t.value);
+    t.el.style.setProperty('--r', String(t.r));
+    t.el.style.setProperty('--c', String(t.c));
+    t.isNew = false;
+    t.merged = false;
+  }
+
+  function render() {
+    for (const row of grid) for (const t of row) if (t) place(t);
+    scoreEl.textContent = String(score);
+    bestEl.textContent = String(Math.max(best, score));
+    undoBtn.disabled = !history;
+  }
+
+  function canMove() {
+    if (empties().length) return true;
+    for (let r = 0; r < N; r++)
+      for (let c = 0; c < N; c++) {
+        const v = grid[r][c]!.value;
+        if ((c + 1 < N && grid[r][c + 1]!.value === v) || (r + 1 < N && grid[r + 1][c]!.value === v)) return true;
+      }
+    return false;
+  }
+
+  function move(dir: 'up' | 'down' | 'left' | 'right') {
+    if (busy || !over.hidden) return;
+    const [dr, dc] = { up: [-1, 0], down: [1, 0], left: [0, -1], right: [0, 1] }[dir];
+    const before = snapshot();
+    const rows = [...Array(N).keys()];
+    const cols = [...Array(N).keys()];
+    if (dr === 1) rows.reverse();
+    if (dc === 1) cols.reverse();
+    const mergedIds = new Set<number>();
+    const dying: Tile[] = [];
+    let moved = false;
+
+    for (const r of rows)
+      for (const c of cols) {
+        const t = grid[r][c];
+        if (!t) continue;
+        let nr = r;
+        let nc = c;
+        while (nr + dr >= 0 && nr + dr < N && nc + dc >= 0 && nc + dc < N && !grid[nr + dr][nc + dc]) {
+          nr += dr;
+          nc += dc;
+        }
+        const tr = nr + dr;
+        const tc = nc + dc;
+        const target = tr >= 0 && tr < N && tc >= 0 && tc < N ? grid[tr][tc] : null;
+        grid[r][c] = null;
+        if (target && target.value === t.value && !mergedIds.has(target.id)) {
+          target.value *= 2;
+          target.merged = true;
+          mergedIds.add(target.id);
+          score += target.value;
+          t.r = tr;
+          t.c = tc;
+          dying.push(t);
+          moved = true;
+        } else {
+          grid[nr][nc] = t;
+          if (nr !== r || nc !== c) moved = true;
+          t.r = nr;
+          t.c = nc;
+        }
+      }
+
+    if (!moved) return;
+    history = before;
+    busy = true;
+    // 미끄러지는 동안 합쳐질 타일을 목표 칸으로 보낸 뒤 제거
+    for (const t of dying) {
+      t.el!.style.setProperty('--r', String(t.r));
+      t.el!.style.setProperty('--c', String(t.c));
+      t.el!.style.zIndex = '1';
+    }
+    for (const row of grid)
+      for (const t of row)
+        if (t) {
+          t.el!.style.setProperty('--r', String(t.r));
+          t.el!.style.setProperty('--c', String(t.c));
+        }
+    setTimeout(() => {
+      dying.forEach((t) => t.el!.remove());
+      spawn();
+      render();
+      save();
+      busy = false;
+      const has2048 = grid.flat().some((t) => t && t.value >= 2048);
+      if (has2048 && !won) showOver('🎉 2048 달성!', true);
+      else if (!canMove()) showOver(`더 이상 움직일 수 없어요 · ${score}점`, false);
+    }, 110);
+  }
+
+  function showOver(title: string, canContinue: boolean) {
+    overTitle.textContent = title;
+    contBtn.hidden = !canContinue;
+    over.hidden = false;
+  }
+
+  const KEYS: Record<string, 'up' | 'down' | 'left' | 'right'> = {
+    ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
+    KeyW: 'up', KeyS: 'down', KeyA: 'left', KeyD: 'right',
+  };
+  window.addEventListener('keydown', (e) => {
+    const dir = KEYS[e.code];
+    const el = e.target instanceof Element ? e.target : null;
+    if (!dir || e.ctrlKey || e.metaKey || e.altKey || el?.closest('input, textarea, select, dialog')) return;
+    e.preventDefault();
+    move(dir);
+  });
+
+  let start: { x: number; y: number } | null = null;
+  board.addEventListener('pointerdown', (e) => {
+    if ((e.target as Element).closest('button')) return;
+    start = { x: e.clientX, y: e.clientY };
+  });
+  board.addEventListener('pointerup', (e) => {
+    if (!start) return;
+    const dx = e.clientX - start.x;
+    const dy = e.clientY - start.y;
+    start = null;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < 24) return;
+    move(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : dy > 0 ? 'down' : 'up');
+  });
+
+  document.getElementById('g2-new')!.addEventListener('click', newGame);
+  document.getElementById('g2-retry')!.addEventListener('click', newGame);
+  contBtn.addEventListener('click', () => {
+    won = true;
+    over.hidden = true;
+    save();
+  });
+  undoBtn.addEventListener('click', () => {
+    if (!history || busy) return;
+    restore(history);
+    history = null;
+    render();
+    save();
+  });
+
+  best = load(KEY + ':best', 0);
+  const saved = load<Saved | null>(KEY, null);
+  if (saved && saved.cells?.length === N * N && saved.cells.some(Boolean)) {
+    restore(saved);
+    if (!canMove()) showOver(`더 이상 움직일 수 없어요 · ${score}점`, false);
+  } else newGame();
+</script>
+
+<style>
+  .g2-wrap { max-width: 460px; margin: 0 auto; }
+  .g2-bar { display: flex; align-items: stretch; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  .g2-score {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 76px;
+    background: var(--surface-1); border: 1px solid var(--hairline); border-radius: 10px; padding: 4px 12px;
+  }
+  .g2-score span { font-size: 0.72rem; color: var(--text-muted); }
+  .g2-score strong { font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+  .g2-bar .tool-btn:first-of-type { margin-left: auto; }
+  .g2-board {
+    --gap: clamp(6px, 2.4vw, 12px);
+    --cell: calc((100% - 5 * var(--gap)) / 4);
+    position: relative; aspect-ratio: 1; border-radius: 14px; background: #d8c7b4;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--gap); padding: var(--gap);
+    touch-action: none; user-select: none; outline: none;
+  }
+  .g2-board:focus-visible { box-shadow: 0 0 0 3px var(--accent-line); }
+  .g2-cell { border-radius: 8px; background: rgb(255 255 255 / 35%); }
+  :global(.g2-tile) {
+    position: absolute; width: var(--cell); height: var(--cell);
+    left: calc(var(--gap) + var(--c) * (var(--cell) + var(--gap)));
+    top: calc(var(--gap) + var(--r) * (var(--cell) + var(--gap)));
+    display: grid; place-items: center; border-radius: 8px;
+    font-weight: 800; font-size: clamp(1.2rem, 7vw, 2.1rem); font-variant-numeric: tabular-nums;
+    color: #5e4d3d; background: #f3e8da;
+    transition: left 0.1s ease-in-out, top 0.1s ease-in-out;
+  }
+  :global(.g2-tile.is-new) { animation: g2-appear 0.18s ease-out; }
+  :global(.g2-tile.is-merged) { animation: g2-pop 0.18s ease-out; z-index: 2; }
+  @keyframes g2-appear { from { transform: scale(0); } to { transform: scale(1); } }
+  @keyframes g2-pop { 50% { transform: scale(1.15); } }
+  :global(.g2-tile.v4) { background: #f0dcbf; }
+  :global(.g2-tile.v8) { background: #f4b17a; color: #fff; }
+  :global(.g2-tile.v16) { background: #f39561; color: #fff; }
+  :global(.g2-tile.v32) { background: #ee7b5b; color: #fff; }
+  :global(.g2-tile.v64) { background: #e65b3a; color: #fff; }
+  :global(.g2-tile.v128) { background: #edd073; color: #fff; font-size: clamp(1rem, 6vw, 1.8rem); }
+  :global(.g2-tile.v256) { background: #edcc61; color: #fff; font-size: clamp(1rem, 6vw, 1.8rem); }
+  :global(.g2-tile.v512) { background: #ecc850; color: #fff; font-size: clamp(1rem, 6vw, 1.8rem); }
+  :global(.g2-tile.v1024) { background: #6fb7a8; color: #fff; font-size: clamp(0.85rem, 5vw, 1.5rem); }
+  :global(.g2-tile.v2048) { background: #49696c; color: #fff; font-size: clamp(0.85rem, 5vw, 1.5rem); box-shadow: 0 0 18px rgb(73 105 108 / 55%); }
+  :global(.g2-tile.v4096) { background: #2f3b3c; color: #fff; font-size: clamp(0.85rem, 5vw, 1.5rem); }
+  :global([data-theme='dark']) .g2-board { background: #4a3d33; }
+  :global([data-theme='dark']) .g2-cell { background: rgb(255 255 255 / 8%); }
+  .g2-over {
+    position: absolute; inset: 0; z-index: 5; border-radius: 14px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+    background: color-mix(in srgb, var(--plane) 78%, transparent); backdrop-filter: blur(2px);
+  }
+  .g2-over[hidden] { display: none; }
+  .g2-over p { margin: 0; font-size: 1.2rem; font-weight: 700; color: var(--ink); text-align: center; padding: 0 12px; }
+  .g2-over div { display: flex; gap: 8px; }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.g2-tile) { transition: none; }
+    :global(.g2-tile.is-new), :global(.g2-tile.is-merged) { animation: none; }
+  }
+</style>
