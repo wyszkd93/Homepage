@@ -1,6 +1,9 @@
-// 간결형 SQL 포매터 + 문법 강조.
-// 모양: 절 키워드와 내용은 한 줄(select a, b / from t), where·having·on의 and/or만
-// 다음 줄에 한 단계 들여쓰기, 서브쿼리는 괄호 안을 한 단계 들여쓰기.
+// SQL 포매터(간결형·정렬형) + 문법 강조.
+// 간결형: 절 키워드와 내용은 한 줄(select a, b / from t), where·having·on의 and/or만
+//         다음 줄에 한 단계 들여쓰기, 서브쿼리는 괄호 안을 한 단계 들여쓰기.
+// 정렬형: 키워드 첫 단어를 6칸에 맞춰(FROM   t / GROUP  BY a) 내용이 같은 열에서 시작,
+//         목록은 한 줄에 하나씩 그 열에 맞추고 and/or도 그 열에서 시작,
+//         서브쿼리는 '(SELECT'처럼 괄호에 붙이고 안쪽 절은 SELECT 위치에 맞춘다.
 
 export type Case = 'upper' | 'lower' | 'preserve';
 type TokType = 'ws' | 'comment' | 'string' | 'ident' | 'number' | 'bind' | 'word' | 'op' | 'open' | 'close' | 'comma' | 'semi' | 'dot';
@@ -26,7 +29,8 @@ const FUNCTIONS = new Set(
   length lengthb upper lower initcap trim ltrim rtrim lpad rpad replace translate concat abs ceil floor mod power sqrt sign greatest
   least add_months months_between last_day next_day extract listagg row_number rank dense_rank lag lead first_value last_value ntile
   regexp_like regexp_replace regexp_substr regexp_instr sys_context userenv chr ascii now current_date current_timestamp date_format
-  ifnull if group_concat string_agg array_agg date_trunc to_json json_value json_query xmlagg xmlelement`
+  ifnull if group_concat string_agg array_agg date_trunc to_json json_value json_query xmlagg xmlelement
+  datediff dateadd date_add date_sub str_to_date timestampdiff getdate isnull len charindex`
     .split(/\s+/)
     .filter(Boolean),
 );
@@ -40,6 +44,8 @@ const CLAUSES = [
 ];
 // 이 절 안의 and/or는 줄을 바꾼다
 const COND_CLAUSES = new Set(['where', 'having', 'on', 'connect by', 'start with']);
+// 정렬형에서 쉼표마다 줄을 바꾸는 절
+const LIST_CLAUSES = new Set(['select', 'from', 'group by', 'order by', 'set', 'returning', 'with']);
 // 혼자 한 줄을 차지하는 절 (다음 내용은 다음 줄)
 const SET_OPS = new Set(['union all', 'union', 'intersect', 'minus', 'except']);
 
@@ -97,16 +103,17 @@ interface Ctx {
   between: boolean; // BETWEEN 뒤 첫 AND 대기
   caseDepth: number; // CASE ... END 안이면 and/or로 줄을 바꾸지 않음
   closeIndent: number; // 닫는 괄호 들여쓰기
+  fresh: boolean; // 정렬형: 방금 연 서브쿼리 괄호 (첫 절을 괄호에 붙임)
 }
 
 const WRAP = 100;
 
-export function formatCompact(sql: string, kcase: Case, tab = 4): string {
+export function formatCompact(sql: string, kcase: Case, tab = 4, align = false): string {
   const toks = tokenize(sql).filter((t) => t.type !== 'ws');
   const lines: string[] = [];
   let line = '';
   let lineIndent = 0;
-  const root: Ctx = { sub: true, base: 0, clause: '', clauseCol: 0, between: false, caseDepth: 0, closeIndent: 0 };
+  const root: Ctx = { sub: true, base: 0, clause: '', clauseCol: 0, between: false, caseDepth: 0, closeIndent: 0, fresh: false };
   const stack: Ctx[] = [root];
   let prev: Token | null = null;
   let prevWord = ''; // 직전 토큰이 단어면 소문자형
@@ -166,13 +173,19 @@ export function formatCompact(sql: string, kcase: Case, tab = 4): string {
         cm && !(cm[0] === 'with' && ctx.clause !== '') && !(cm[0] === 'using' && ctx.clause !== 'merge into') && ctx.caseDepth === 0;
       if (cm && valid) {
         const [name, len] = cm;
-        if (!atLineStart()) newline(ctx.base);
-        line = ' '.repeat(ctx.base);
-        lineIndent = ctx.base;
-        const words = toks.slice(i, i + len).map((w) => applyCase(w.text, kcase)).join(' ');
+        if (!ctx.fresh) {
+          if (!atLineStart()) newline(ctx.base);
+          line = ' '.repeat(ctx.base);
+          lineIndent = ctx.base;
+        }
+        ctx.fresh = false;
+        const parts = toks.slice(i, i + len).map((w) => applyCase(w.text, kcase));
+        // 정렬형은 첫 단어를 6칸에 맞추고 뒤에 한 칸 → 내용은 항상 base + 7 이후
+        const words = align ? [parts[0].padEnd(6), ...parts.slice(1)].join(' ').replace(/ +$/, '') : parts.join(' ');
         line += words;
+        if (align) line += ' '.repeat(Math.max(1, 7 - words.length));
         ctx.clause = name;
-        ctx.clauseCol = ctx.base + words.length + 1;
+        ctx.clauseCol = line.length;
         ctx.between = false;
         i += len - 1;
         prev = { type: 'word', text: words };
@@ -194,7 +207,7 @@ export function formatCompact(sql: string, kcase: Case, tab = 4): string {
         if (lower === 'and' && ctx.between) {
           ctx.between = false;
         } else {
-          newline(ctx.base + tab);
+          newline(align ? ctx.clauseCol : ctx.base + tab);
           line += applyCase(t.text, kcase);
           prev = t;
           prevWord = lower;
@@ -211,26 +224,28 @@ export function formatCompact(sql: string, kcase: Case, tab = 4): string {
         // 함수 호출은 붙이고(nvl(...)), 키워드·INSERT 대상 테이블 뒤는 띄운다
         const call = prev?.type === 'word' && !KEYWORDS.has(prevWord) && ctx.clause !== 'insert into';
         put('(', space && !call);
-        if (isSub) {
+        if (isSub && align) {
+          stack.push({ sub: true, base: line.length, clause: '', clauseCol: line.length, between: false, caseDepth: 0, closeIndent: lineIndent, fresh: true });
+        } else if (isSub) {
           const indent = lineIndent + tab;
-          stack.push({ sub: true, base: indent, clause: '', clauseCol: indent, between: false, caseDepth: 0, closeIndent: lineIndent });
+          stack.push({ sub: true, base: indent, clause: '', clauseCol: indent, between: false, caseDepth: 0, closeIndent: lineIndent, fresh: false });
           newline(indent);
         } else {
-          stack.push({ sub: false, base: ctx.base, clause: ctx.clause, clauseCol: ctx.clauseCol, between: false, caseDepth: 0, closeIndent: lineIndent });
+          stack.push({ sub: false, base: ctx.base, clause: ctx.clause, clauseCol: ctx.clauseCol, between: false, caseDepth: 0, closeIndent: lineIndent, fresh: false });
         }
         prev = t;
         break;
       }
       case 'close': {
         const c = stack.length > 1 ? stack.pop()! : ctx;
-        if (c.sub) newline(c.closeIndent);
+        if (c.sub && !align) newline(c.closeIndent);
         put(')', false);
         prev = t;
         break;
       }
       case 'comma': {
         line += ',';
-        if (ctx.sub && line.length > WRAP) newline(ctx.clauseCol);
+        if (ctx.sub && ((align && LIST_CLAUSES.has(ctx.clause)) || line.length > WRAP)) newline(ctx.clauseCol);
         else line += ' ';
         prev = t;
         break;
