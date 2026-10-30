@@ -1,0 +1,257 @@
+---
+// 게임 아래에 붙는 공용 랭킹 패널. 게임은 끝날 때 window에 'game:score' 이벤트({ game, score })를 보낸다.
+import { url } from '../utils/url';
+
+interface Props {
+  game: 'flappy-mogu' | 'fruit-merge' | '2048';
+}
+const { game } = Astro.props;
+---
+
+<section class="tool-panel lb" data-game={game} aria-labelledby="lb-title">
+  <div class="lb-head">
+    <h2 id="lb-title">🏆 랭킹 TOP 10</h2>
+    <button class="tool-btn lb-refresh" type="button">새로고침</button>
+  </div>
+  <ol class="lb-list" aria-live="polite"><li class="lb-empty">불러오는 중…</li></ol>
+
+  <div class="lb-out">
+    <p>로그인하면 내 최고 기록이 랭킹에 올라가요.</p>
+    <button class="tool-btn tool-btn-primary lb-login" type="button">Google로 로그인</button>
+  </div>
+  <div class="lb-in" hidden>
+    <p class="lb-mine">내 최고 기록 <strong class="lb-mybest">-</strong> <span class="lb-myrank"></span></p>
+    <div class="lb-row">
+      <label>닉네임 <input class="tool-input lb-name" maxlength="12" autocomplete="nickname" /></label>
+      <button class="tool-btn lb-save" type="button">저장</button>
+      <button class="tool-btn lb-logout" type="button">로그아웃</button>
+      <button class="lb-delete" type="button">내 기록 삭제</button>
+    </div>
+  </div>
+  <p class="tool-msg lb-msg" aria-live="polite"></p>
+  <p class="tool-hint">랭킹에는 닉네임과 점수만 공개돼요 · <a href={url('/privacy/')}>개인정보 처리방침</a></p>
+</section>
+
+<script>
+  import { GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut, type User } from 'firebase/auth';
+  import {
+    collection, deleteDoc, doc, getCount, getDoc, getDocs, limit, orderBy, query, serverTimestamp, setDoc, where,
+  } from 'firebase/firestore/lite';
+  import { auth, db } from '../lib/firebase';
+
+  const GAMES = ['flappy-mogu', 'fruit-merge', '2048'];
+  const root = document.querySelector<HTMLElement>('.lb');
+  if (root) init(root);
+
+  function init(root: HTMLElement) {
+    const game = root.dataset.game!;
+    const $ = <T extends HTMLElement>(sel: string) => root.querySelector(sel) as T;
+    const list = $('.lb-list');
+    const msg = $('.lb-msg');
+    const nameIn = $<HTMLInputElement>('.lb-name');
+
+    let user: User | null = null;
+    let myBest: number | null = null; // null: 아직 모름, -1: 기록 없음
+    let pending = 0; // 로그인 전에 낸 점수 (로그인하면 올림)
+
+    const show = (text: string, error = false) => {
+      msg.textContent = text;
+      msg.classList.toggle('is-error', error);
+    };
+    const scoreRef = (g: string, uid: string) => doc(db, 'leaderboards', g, 'scores', uid);
+
+    // 실명이 드러나지 않게 기본 닉네임은 '모구팬' + uid에서 만든 숫자
+    const defaultName = (uid: string) => {
+      let h = 0;
+      for (const ch of uid) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+      return `모구팬${1000 + (h % 9000)}`;
+    };
+    const nameKey = (uid: string) => `rank:name:${uid}`;
+    const getName = () => {
+      try {
+        return localStorage.getItem(nameKey(user!.uid)) || defaultName(user!.uid);
+      } catch {
+        return defaultName(user!.uid);
+      }
+    };
+    const setName = (name: string) => {
+      try {
+        localStorage.setItem(nameKey(user!.uid), name);
+      } catch {}
+    };
+
+    async function loadTop() {
+      try {
+        const snap = await getDocs(query(collection(db, 'leaderboards', game, 'scores'), orderBy('score', 'desc'), limit(10)));
+        list.replaceChildren();
+        if (snap.empty) {
+          const li = document.createElement('li');
+          li.className = 'lb-empty';
+          li.textContent = '아직 기록이 없어요. 첫 번째 주인공이 되어 보세요!';
+          list.append(li);
+        }
+        snap.docs.forEach((d, i) => {
+          const li = document.createElement('li');
+          if (user && d.id === user.uid) li.className = 'is-me';
+          const rank = document.createElement('span');
+          const name = document.createElement('span');
+          const score = document.createElement('strong');
+          rank.className = 'lb-rank';
+          name.className = 'lb-who';
+          rank.textContent = i < 3 ? ['🥇', '🥈', '🥉'][i] : String(i + 1);
+          name.textContent = String(d.data().name);
+          score.textContent = Number(d.data().score).toLocaleString();
+          li.append(rank, name, score);
+          list.append(li);
+        });
+        await loadMyRank();
+      } catch (e) {
+        console.error(e);
+        list.replaceChildren();
+        const li = document.createElement('li');
+        li.className = 'lb-empty';
+        li.textContent = '랭킹을 불러오지 못했어요. 잠시 후 새로고침해 주세요.';
+        list.append(li);
+      }
+    }
+
+    async function loadMine() {
+      if (!user) return;
+      const snap = await getDoc(scoreRef(game, user.uid));
+      myBest = snap.exists() ? Number(snap.data().score) : -1;
+      if (snap.exists()) setName(String(snap.data().name));
+      $('.lb-mybest').textContent = myBest >= 0 ? `${myBest.toLocaleString()}점` : '아직 없음';
+    }
+
+    async function loadMyRank() {
+      const el = $('.lb-myrank');
+      if (!user || myBest === null || myBest < 0) return void (el.textContent = '');
+      const ahead = await getCount(query(collection(db, 'leaderboards', game, 'scores'), where('score', '>', myBest)));
+      el.textContent = `· ${ahead.data().count + 1}위`;
+    }
+
+    async function submit(score: number) {
+      score = Math.max(0, Math.floor(score));
+      if (!user) {
+        if (score > 0) {
+          pending = Math.max(pending, score);
+          show(`로그인하면 이번 기록(${pending.toLocaleString()}점)을 랭킹에 올릴 수 있어요.`);
+        }
+        return;
+      }
+      if (myBest === null) await loadMine();
+      if (score <= (myBest ?? -1)) return;
+      try {
+        await setDoc(scoreRef(game, user.uid), { name: getName(), score, updatedAt: serverTimestamp() });
+        myBest = score;
+        $('.lb-mybest').textContent = `${score.toLocaleString()}점`;
+        show(`🎉 최고 기록 ${score.toLocaleString()}점을 랭킹에 올렸어요!`);
+        await loadTop();
+      } catch (e) {
+        console.error(e);
+        show('기록을 올리지 못했어요. 잠시 후 다시 시도해 주세요.', true);
+      }
+    }
+
+    window.addEventListener('game:score', (e) => {
+      const { game: g, score } = (e as CustomEvent<{ game: string; score: number }>).detail;
+      if (g === game) submit(score);
+    });
+
+    $('.lb-refresh').addEventListener('click', loadTop);
+
+    $('.lb-login').addEventListener('click', async () => {
+      try {
+        await signInWithPopup(auth, new GoogleAuthProvider());
+      } catch (e) {
+        const code = (e as { code?: string }).code ?? '';
+        if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') return;
+        show(
+          code === 'auth/popup-blocked' ? '로그인 창이 막혔어요. 브라우저에서 팝업을 허용해 주세요.'
+          : code === 'auth/unauthorized-domain' ? '이 주소에서는 로그인이 아직 허용되지 않았어요.'
+          : '로그인하지 못했어요. 잠시 후 다시 시도해 주세요.',
+          true,
+        );
+      }
+    });
+
+    $('.lb-logout').addEventListener('click', () => signOut(auth));
+
+    $('.lb-save').addEventListener('click', async () => {
+      const name = nameIn.value.trim();
+      if (!name || name.length > 12) return show('닉네임은 1~12자로 정해 주세요.', true);
+      setName(name);
+      try {
+        // 이미 올린 기록들의 닉네임도 함께 바꾼다 (점수는 그대로)
+        for (const g of GAMES) {
+          const snap = await getDoc(scoreRef(g, user!.uid));
+          if (snap.exists()) await setDoc(scoreRef(g, user!.uid), { name, score: Number(snap.data().score), updatedAt: serverTimestamp() });
+        }
+        show('닉네임을 바꿨어요.');
+        await loadTop();
+      } catch (e) {
+        console.error(e);
+        show('닉네임을 저장하지 못했어요.', true);
+      }
+    });
+
+    $('.lb-delete').addEventListener('click', async () => {
+      if (!confirm('모든 게임의 내 랭킹 기록을 지울까요? 되돌릴 수 없어요.')) return;
+      try {
+        for (const g of GAMES) await deleteDoc(scoreRef(g, user!.uid));
+        myBest = -1;
+        $('.lb-mybest').textContent = '아직 없음';
+        show('내 기록을 모두 지웠어요.');
+        await loadTop();
+      } catch (e) {
+        console.error(e);
+        show('기록을 지우지 못했어요.', true);
+      }
+    });
+
+    onAuthStateChanged(auth, async (u) => {
+      user = u;
+      myBest = null;
+      $('.lb-out').hidden = !!u;
+      $('.lb-in').hidden = !u;
+      show('');
+      if (u) {
+        try {
+          await loadMine();
+        } catch (e) {
+          console.error(e);
+        }
+        nameIn.value = getName();
+        if (pending > 0) {
+          const p = pending;
+          pending = 0;
+          await submit(p);
+        }
+      }
+      await loadTop();
+    });
+  }
+</script>
+
+<style>
+  .lb { margin-top: 18px; }
+  .lb-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .lb-head h2 { margin: 0; }
+  .lb-list { list-style: none; margin: 0 0 12px; padding: 0; }
+  .lb-list :global(li) {
+    display: grid; grid-template-columns: 2.2em minmax(0, 1fr) auto; align-items: center; gap: 8px;
+    padding: 6px 8px; border-bottom: 1px solid var(--gridline); font-size: 0.95rem;
+  }
+  .lb-list :global(li.is-me) { background: var(--accent-soft); border-radius: 8px; font-weight: 700; }
+  .lb-list :global(.lb-rank) { text-align: center; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+  .lb-list :global(.lb-who) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lb-list :global(strong) { font-variant-numeric: tabular-nums; }
+  .lb-list :global(.lb-empty) { display: block; color: var(--text-muted); border: 0; text-align: center; padding: 12px 0; }
+  .lb-out p, .lb-mine { margin: 0 0 8px; color: var(--ink-muted); font-size: 0.92rem; }
+  .lb-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .lb-row label { display: inline-flex; align-items: center; gap: 6px; font-size: 0.9rem; color: var(--ink-muted); }
+  .lb-name { width: 9.5em; }
+  .lb-delete { font: inherit; font-size: 0.82rem; background: none; border: 0; color: var(--text-muted); text-decoration: underline; cursor: pointer; margin-left: auto; }
+  .lb-delete:hover { color: #c2414b; }
+  .lb .tool-hint a { color: inherit; }
+</style>

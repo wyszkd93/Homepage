@@ -1,5 +1,6 @@
 ---
 import { PROFILE } from '../consts';
+import { url } from '../utils/url';
 const year = new Date().getFullYear();
 ---
 
@@ -8,6 +9,6 @@ const year = new Date().getFullYear();
     <p class="footer-links">
       {PROFILE.links.map((l) => <a href={l.url}>{l.label}</a>)}
     </p>
-    <p>© {year} {PROFILE.name}</p>
+    <p>© {year} {PROFILE.name} · <a href={url('/privacy/')}>개인정보 처리방침</a></p>
   </div>
 </footer>

@@ -24,7 +24,14 @@
   - 카드는 같은 `src/data/tools.ts`에서 `kind: 'game'`으로 구분합니다.
   - 과일 합치기는 물리 엔진 `matter-js`를 씁니다.
   - 플래피 모구 캐릭터는 사용자가 Gemini로 만든 도트 그림을 줄여 쓴 스프라이트 시트(`src/assets/flappy-mogu.png`)입니다. 날개 위·가운데·아래 3장(각 64×57)이 들어 있습니다. 그림을 바꿀 때는 같은 크기의 3장짜리 시트로 교체합니다.
-  - 최고 점수, 진행 중인 2048 판, 뽁뽁이 누적 개수는 그 브라우저에만 저장되고, 공용 랭킹은 없습니다.
+  - 최고 점수, 진행 중인 2048 판, 뽁뽁이 누적 개수는 그 브라우저에만 저장됩니다.
+- **게임 공용 랭킹 (Firebase)**: 플래피 모구·과일 합치기·2048 아래 `Leaderboard` 패널
+  - Firebase 프로젝트 `mogu-homepage` (무료 Spark 요금제), 로그인은 Google, DB는 Firestore 서울(asia-northeast3)
+  - 설정: `src/lib/firebase.ts` (공개용 웹 config), 보안 규칙: 저장소 루트 `firestore.rules` → **콘솔 Firestore → 규칙 탭에 붙여넣고 게시해야 적용**
+  - 데이터: `leaderboards/{게임}/scores/{uid}` = { name, score, updatedAt }, 본인 문서만, 기존 이상 점수만 쓰기 가능
+  - 게임은 끝날 때 `window`에 `game:score` 이벤트를 보내고 패널이 최고 기록일 때만 저장
+  - 개인정보 처리방침: `/privacy/` (푸터 링크)
+  - 로컬 테스트: `PUBLIC_FIREBASE_EMULATOR=1 npm run build` → Firebase 에뮬레이터(auth 9099, firestore 8080)에 붙고 `window.__testSignIn(uid)`로 로그인. 배포 빌드에는 들어가지 않음
   - 예전 게임(모구 점프, SQL 타자 연습)은 '재미없다'는 의견으로 삭제했습니다.
 - **소개 페이지**: `src/consts.ts`의 `PROFILE`
   - 회사명, 재직 기간 같은 회사 관련 내용은 넣지 않기로 했습니다.

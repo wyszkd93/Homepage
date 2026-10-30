@@ -1,6 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import sprite from '../../assets/flappy-mogu.png';
+import Leaderboard from '../../components/Leaderboard.astro';
 ---
 
 <Base
@@ -21,6 +22,7 @@ import sprite from '../../assets/flappy-mogu.png';
         <p id="fl-sub" class="fl-sub">눌러서 시작</p>
       </div>
     </div>
+    <Leaderboard game="flappy-mogu" />
   </div>
 </Base>
 
@@ -149,11 +151,15 @@ import sprite from '../../assets/flappy-mogu.png';
     sfx.flap();
   }
 
+  // 랭킹 패널(Leaderboard)로 점수 보내기
+  const report = (score: number) => window.dispatchEvent(new CustomEvent('game:score', { detail: { game: 'flappy-mogu', score } }));
+
   function die() {
     if (state !== 'play') return;
     state = 'dead';
     deadAt = performance.now();
     sfx.hit();
+    report(score);
     const record = score > best;
     if (record) {
       best = score;
