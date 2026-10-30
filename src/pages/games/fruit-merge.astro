@@ -10,6 +10,7 @@ import Leaderboard from '../../components/Leaderboard.astro';
   tagline="같은 과일이 닿으면 한 단계 큰 과일이 돼요 · 목표는 수박 🍉"
 >
   <div class="fm-wrap">
+    <Leaderboard game="fruit-merge" />
     <div class="fm-bar">
       <div class="fm-score"><span>점수</span><strong id="fm-score">0</strong></div>
       <div class="fm-score"><span>최고</span><strong id="fm-best">0</strong></div>
@@ -27,7 +28,6 @@ import Leaderboard from '../../components/Leaderboard.astro';
       <li>🍒</li><li>🍓</li><li>🍇</li><li>🍊</li><li>🍋</li><li>🍎</li><li>🍐</li><li>🍑</li><li>🍍</li><li>🍈</li><li>🍉</li>
     </ol>
     <p class="tool-hint">마우스·손가락으로 위치를 고르고 눌러서 떨어뜨려요 · 키보드: ←→ 이동, 스페이스 떨어뜨리기</p>
-    <Leaderboard game="fruit-merge" />
   </div>
 </Base>
 
@@ -117,8 +117,11 @@ import Leaderboard from '../../components/Leaderboard.astro';
     }
   }
 
-  // 랭킹 패널(Leaderboard)로 점수 보내기
-  const report = (score: number) => window.dispatchEvent(new CustomEvent('game:score', { detail: { game: 'fruit-merge', score } }));
+  // 랭킹(Leaderboard)으로 점수 보내기. final: 판이 끝남 → 결과 창이 뜸
+  const report = (score: number, final = false) =>
+    window.dispatchEvent(new CustomEvent('game:score', { detail: { game: 'fruit-merge', score, final } }));
+  const onRetry = (fn: () => void) =>
+    window.addEventListener('game:retry', (e) => (e as CustomEvent<{ game: string }>).detail.game === 'fruit-merge' && fn());
 
   function newGame() {
     for (const f of fruits) Composite.remove(engine.world, f);
@@ -187,7 +190,7 @@ import Leaderboard from '../../components/Leaderboard.astro';
         f.overSince ||= now;
         if (now - f.overSince > 2000) {
           over = true;
-          report(score);
+          report(score, true);
           overTitle.textContent = `과일이 넘쳤어요! · ${score}점`;
           overEl.hidden = false;
           return;
@@ -312,6 +315,7 @@ import Leaderboard from '../../components/Leaderboard.astro';
   });
   document.getElementById('fm-new')!.addEventListener('click', newGame);
   document.getElementById('fm-retry')!.addEventListener('click', newGame);
+  onRetry(newGame);
 
   resize();
   newGame();
