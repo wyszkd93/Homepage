@@ -61,7 +61,7 @@ import Base from '../../layouts/Base.astro';
 
 <script>
   import { formatDialect, plsql, mysql, mariadb, postgresql, sql } from 'sql-formatter';
-  import { fixFetch, formatCompact, highlight, isBlock, type Case } from '../../utils/sqlfmt';
+  import { fixFetch, formatCompact, highlight, isBlock, isInsert, splitStatements, type Case } from '../../utils/sqlfmt';
 
   const dialects = { plsql, mysql, mariadb, postgresql, sql };
   const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -108,18 +108,25 @@ import Base from '../../layouts/Base.astro';
         text = formatCompact(src, kc, tab, style.value === 'align');
       } else {
         if (own) note = 'PL/SQL 블록은 들여쓰기형으로 정리했어요.';
-        text = fixFetch(
-          formatDialect(src, {
-            dialect: dialects[lang.value as keyof typeof dialects],
-            keywordCase: kc,
-            functionCase: kc,
-            dataTypeCase: kc,
-            tabWidth: tab,
-            indentStyle: style.value === 'tabularRight' ? 'tabularRight' : 'standard',
-            linesBetweenQueries: isBlock(src) ? 0 : 1, // 블록 안 ; 뒤에 빈 줄이 생기지 않게
-          }),
-          kc,
-        );
+        const lib = (sqlText: string) =>
+          fixFetch(
+            formatDialect(sqlText, {
+              dialect: dialects[lang.value as keyof typeof dialects],
+              keywordCase: kc,
+              functionCase: kc,
+              dataTypeCase: kc,
+              tabWidth: tab,
+              indentStyle: style.value === 'tabularRight' ? 'tabularRight' : 'standard',
+              linesBetweenQueries: isBlock(src) ? 0 : 1, // 블록 안 ; 뒤에 빈 줄이 생기지 않게
+            }),
+            kc,
+          );
+        // INSERT 문은 어느 모양이든 INSERT INTO t / ( / 컬럼 / ) / VALUES / ( / 값 / ) 형식으로
+        text = isBlock(src)
+          ? lib(src)
+          : splitStatements(src)
+              .map((st) => (isInsert(st) ? formatCompact(st, kc, tab) : lib(st)))
+              .join('\n\n');
       }
       out.innerHTML = highlight(text);
       show(note);
