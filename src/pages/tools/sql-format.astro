@@ -10,6 +10,13 @@ import Base from '../../layouts/Base.astro';
 >
   <div class="tool-panel">
     <div class="tool-row">
+      <label>모양
+        <select id="sf-style" class="tool-select">
+          <option value="compact">간결형</option>
+          <option value="tabularRight">오른쪽 정렬형</option>
+          <option value="standard">들여쓰기형</option>
+        </select>
+      </label>
       <label>DB
         <select id="sf-lang" class="tool-select">
           <option value="plsql">Oracle (PL/SQL)</option>
@@ -28,8 +35,8 @@ import Base from '../../layouts/Base.astro';
       </label>
       <label>들여쓰기
         <select id="sf-indent" class="tool-select">
-          <option value="2">2칸</option>
           <option value="4">4칸</option>
+          <option value="2">2칸</option>
         </select>
       </label>
     </div>
@@ -53,6 +60,7 @@ import Base from '../../layouts/Base.astro';
 
 <script>
   import { formatDialect, plsql, mysql, mariadb, postgresql, sql } from 'sql-formatter';
+  import { fixFetch, formatCompact, highlight, isBlock, type Case } from '../../utils/sqlfmt';
 
   const dialects = { plsql, mysql, mariadb, postgresql, sql };
   const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -62,6 +70,7 @@ import Base from '../../layouts/Base.astro';
   const lang = $<HTMLSelectElement>('sf-lang');
   const kcase = $<HTMLSelectElement>('sf-case');
   const indent = $<HTMLSelectElement>('sf-indent');
+  const style = $<HTMLSelectElement>('sf-style');
 
   const KEY = 'tool:sql-format';
   try {
@@ -69,6 +78,7 @@ import Base from '../../layouts/Base.astro';
     if (saved.lang) lang.value = saved.lang;
     if (saved.kcase) kcase.value = saved.kcase;
     if (saved.indent) indent.value = saved.indent;
+    if (saved.style) style.value = saved.style;
   } catch {}
 
   function show(text: string, isError = false) {
@@ -78,7 +88,7 @@ import Base from '../../layouts/Base.astro';
 
   function run() {
     try {
-      localStorage.setItem(KEY, JSON.stringify({ lang: lang.value, kcase: kcase.value, indent: indent.value }));
+      localStorage.setItem(KEY, JSON.stringify({ lang: lang.value, kcase: kcase.value, indent: indent.value, style: style.value }));
     } catch {}
     const src = input.value.trim();
     if (!src) {
@@ -86,14 +96,30 @@ import Base from '../../layouts/Base.astro';
       show('정리할 SQL을 입력하세요.');
       return;
     }
+    const kc = kcase.value as Case;
+    const tab = Number(indent.value);
     try {
-      out.textContent = formatDialect(src, {
-        dialect: dialects[lang.value as keyof typeof dialects],
-        keywordCase: kcase.value as 'upper' | 'lower' | 'preserve',
-        tabWidth: Number(indent.value),
-        linesBetweenQueries: 1,
-      });
-      show('정리했어요.');
+      let text: string;
+      let note = '정리했어요.';
+      if (style.value === 'compact' && !isBlock(src)) {
+        text = formatCompact(src, kc, tab);
+      } else {
+        if (style.value === 'compact') note = 'PL/SQL 블록은 들여쓰기형으로 정리했어요.';
+        text = fixFetch(
+          formatDialect(src, {
+            dialect: dialects[lang.value as keyof typeof dialects],
+            keywordCase: kc,
+            functionCase: kc,
+            dataTypeCase: kc,
+            tabWidth: tab,
+            indentStyle: style.value === 'tabularRight' ? 'tabularRight' : 'standard',
+            linesBetweenQueries: isBlock(src) ? 0 : 1, // 블록 안 ; 뒤에 빈 줄이 생기지 않게
+          }),
+          kc,
+        );
+      }
+      out.innerHTML = highlight(text);
+      show(note);
     } catch (e) {
       out.textContent = '';
       show(`해석하지 못했어요: ${(e as Error).message.split('\n')[0]}`, true);
@@ -101,7 +127,7 @@ import Base from '../../layouts/Base.astro';
   }
 
   $('sf-run').addEventListener('click', run);
-  [lang, kcase, indent].forEach((el) => el.addEventListener('change', run));
+  [style, lang, kcase, indent].forEach((el) => el.addEventListener('change', run));
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
