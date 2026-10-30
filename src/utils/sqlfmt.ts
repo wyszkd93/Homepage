@@ -104,6 +104,7 @@ interface Ctx {
   caseDepth: number; // CASE ... END 안이면 and/or로 줄을 바꾸지 않음
   closeIndent: number; // 닫는 괄호 들여쓰기
   fresh: boolean; // 정렬형: 방금 연 서브쿼리 괄호 (첫 절을 괄호에 붙임)
+  list?: boolean; // INSERT 컬럼·VALUES 괄호: 괄호는 단독 줄, 항목은 한 줄에 하나
 }
 
 const WRAP = 100;
@@ -223,8 +224,15 @@ export function formatCompact(sql: string, kcase: Case, tab = 4, align = false):
         const space = !!prev && prev.type !== 'open' && prev.type !== 'dot';
         // 함수 호출은 붙이고(nvl(...)), 키워드·INSERT 대상 테이블 뒤는 띄운다
         const call = prev?.type === 'word' && !KEYWORDS.has(prevWord) && ctx.clause !== 'insert into';
-        put('(', space && !call);
-        if (isSub && align) {
+        const listParen = !isSub && ctx.sub && (ctx.clause === 'insert into' || ctx.clause === 'values');
+        if (!listParen) put('(', space && !call);
+        if (listParen) {
+          // INSERT INTO t / ( / 컬럼 / ) / VALUES / ( / 값 / )
+          newline(ctx.base);
+          line += '(';
+          stack.push({ sub: false, base: ctx.base, clause: ctx.clause, clauseCol: ctx.base + tab, between: false, caseDepth: 0, closeIndent: ctx.base, fresh: false, list: true });
+          newline(ctx.base + tab);
+        } else if (isSub && align) {
           stack.push({ sub: true, base: line.length, clause: '', clauseCol: line.length, between: false, caseDepth: 0, closeIndent: lineIndent, fresh: true });
         } else if (isSub) {
           const indent = lineIndent + tab;
@@ -238,14 +246,15 @@ export function formatCompact(sql: string, kcase: Case, tab = 4, align = false):
       }
       case 'close': {
         const c = stack.length > 1 ? stack.pop()! : ctx;
-        if (c.sub && !align) newline(c.closeIndent);
+        if ((c.sub && !align) || c.list) newline(c.closeIndent);
         put(')', false);
         prev = t;
         break;
       }
       case 'comma': {
         line += ',';
-        if (ctx.sub && ((align && LIST_CLAUSES.has(ctx.clause)) || line.length > WRAP)) newline(ctx.clauseCol);
+        if (ctx.list) newline(ctx.base + tab);
+        else if (ctx.sub && ((align && LIST_CLAUSES.has(ctx.clause)) || line.length > WRAP)) newline(ctx.clauseCol);
         else line += ' ';
         prev = t;
         break;
@@ -300,6 +309,23 @@ export function formatCompact(sql: string, kcase: Case, tab = 4, align = false):
   while (lines.length && lines[lines.length - 1] === '') lines.pop();
   return lines.join('\n');
 }
+
+/** 문장(;) 단위로 나눈다. 문자열·주석 안의 ;는 무시 */
+export function splitStatements(sql: string): string[] {
+  const out: string[] = [];
+  let cur = '';
+  for (const t of tokenize(sql)) {
+    cur += t.text;
+    if (t.type === 'semi') {
+      out.push(cur.trim());
+      cur = '';
+    }
+  }
+  if (cur.trim()) out.push(cur.trim());
+  return out;
+}
+
+export const isInsert = (stmt: string) => /^\s*(?:--[^\n]*\n\s*|\/\*[\s\S]*?\*\/\s*)*insert\b/i.test(stmt);
 
 /** sql-formatter 결과 보정: FETCH FIRST n ROWS ONLY의 대소문자, 한 줄로 */
 export function fixFetch(text: string, kcase: Case): string {
