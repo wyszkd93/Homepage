@@ -12,6 +12,7 @@ import Base from '../../layouts/Base.astro';
     <div class="tool-row">
       <label>모양
         <select id="sf-style" class="tool-select">
+          <option value="align">정렬형</option>
           <option value="compact">간결형</option>
           <option value="tabularRight">오른쪽 정렬형</option>
           <option value="standard">들여쓰기형</option>
@@ -78,7 +79,7 @@ import Base from '../../layouts/Base.astro';
     if (saved.lang) lang.value = saved.lang;
     if (saved.kcase) kcase.value = saved.kcase;
     if (saved.indent) indent.value = saved.indent;
-    if (saved.style) style.value = saved.style;
+    if (saved.shape) style.value = saved.shape;
   } catch {}
 
   function show(text: string, isError = false) {
@@ -88,7 +89,7 @@ import Base from '../../layouts/Base.astro';
 
   function run() {
     try {
-      localStorage.setItem(KEY, JSON.stringify({ lang: lang.value, kcase: kcase.value, indent: indent.value, style: style.value }));
+      localStorage.setItem(KEY, JSON.stringify({ lang: lang.value, kcase: kcase.value, indent: indent.value, shape: style.value }));
     } catch {}
     const src = input.value.trim();
     if (!src) {
@@ -96,15 +97,17 @@ import Base from '../../layouts/Base.astro';
       show('정리할 SQL을 입력하세요.');
       return;
     }
+    indent.disabled = style.value === 'align'; // 정렬형은 키워드 폭에 맞춰 정렬하므로 들여쓰기 칸 수가 필요 없음
     const kc = kcase.value as Case;
     const tab = Number(indent.value);
     try {
       let text: string;
       let note = '정리했어요.';
-      if (style.value === 'compact' && !isBlock(src)) {
-        text = formatCompact(src, kc, tab);
+      const own = style.value === 'align' || style.value === 'compact';
+      if (own && !isBlock(src)) {
+        text = formatCompact(src, kc, tab, style.value === 'align');
       } else {
-        if (style.value === 'compact') note = 'PL/SQL 블록은 들여쓰기형으로 정리했어요.';
+        if (own) note = 'PL/SQL 블록은 들여쓰기형으로 정리했어요.';
         text = fixFetch(
           formatDialect(src, {
             dialect: dialects[lang.value as keyof typeof dialects],
