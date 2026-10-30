@@ -1,6 +1,17 @@
 ---
 import Base from '../../layouts/Base.astro';
 
+const koExamples = [
+  '평일 새벽 2시',
+  '10분마다',
+  '매주 월요일 오전 9시 30분',
+  '매월 1일 자정',
+  '주말 오후 3시',
+  '평일 9시부터 18시까지 30분마다',
+  '월,수,금 오후 6시 반',
+  '매일 오전 9시, 오후 6시',
+];
+
 const examples = [
   ['0 2 * * 1-5', '평일 새벽 2시'],
   ['*/10 * * * *', '10분마다'],
@@ -15,9 +26,32 @@ const examples = [
   title="Cron 해석기"
   description="crontab 크론식을 우리말로 풀어 주고 다음 실행 시각을 계산하는 도구"
   heading="Cron 해석기"
-  tagline="크론식을 넣으면 뜻과 다음 실행 시각을 알려줘요 · 리눅스 crontab 5필드 기준"
+  tagline="우리말 일정 ↔ 크론식을 서로 바꾸고 다음 실행 시각을 알려줘요 · 리눅스 crontab 5필드 기준"
 >
-  <div class="tool-panel">
+  <div class="cron-tabs" role="tablist" aria-label="변환 방향">
+    <button class="cron-tab" role="tab" id="tab-ko" aria-controls="panel-ko" aria-selected="true" type="button">한글 → cron</button>
+    <button class="cron-tab" role="tab" id="tab-cron" aria-controls="panel-cron" aria-selected="false" type="button">cron → 한글</button>
+  </div>
+
+  <div class="tool-panel cron-panel" role="tabpanel" id="panel-ko" aria-labelledby="tab-ko">
+    <label for="ko-in" class="visually-hidden">우리말 일정</label>
+    <input id="ko-in" class="tool-input cron-input" value="평일 새벽 2시" autocomplete="off" placeholder="예) 평일 새벽 2시, 10분마다, 매월 1일 자정" />
+    <div class="ko-result">
+      <span class="ko-arrow" aria-hidden="true">→</span>
+      <code id="ko-out" class="ko-cron tool-mono">—</code>
+      <button id="ko-copy" class="tool-btn" type="button">복사</button>
+    </div>
+    <ol id="ko-fields" class="cron-fields" aria-label="필드별 값"></ol>
+    <p id="ko-msg" class="tool-msg"></p>
+    <div class="chips cron-examples">
+      {koExamples.map((k) => (
+        <button class="chip chip-link ko-ex" type="button" data-ko={k}>{k}</button>
+      ))}
+    </div>
+    <p class="tool-hint">요일(평일·주말·월~금), 날짜(매월 1일), 시각(새벽 2시·23:30·정오), 간격(10분마다·2시간마다), 범위(9시부터 18시까지)를 알아들어요.</p>
+  </div>
+
+  <div class="tool-panel cron-panel" role="tabpanel" id="panel-cron" aria-labelledby="tab-cron" hidden>
     <label for="cr-in" class="visually-hidden">크론식</label>
     <input id="cr-in" class="tool-input tool-mono cron-input" value="0 2 * * 1-5" spellcheck="false" autocomplete="off" />
     <ol id="cr-fields" class="cron-fields" aria-label="필드별 값"></ol>
@@ -61,6 +95,7 @@ const examples = [
   import cronstrue from 'cronstrue';
   import 'cronstrue/locales/ko';
   import { expandMacro, nextRuns, parseCron } from '../../utils/cron';
+  import { koToCron } from '../../utils/cron-ko';
 
   const input = document.getElementById('cr-in') as HTMLInputElement;
   const desc = document.getElementById('cr-desc')!;
@@ -71,8 +106,8 @@ const examples = [
   const LABELS = ['분', '시', '일', '월', '요일'];
 
   // 입력한 식을 필드별로 쪼개 이름표와 함께 보여준다.
-  function renderFields(expr: string) {
-    fields.replaceChildren();
+  function renderFields(expr: string, target = fields) {
+    target.replaceChildren();
     const parts = expandMacro(expr).split(/\s+/).filter(Boolean);
     if (parts.length !== 5) return;
     parts.forEach((part, i) => {
@@ -82,7 +117,7 @@ const examples = [
       v.textContent = part;
       k.textContent = LABELS[i];
       li.append(v, k);
-      fields.append(li);
+      target.append(li);
     });
   }
 
@@ -102,13 +137,17 @@ const examples = [
 
   tz.textContent = `내 브라우저 시간대(${Intl.DateTimeFormat().resolvedOptions().timeZone}) 기준이에요. 서버 시간대가 다르면 그만큼 어긋나요.`;
 
-  function render() {
-    const expr = input.value.trim();
-    const params = new URL(location.href);
-    params.searchParams.set('e', expr);
-    history.replaceState(null, '', params);
+  // 공유 링크: ?k=한글 또는 ?e=크론식
+  function setParam(key: 'k' | 'e', value: string) {
+    const u = new URL(location.href);
+    u.searchParams.delete(key === 'k' ? 'e' : 'k');
+    u.searchParams.set(key, value);
+    history.replaceState(null, '', u);
+  }
+
+  // 아래 '뜻'·'다음 실행 시각' 패널을 크론식 기준으로 채운다
+  function show(expr: string) {
     list.replaceChildren();
-    renderFields(expr);
     msg.textContent = '';
     msg.classList.remove('is-error');
     if (!expr) {
@@ -140,8 +179,89 @@ const examples = [
     }
   }
 
-  const fromUrl = new URL(location.href).searchParams.get('e');
-  if (fromUrl) input.value = fromUrl;
+  function render() {
+    const expr = input.value.trim();
+    setParam('e', expr);
+    renderFields(expr);
+    show(expr);
+  }
+
+  // ── 한글 → cron ──
+  const koIn = document.getElementById('ko-in') as HTMLInputElement;
+  const koOut = document.getElementById('ko-out')!;
+  const koMsg = document.getElementById('ko-msg')!;
+  const koFields = document.getElementById('ko-fields')!;
+
+  function renderKo() {
+    const text = koIn.value.trim();
+    setParam('k', text);
+    koMsg.textContent = '';
+    koMsg.classList.remove('is-error');
+    try {
+      const { cron, leftover } = koToCron(text);
+      koOut.textContent = cron;
+      renderFields(cron, koFields);
+      if (leftover) {
+        koMsg.textContent = `'${leftover}' 부분은 이해하지 못해서 빼고 바꿨어요.`;
+        koMsg.classList.add('is-error');
+      }
+      show(cron);
+    } catch (e) {
+      koOut.textContent = '—';
+      koFields.replaceChildren();
+      koMsg.textContent = (e as Error).message;
+      koMsg.classList.add('is-error');
+      list.replaceChildren();
+      desc.textContent = '—';
+      msg.textContent = '';
+    }
+  }
+
+  koIn.addEventListener('input', renderKo);
+  document.querySelectorAll<HTMLButtonElement>('.ko-ex').forEach((b) =>
+    b.addEventListener('click', () => {
+      koIn.value = b.dataset.ko!;
+      renderKo();
+      koIn.focus();
+    }),
+  );
+  document.getElementById('ko-copy')!.addEventListener('click', async () => {
+    const text = koOut.textContent ?? '';
+    if (text === '—') return;
+    try {
+      await navigator.clipboard.writeText(text);
+      koMsg.classList.remove('is-error');
+      koMsg.textContent = '크론식을 복사했어요.';
+    } catch {
+      koMsg.textContent = '복사하지 못했어요. 직접 선택해 복사해 주세요.';
+    }
+  });
+
+  // ── 탭 ──
+  const tabs = [...document.querySelectorAll<HTMLButtonElement>('.cron-tab')];
+  function selectTab(id: 'ko' | 'cron', focus = false) {
+    for (const t of tabs) {
+      const on = t.id === `tab-${id}`;
+      t.setAttribute('aria-selected', String(on));
+      t.tabIndex = on ? 0 : -1;
+      document.getElementById(t.getAttribute('aria-controls')!)!.hidden = !on;
+      if (on && focus) t.focus();
+    }
+    if (id === 'ko') renderKo();
+    else render();
+  }
+  tabs.forEach((t, i) => {
+    t.addEventListener('click', () => selectTab(t.id === 'tab-ko' ? 'ko' : 'cron'));
+    t.addEventListener('keydown', (e) => {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      const next = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+      selectTab(next.id === 'tab-ko' ? 'ko' : 'cron', true);
+    });
+  });
+
+  const params = new URL(location.href).searchParams;
+  if (params.get('e')) input.value = params.get('e')!;
+  if (params.get('k')) koIn.value = params.get('k')!;
   input.addEventListener('input', render);
   document.querySelectorAll<HTMLButtonElement>('.cron-ex').forEach((b) =>
     b.addEventListener('click', () => {
@@ -150,10 +270,22 @@ const examples = [
       input.focus();
     }),
   );
-  render();
+  selectTab(params.has('e') ? 'cron' : 'ko');
 </script>
 
 <style>
+  .cron-tabs { display: flex; gap: 4px; margin-bottom: -1px; padding-left: 10px; }
+  .cron-tab {
+    font: inherit; font-size: 0.95rem; font-weight: 600; cursor: pointer;
+    padding: 9px 18px; border: 1px solid transparent; border-bottom: 0; border-radius: 10px 10px 0 0;
+    background: none; color: var(--text-muted);
+  }
+  .cron-tab:hover { color: var(--ink); }
+  .cron-tab[aria-selected='true'] { background: var(--surface-1); border-color: var(--hairline); color: var(--accent); }
+  .cron-panel { border-top-left-radius: 4px; }
+  .ko-result { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 14px; }
+  .ko-arrow { font-size: 1.4rem; color: var(--text-muted); }
+  .ko-cron { font-size: 1.6rem; font-weight: 700; color: var(--accent); background: none; border: 0; padding: 0; letter-spacing: 0.04em; }
   .cron-input { width: 100%; font-size: 1.4rem; padding: 10px 14px; letter-spacing: 0.04em; }
   .cron-fields { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; margin: 10px 0 14px; padding: 0; min-height: 2.6rem; }
   .cron-fields :global(li) {
