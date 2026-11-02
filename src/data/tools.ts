@@ -68,6 +68,15 @@ export const TOOLS: Tool[] = [
   },
   {
     kind: 'game',
+    slug: 'dog-life',
+    title: '모구의 견생 한 바퀴',
+    description: '무작위 강아지로 태어나 한평생을 살아 봐요.',
+    color: '#c0632f',
+    icon: '<circle cx="11" cy="4" r="2"/><circle cx="18" cy="8" r="2"/><circle cx="20" cy="16" r="2"/><path d="M9 10a5 5 0 0 1 5 5v3.5a3.5 3.5 0 0 1-6.84 1.045Q6.52 17.48 4.46 16.84A3.5 3.5 0 0 1 5.5 10Z"/>',
+    badge: 'NEW',
+  },
+  {
+    kind: 'game',
     slug: 'saju',
     title: '모구의 사주 카페',
     description: '생년월일로 사주팔자와 오늘의 운세를 재미로 봐요.',
