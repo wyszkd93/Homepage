@@ -77,6 +77,11 @@ import { Image } from 'astro:assets';
       <ol id="dl-log" class="tool-panel dl-log" aria-live="polite"></ol>
     </section>
 
+    <div id="dl-shared" class="dl-shared" hidden>
+      <p>👀 친구가 공유한 견생이에요. 나는 어떤 강아지로 태어날까요?</p>
+      <button id="dl-mine" class="dl-btn" type="button">🐾 나도 해보기</button>
+    </div>
+
     <section id="dl-end" class="dl-end" hidden>
       <div class="tool-panel dl-end-card">
         <p class="dl-end-icon">🌈</p>
@@ -106,6 +111,7 @@ import { Image } from 'astro:assets';
     born, eventsForYear, applyEffect, tick, stageOf, ageText, nameGa, CHOICES,
     type Dog, type LifeEvent,
   } from '../../utils/dog-life';
+  import { encodeResult, decodeResult, clearShareParams } from '../../lib/share-param';
 
   const $ = (id: string) => document.getElementById(id)!;
   const KEY = 'game:dog-life';
@@ -173,6 +179,9 @@ import { Image } from 'astro:assets';
     $('dl-choice').hidden = true;
     $('dl-start').hidden = true;
     $('dl-end').hidden = true;
+    $('dl-shared').hidden = true;
+    document.querySelector<HTMLElement>('.kk-wrap')?.removeAttribute('hidden');
+    clearShareParams();
     $('dl-live').hidden = false;
     log('✨', `${dog.breed.name} ${dog.personality.name}로 태어났어요. ${dog.personality.note}.`, 0, 'is-memory');
     renderLive();
@@ -246,22 +255,20 @@ import { Image } from 'astro:assets';
     if (age >= dog.lifespan) finish();
   }
 
-  function finish() {
-    if (!dog) return;
-    cancelAnimationFrame(raf);
-    const d = dog;
-    age = d.lifespan;
-    log('🌈', `${nameGa(d.name)} 가족 곁에서 편안히 잠들었어요.`, age, 'is-memory');
-    const score = Math.round((d.stats.happy + d.stats.bond) / 2);
-    $('dl-end-title').textContent = `${d.breed.name} '${d.name}'의 견생`;
+  // 공유 링크에 담는 요약 (짧은 키)
+  type Summary = { b: string; n: string; y: number; w: number; t: number; f: number; s: number; fam: string; p: string; e?: string; m?: string[] };
+
+  /** 마지막 화면을 그립니다. 내 견생이든 친구가 공유한 견생이든 같은 화면을 씁니다. */
+  function renderEnd(x: Summary) {
+    $('dl-end-title').textContent = `${x.b} '${x.n}'의 견생`;
     $('dl-end-text').textContent =
-      `${d.family.name}에서 ${ageText(age)}을 살고 무지개다리를 건넜어요. 지금쯤 모구와 함께 들판을 뛰어다니고 있을 거예요.`;
+      `${x.fam}에서 ${ageText(x.y)}을 살고 무지개다리를 건넜어요. 지금쯤 모구와 함께 들판을 뛰어다니고 있을 거예요.`;
     const stats = [
-      ['함께한 시간', ageText(age)],
-      ['산책', `${fmt(d.walks)}번`],
-      ['간식', `${fmt(d.treats)}개`],
-      ['친구', `${d.friends}마리`],
-      ['행복 점수', `${score}점`],
+      ['함께한 시간', ageText(x.y)],
+      ['산책', `${fmt(x.w)}번`],
+      ['간식', `${fmt(x.t)}개`],
+      ['친구', `${x.f}마리`],
+      ['행복 점수', `${x.s}점`],
     ];
     $('dl-end-stats').innerHTML = '';
     for (const [k, v] of stats) {
@@ -274,11 +281,28 @@ import { Image } from 'astro:assets';
       $('dl-end-stats').append(li);
     }
     $('dl-mem').innerHTML = '';
-    for (const m of d.memories.slice(-5)) {
+    for (const m of x.m ?? []) {
       const li = document.createElement('li');
       li.textContent = m;
       $('dl-mem').append(li);
     }
+    ($('dl-mem').closest('.dl-memories') as HTMLElement).hidden = !(x.m ?? []).length;
+    return stats;
+  }
+
+  function finish() {
+    if (!dog) return;
+    cancelAnimationFrame(raf);
+    const d = dog;
+    age = d.lifespan;
+    log('🌈', `${nameGa(d.name)} 가족 곁에서 편안히 잠들었어요.`, age, 'is-memory');
+    const score = Math.round((d.stats.happy + d.stats.bond) / 2);
+    const sum: Summary = {
+      b: d.breed.name, n: d.name, y: Math.round(age * 100) / 100, w: Math.round(d.walks), t: Math.round(d.treats),
+      f: d.friends, s: score, fam: d.family.name, p: d.personality.name, e: d.breed.emoji, m: d.memories.slice(-3),
+    };
+    const stats = renderEnd(sum);
+    $('dl-shared').hidden = true;
     $('dl-live').hidden = true;
     $('dl-end').hidden = false;
     $('dl-end').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -291,6 +315,7 @@ import { Image } from 'astro:assets';
           // 카드 아래 목록(itemContent)은 누르면 앱 기본 주소로 가서 404가 나므로 쓰지 않습니다.
           text: `산책 ${fmt(d.walks)}번 · 간식 ${fmt(d.treats)}개 · 친구 ${d.friends}마리 · 행복 ${score}점`,
           image: () => drawCard(d, stats, score),
+          viewQuery: `r=${encodeResult(sum)}`,
         },
       }),
     );
@@ -393,6 +418,31 @@ import { Image } from 'astro:assets';
     if (!document.hidden) last = performance.now();
   });
   renderPast();
+
+  // 친구가 공유한 견생(?r=)으로 들어오면 그 마지막 화면을 보여 줍니다. 저장은 하지 않아요.
+  const shared = decodeResult<Summary>(new URLSearchParams(location.search).get('r'));
+  if (shared && typeof shared.b === 'string' && typeof shared.n === 'string' && Number.isFinite(shared.y)) {
+    const clip = (v: unknown, n = 20) => String(v ?? '').slice(0, n);
+    renderEnd({
+      b: clip(shared.b), n: clip(shared.n, 12), y: Math.max(0, Math.min(30, Number(shared.y))),
+      w: Number(shared.w) || 0, t: Number(shared.t) || 0, f: Number(shared.f) || 0, s: Number(shared.s) || 0,
+      fam: clip(shared.fam, 30), p: clip(shared.p), m: Array.isArray(shared.m) ? shared.m.slice(0, 3).map((x) => clip(x, 80)) : [],
+    });
+    $('dl-start').hidden = true;
+    $('dl-end').hidden = false;
+    $('dl-shared').hidden = false;
+    document.querySelector<HTMLElement>('.kk-wrap')?.setAttribute('hidden', '');
+  } else {
+    clearShareParams();
+  }
+  $('dl-mine').addEventListener('click', () => {
+    $('dl-shared').hidden = true;
+    $('dl-end').hidden = true;
+    $('dl-start').hidden = false;
+    document.querySelector<HTMLElement>('.kk-wrap')?.removeAttribute('hidden');
+    clearShareParams();
+    $('dl-start').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
 </script>
 
 <style>
@@ -472,6 +522,20 @@ import { Image } from 'astro:assets';
   .dl-log :global(li.is-memory) { font-weight: 600; }
   .dl-log :global(li.is-choice) { color: var(--accent); }
 
+  .dl-shared {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px 16px;
+    margin-bottom: 16px;
+    padding: 14px 18px;
+    border-radius: 14px;
+    background: var(--accent-soft);
+    border: 1px solid var(--accent-line);
+  }
+  .dl-shared[hidden], .dl-memories[hidden] { display: none; }
+  .dl-shared p { margin: 0; font-weight: 600; }
   .dl-end-card { text-align: center; }
   .dl-end-icon { font-size: 2.6rem; margin: 0; }
   .dl-end-title { font-size: 1.3rem; font-weight: 800; margin: 6px 0 8px; }

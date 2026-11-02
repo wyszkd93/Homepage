@@ -13,6 +13,10 @@ const gameTitle = TOOLS.find((t) => t.slug === game)?.title ?? game;
 ---
 
 <div class="lb" data-game={game} data-title={gameTitle}>
+  <div class="lb-shared" hidden>
+    <p class="lb-shared-text"></p>
+    <button class="tool-btn tool-btn-primary lb-mine" type="button">🎮 나도 해보기</button>
+  </div>
   <div class="lb-bar">
     <span class="lb-status">랭킹 정보를 불러오는 중…</span>
     <span class="lb-actions">
@@ -73,6 +77,7 @@ const gameTitle = TOOLS.find((t) => t.slug === game)?.title ?? game;
   } from 'firebase/firestore/lite';
   import { auth, db } from '../lib/firebase';
   import { kakaoEnabled, shareKakao } from '../lib/kakao';
+  import { encodeResult, decodeResult, clearShareParams } from '../lib/share-param';
 
   const GAMES = ['flappy-mogu', 'fruit-merge', '2048'];
   const root = document.querySelector<HTMLElement>('.lb');
@@ -281,7 +286,7 @@ const gameTitle = TOOLS.find((t) => t.slug === game)?.title ?? game;
       shareKakao({
         title: `${root.dataset.title} ${fmt(lastScore)}점!`,
         description: '모구 홈페이지 쉬어가기에서 기록을 세웠어요. 나를 이길 수 있을까요?',
-        buttonTitle: '도전하기',
+        viewQuery: `r=${encodeResult({ s: lastScore, ...(user ? { n: getName() } : {}) })}`,
       }).catch((e) => {
         console.error(e);
         show(msg, '카카오톡 공유를 열지 못했어요.', true);
@@ -331,6 +336,24 @@ const gameTitle = TOOLS.find((t) => t.slug === game)?.title ?? game;
       }
     });
 
+    // ── 친구가 공유한 기록 (?r=) ──
+    const shared = decodeResult<{ s?: number; n?: string }>(new URLSearchParams(location.search).get('r'));
+    const sharedScore = shared && Number.isFinite(shared.s) && shared.s! >= 0 ? Math.floor(shared.s!) : null;
+    let sharedView = sharedScore !== null;
+    if (sharedView) {
+      const who = typeof shared!.n === 'string' && shared!.n.trim() ? `'${shared!.n.slice(0, 12)}'님이` : '친구가';
+      $('.lb-shared-text').textContent = `👀 ${who} ${root.dataset.title}에서 ${fmt(sharedScore!)}점을 기록했어요! 이길 수 있을까요?`;
+      $('.lb-shared').hidden = false;
+    } else if (new URLSearchParams(location.search).has('from')) {
+      clearShareParams();
+    }
+    $('.lb-mine').addEventListener('click', () => {
+      $('.lb-shared').hidden = true;
+      clearShareParams();
+      if (sharedView && !user && authReady) open(startDlg);
+      sharedView = false;
+    });
+
     onAuthStateChanged(auth, async (u) => {
       const first = !authReady;
       user = u;
@@ -357,9 +380,11 @@ const gameTitle = TOOLS.find((t) => t.slug === game)?.title ?? game;
         }
       } else if (first) {
         // 로그인하지 않은 상태로 게임 페이지에 들어올 때마다 로그인 안내를 띄웁니다.
-        open(startDlg);
+        // 친구가 공유한 기록을 보러 들어왔을 때는 '나도 해보기'를 누를 때 띄웁니다.
+        if (!sharedView) open(startDlg);
       }
     });
+
   }
 </script>
 
@@ -408,6 +433,20 @@ const gameTitle = TOOLS.find((t) => t.slug === game)?.title ?? game;
   .lb-name { width: 100%; text-align: center; font-size: 1.05rem; }
   .lb-name-dlg .lb-delete { font-weight: 500; color: var(--text-muted); font-size: 0.82rem; }
   .lb-name-dlg .lb-delete:hover { color: #c2414b; }
+  .lb-shared {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px 16px;
+    margin-bottom: 12px;
+    padding: 14px 18px;
+    border-radius: 14px;
+    background: var(--accent-soft);
+    border: 1px solid var(--accent-line);
+  }
+  .lb-shared[hidden] { display: none; }
+  .lb-shared-text { margin: 0; font-weight: 600; line-height: 1.6; }
   .lb-share { background: #fee500; border-color: #fee500; color: #191919; font-weight: 700; }
   .lb-share:hover { filter: brightness(0.97); }
 </style>
