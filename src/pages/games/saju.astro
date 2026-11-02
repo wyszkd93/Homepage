@@ -1,0 +1,380 @@
+---
+import Base from '../../layouts/Base.astro';
+
+// 태어난 시(시진). 한국 표준시 기준으로 30분씩 늦춰 나눕니다.
+const HOURS = [
+  ['子', '자시', '23:30 ~ 01:29'],
+  ['丑', '축시', '01:30 ~ 03:29'],
+  ['寅', '인시', '03:30 ~ 05:29'],
+  ['卯', '묘시', '05:30 ~ 07:29'],
+  ['辰', '진시', '07:30 ~ 09:29'],
+  ['巳', '사시', '09:30 ~ 11:29'],
+  ['午', '오시', '11:30 ~ 13:29'],
+  ['未', '미시', '13:30 ~ 15:29'],
+  ['申', '신시', '15:30 ~ 17:29'],
+  ['酉', '유시', '17:30 ~ 19:29'],
+  ['戌', '술시', '19:30 ~ 21:29'],
+  ['亥', '해시', '21:30 ~ 23:29'],
+];
+---
+
+<Base
+  title="모구의 사주 카페"
+  description="생년월일로 사주팔자와 오행, 오늘의 운세를 재미로 알아보는 미니게임"
+  heading="모구의 사주 카페"
+  tagline="생년월일을 넣으면 모구가 사주팔자와 오늘의 운세를 봐 드려요 · 재미로만 봐 주세요"
+>
+  <div class="sj">
+    <form id="sj-form" class="tool-panel sj-form">
+      <label>
+        <span>생년월일 (양력)</span>
+        <input id="sj-date" class="tool-input" type="date" min="1900-01-01" required />
+      </label>
+      <label>
+        <span>태어난 시간</span>
+        <select id="sj-hour" class="tool-select">
+          <option value="">모름</option>
+          {HOURS.map(([h, name, range], i) => <option value={i}>{name} ({h}) · {range}</option>)}
+        </select>
+      </label>
+      <button class="sj-go" type="submit">🔮 사주 보기</button>
+    </form>
+
+    <div id="sj-result" class="sj-result" hidden>
+      <section class="tool-panel">
+        <h2>사주팔자</h2>
+        <div id="sj-pillars" class="sj-pillars"></div>
+        <p id="sj-animal" class="sj-note"></p>
+      </section>
+
+      <section class="tool-panel">
+        <h2>오행 분포</h2>
+        <div id="sj-bars" class="sj-bars"></div>
+        <p id="sj-balance" class="sj-note"></p>
+      </section>
+
+      <section class="tool-panel sj-me">
+        <h2>나의 일간</h2>
+        <div class="sj-me-head">
+          <span id="sj-me-icon" class="sj-me-icon" aria-hidden="true"></span>
+          <div>
+            <p id="sj-me-title" class="sj-me-title"></p>
+            <p id="sj-me-tags" class="sj-tags"></p>
+          </div>
+        </div>
+        <p id="sj-me-text"></p>
+      </section>
+
+      <section class="tool-panel sj-today">
+        <h2>오늘의 운세 <span id="sj-today-date" class="sj-sub"></span></h2>
+        <p id="sj-today-sum" class="sj-today-sum"></p>
+        <ul id="sj-stars" class="sj-stars"></ul>
+        <ul id="sj-lucky" class="sj-lucky"></ul>
+        <p id="sj-mogu" class="sj-mogu"></p>
+      </section>
+
+      <p class="sj-disclaimer">
+        절기는 해마다 하루쯤 차이가 나서 평균 날짜로 계산했어요. 절기 무렵에 태어났다면 월주가 다를 수 있어요.
+        결과는 재미로만 봐 주세요. 입력한 생년월일은 이 브라우저에만 저장되고 어디에도 보내지 않아요.
+      </p>
+    </div>
+  </div>
+</Base>
+
+<script>
+  import {
+    calcSaju, dayPillar, stemElement, branchElement, relation,
+    STEMS, STEMS_KO, BRANCHES, BRANCHES_KO, ANIMALS, ELEMENTS, ELEMENT_KO, ELEMENT_HANJA,
+    type Element, type Pillar, type Relation,
+  } from '../../utils/saju';
+
+  const KEY = 'game:saju';
+  const $ = (id: string) => document.getElementById(id)!;
+  const form = $('sj-form') as HTMLFormElement;
+  const dateIn = $('sj-date') as HTMLInputElement;
+  const hourIn = $('sj-hour') as HTMLSelectElement;
+
+  const COLOR: Record<Element, string> = { wood: '#3f9b5a', fire: '#e0563b', earth: '#c9952a', metal: '#8a8f98', water: '#3b6fd1' };
+  const LUCKY: Record<Element, { color: string; num: string; dir: string; food: string }> = {
+    wood: { color: '초록', num: '3 · 8', dir: '동쪽', food: '샐러드' },
+    fire: { color: '빨강', num: '2 · 7', dir: '남쪽', food: '떡볶이' },
+    earth: { color: '노랑', num: '5 · 10', dir: '가운데', food: '고구마' },
+    metal: { color: '하양', num: '4 · 9', dir: '서쪽', food: '닭가슴살' },
+    water: { color: '남색', num: '1 · 6', dir: '북쪽', food: '국수' },
+  };
+
+  const ME = [
+    { icon: '🌳', title: '갑목(甲木) · 곧게 자라는 큰 나무', tags: ['리더십', '추진력', '정직'], text: '한번 정한 방향으로 쭉 뻗어 나가는 사람이에요. 남을 이끄는 힘이 있고 원칙을 중요하게 여겨요. 가끔은 휘어질 줄도 알면 더 멀리 자라요.' },
+    { icon: '🌿', title: '을목(乙木) · 바람에 유연한 꽃과 풀', tags: ['적응력', '섬세함', '친화력'], text: '어떤 환경에서도 길을 찾아 뿌리내리는 사람이에요. 부드럽지만 끈질기고, 사람 사이를 잘 이어 줘요.' },
+    { icon: '☀️', title: '병화(丙火) · 모두를 비추는 태양', tags: ['열정', '솔직함', '긍정'], text: '밝고 솔직해서 주변을 환하게 만드는 사람이에요. 마음먹은 일은 시원하게 밀어붙여요. 가끔은 쉬어 가며 에너지를 아껴 주세요.' },
+    { icon: '🕯️', title: '정화(丁火) · 따뜻한 촛불', tags: ['배려', '집중력', '따뜻함'], text: '조용히 곁을 밝혀 주는 사람이에요. 한 가지에 깊게 몰입하는 힘이 있고, 세심한 배려로 사람들의 마음을 녹여요.' },
+    { icon: '⛰️', title: '무토(戊土) · 든든한 큰 산', tags: ['신뢰', '포용력', '안정감'], text: '흔들림 없이 묵직하게 버텨 주는 사람이에요. 믿고 기댈 수 있는 존재라 자연스럽게 사람이 모여요.' },
+    { icon: '🌾', title: '기토(己土) · 곡식을 키우는 밭', tags: ['꼼꼼함', '실용성', '돌봄'], text: '차근차근 가꾸어 결실을 만드는 사람이에요. 현실 감각이 좋고, 주변 사람을 챙기는 데 능해요.' },
+    { icon: '⚔️', title: '경금(庚金) · 단단한 원석과 칼', tags: ['결단력', '의리', '정의감'], text: '맺고 끊음이 분명하고 의리가 있는 사람이에요. 어려운 결정도 피하지 않아요. 표현을 조금만 부드럽게 하면 금상첨화예요.' },
+    { icon: '💎', title: '신금(辛金) · 반짝이는 보석', tags: ['완벽주의', '감각', '자존심'], text: '섬세한 감각과 높은 기준을 가진 사람이에요. 디테일을 놓치지 않아 결과물이 빛나요. 스스로에게도 조금은 너그러워져요.' },
+    { icon: '🌊', title: '임수(壬水) · 넓은 바다와 큰 강', tags: ['지혜', '포용', '자유로움'], text: '생각이 넓고 깊어 큰 그림을 보는 사람이에요. 어디든 흘러가 적응하고, 많은 것을 품어요.' },
+    { icon: '💧', title: '계수(癸水) · 촉촉한 비와 이슬', tags: ['직관', '상상력', '공감'], text: '조용히 스며들어 주변을 살리는 사람이에요. 직관이 뛰어나고, 남의 마음을 잘 읽어요.' },
+  ];
+
+  const TODAY: Record<Relation, { sum: string; base: number; bias: [number, number, number, number] }> = {
+    same: { sum: '나와 같은 기운이 들어오는 날이에요. 동료와 힘을 합치면 일이 술술 풀려요.', base: 3.5, bias: [0, 0.5, 0.5, 0] },
+    helped: { sum: '나를 도와주는 기운이 들어와요. 배우고 정리하기 좋은 날이에요.', base: 4.2, bias: [0, 0, 0.5, 0.5] },
+    helps: { sum: '내 재주를 드러내기 좋은 날이에요. 아이디어를 말로 꺼내 보세요.', base: 3.8, bias: [0, 0.5, 0.5, -0.5] },
+    controls: { sum: '노력한 만큼 결실을 거두는 날이에요. 작은 보상이 찾아올지도 몰라요.', base: 4, bias: [1, 0, 0, 0] },
+    controlled: { sum: '책임질 일이 늘어나는 날이에요. 서두르지 말고 하나씩 확인하면 괜찮아요.', base: 3.2, bias: [-0.5, 0, 0.5, -0.5] },
+  };
+
+  const MOGU = [
+    '작업 전에 백업부터! 오늘은 그게 행운의 열쇠예요.',
+    'COMMIT은 천천히, 확인은 두 번. 실수가 비켜 가요.',
+    '오늘은 실행 계획(EXPLAIN PLAN)을 한 번 더 보면 좋은 일이 생겨요.',
+    '로그 한 줄에 답이 있어요. 오늘은 꼼꼼함이 이겨요.',
+    '퇴근 전에 아카이브 공간 한번 확인해 보세요. 마음이 편해져요.',
+    '어려운 문제는 커피 한 잔 뒤에 다시 보면 풀려요. ☕',
+    '오늘 만난 에러는 내일의 블로그 글감이에요.',
+    '인덱스는 필요한 곳에만! 욕심을 줄이면 일이 가벼워져요.',
+    '가까운 동료에게 먼저 인사해 보세요. 뜻밖의 도움을 받아요.',
+    '모니터에서 잠깐 눈을 떼고 산책하면 좋은 아이디어가 떠올라요. 🐾',
+    '오늘은 미뤄 둔 패치 노트를 읽기 좋은 날이에요.',
+    '장애는 피해 가고 칭찬은 찾아오는 날! 모구가 응원해요.',
+  ];
+
+  // 같은 생일·같은 날이면 같은 결과가 나오도록 고정된 난수
+  function seeded(str: string) {
+    let h = 1779033703 ^ str.length;
+    for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 3432918353), (h = (h << 13) | (h >>> 19));
+    return () => {
+      h = Math.imul(h ^ (h >>> 16), 2246822507);
+      h = Math.imul(h ^ (h >>> 13), 3266489909);
+      return ((h ^= h >>> 16) >>> 0) / 4294967296;
+    };
+  }
+
+  const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  dateIn.max = ymd(new Date());
+
+  function cell(label: string, p: Pillar | null) {
+    if (!p) {
+      return `<div class="sj-col"><span class="sj-label">${label}</span><span class="sj-ch sj-unknown">?</span><span class="sj-ch sj-unknown">?</span></div>`;
+    }
+    const se = stemElement(p.stem);
+    const be = branchElement(p.branch);
+    return `<div class="sj-col"><span class="sj-label">${label}</span>
+      <span class="sj-ch" style="--el:${COLOR[se]}">${STEMS[p.stem]}<small>${STEMS_KO[p.stem]} · ${ELEMENT_KO[se]}</small></span>
+      <span class="sj-ch" style="--el:${COLOR[be]}">${BRANCHES[p.branch]}<small>${BRANCHES_KO[p.branch]} · ${ELEMENT_KO[be]}</small></span></div>`;
+  }
+
+  function stars(score: number) {
+    const s = Math.max(1, Math.min(5, Math.round(score)));
+    return '★'.repeat(s) + '☆'.repeat(5 - s);
+  }
+
+  function render(dateStr: string, hourStr: string) {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    if (!y || !m || !d) return;
+    const hour = hourStr === '' ? null : Number(hourStr);
+    const s = calcSaju(y, m, d, hour);
+
+    $('sj-pillars').innerHTML = cell('시주', s.hour) + cell('일주', s.day) + cell('월주', s.month) + cell('년주', s.year);
+    $('sj-animal').textContent =
+      `${STEMS_KO[s.year.stem]}${BRANCHES_KO[s.year.branch]}년생 ${ANIMALS[s.year.branch]}띠예요.` +
+      (hour === null ? ' 태어난 시간을 넣으면 시주까지 볼 수 있어요.' : '');
+
+    const total = Object.values(s.counts).reduce((a, b) => a + b, 0);
+    $('sj-bars').innerHTML = ELEMENTS.map((e) => {
+      const n = s.counts[e];
+      return `<div class="sj-bar"><span class="sj-bar-name" style="color:${COLOR[e]}">${ELEMENT_HANJA[e]} ${ELEMENT_KO[e]}</span>
+        <span class="sj-bar-track"><span class="sj-bar-fill" style="width:${(n / total) * 100}%;background:${COLOR[e]}"></span></span>
+        <span class="sj-bar-n">${n}</span></div>`;
+    }).join('');
+    const max = Math.max(...ELEMENTS.map((e) => s.counts[e]));
+    const strong = ELEMENTS.filter((e) => s.counts[e] === max).map((e) => ELEMENT_KO[e]);
+    const missing = ELEMENTS.filter((e) => s.counts[e] === 0);
+    const weakest = [...ELEMENTS].sort((a, b) => s.counts[a] - s.counts[b])[0];
+    $('sj-balance').textContent =
+      `${strong.join('·')} 기운이 가장 강해요. ` +
+      (missing.length
+        ? `${missing.map((e) => ELEMENT_KO[e]).join('·')} 기운이 없어서, ${LUCKY[missing[0]].color}색 소품으로 채워 보면 좋아요.`
+        : '다섯 기운이 모두 있어 균형이 좋은 편이에요.');
+
+    const me = ME[s.day.stem];
+    $('sj-me-icon').textContent = me.icon;
+    $('sj-me-title').textContent = me.title;
+    $('sj-me-tags').innerHTML = me.tags.map((t) => `<span>${t}</span>`).join('');
+    $('sj-me-text').textContent = me.text;
+
+    // 오늘의 운세: 오늘 일진의 천간이 나의 일간에게 어떤 기운인지로 큰 흐름을 정합니다.
+    const now = new Date();
+    const today = dayPillar(now.getFullYear(), now.getMonth() + 1, now.getDate());
+    const rel = relation(stemElement(s.day.stem), stemElement(today.stem));
+    const t = TODAY[rel];
+    const rand = seeded(`${dateStr}|${hourStr}|${ymd(now)}`);
+    $('sj-today-date').textContent = `${now.getMonth() + 1}월 ${now.getDate()}일 · ${STEMS[today.stem]}${BRANCHES[today.branch]}일`;
+    $('sj-today-sum').textContent = t.sum;
+    const cats = ['💰 금전운', '💕 애정운', '💼 업무운', '🍀 건강운'];
+    $('sj-stars').innerHTML = cats
+      .map((c, i) => `<li><span>${c}</span><span class="sj-star">${stars(t.base + t.bias[i] + (rand() - 0.5) * 2)}</span></li>`)
+      .join('');
+    const lucky = LUCKY[weakest];
+    $('sj-lucky').innerHTML = [
+      ['🎨 행운의 색', lucky.color],
+      ['🔢 행운의 숫자', lucky.num],
+      ['🧭 행운의 방향', lucky.dir],
+      ['🍽️ 행운의 메뉴', lucky.food],
+    ].map(([k, v]) => `<li><span>${k}</span><strong>${v}</strong></li>`).join('');
+    $('sj-mogu').textContent = `🐶 모구의 한마디: ${MOGU[Math.floor(rand() * MOGU.length)]}`;
+
+    $('sj-result').hidden = false;
+  }
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (!dateIn.value) return;
+    try { localStorage.setItem(KEY, JSON.stringify({ date: dateIn.value, hour: hourIn.value })); } catch {}
+    render(dateIn.value, hourIn.value);
+    $('sj-result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  try {
+    const saved = JSON.parse(localStorage.getItem(KEY) ?? 'null');
+    if (saved?.date) {
+      dateIn.value = saved.date;
+      hourIn.value = saved.hour ?? '';
+      render(saved.date, hourIn.value);
+    }
+  } catch {}
+</script>
+
+<style>
+  .sj { max-width: 760px; margin: 0 auto; }
+  .sj-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 14px 16px;
+  }
+  .sj-form label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.88rem;
+    color: var(--ink-muted);
+    flex: 1 1 200px;
+  }
+  .sj-form :global(.tool-input), .sj-form :global(.tool-select) { height: 42px; box-sizing: border-box; }
+  .sj-go {
+    flex: 0 0 auto;
+    height: 42px;
+    padding: 0 20px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--accent);
+    color: #fff;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  :global(:root[data-theme='dark']) .sj-go { color: #181412; }
+  .sj-go:hover { filter: brightness(1.08); }
+
+  .sj-result .tool-panel h2 { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .sj-sub { font-size: 0.82rem; font-weight: 500; color: var(--text-muted); }
+  .sj-note { margin: 12px 0 0; font-size: 0.9rem; color: var(--ink-muted); }
+
+  .sj-pillars {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+  .sj-pillars :global(.sj-col) {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+  }
+  .sj-pillars :global(.sj-label) { font-size: 0.8rem; color: var(--text-muted); font-weight: 600; }
+  .sj-pillars :global(.sj-ch) {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 4px 10px;
+    border-radius: 12px;
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--el);
+    background: color-mix(in srgb, var(--el) 12%, var(--surface-1));
+    border: 1px solid color-mix(in srgb, var(--el) 30%, var(--surface-1));
+  }
+  .sj-pillars :global(.sj-ch small) { font-size: 0.72rem; font-weight: 600; margin-top: 6px; color: var(--ink-muted); }
+  .sj-pillars :global(.sj-unknown) {
+    color: var(--text-muted);
+    background: var(--surface-2);
+    border: 1px dashed var(--hairline);
+    padding-bottom: 28px;
+  }
+
+  .sj-bars { display: grid; gap: 8px; }
+  .sj-bars :global(.sj-bar) { display: grid; grid-template-columns: 56px 1fr 20px; align-items: center; gap: 10px; }
+  .sj-bars :global(.sj-bar-name) { font-weight: 700; font-size: 0.9rem; }
+  .sj-bars :global(.sj-bar-track) { height: 10px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+  .sj-bars :global(.sj-bar-fill) { display: block; height: 100%; border-radius: 999px; transition: width 0.5s ease; }
+  .sj-bars :global(.sj-bar-n) { font-size: 0.85rem; color: var(--ink-muted); text-align: right; }
+
+  .sj-me-head { display: flex; align-items: center; gap: 14px; margin-bottom: 10px; }
+  .sj-me-icon {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    font-size: 1.7rem;
+    background: var(--accent-soft);
+  }
+  .sj-me-title { margin: 0 0 6px; font-weight: 700; }
+  .sj-me p:last-child { margin: 0; line-height: 1.75; }
+  .sj-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
+  .sj-tags :global(span) {
+    font-size: 0.78rem;
+    padding: 2px 9px;
+    border-radius: 999px;
+    background: var(--surface-2);
+    color: var(--ink-muted);
+  }
+
+  .sj-today-sum { margin: 0 0 14px; line-height: 1.7; }
+  .sj-stars, .sj-lucky {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 20px;
+  }
+  .sj-stars :global(li), .sj-lucky :global(li) {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--hairline);
+    font-size: 0.92rem;
+  }
+  .sj-stars :global(.sj-star) { color: #f0a92e; letter-spacing: 1px; }
+  .sj-lucky { margin-top: 10px; }
+  .sj-mogu {
+    margin: 16px 0 0;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: var(--accent-soft);
+    line-height: 1.6;
+  }
+  .sj-disclaimer { font-size: 0.8rem; color: var(--text-muted); line-height: 1.7; }
+
+  @media (max-width: 560px) {
+    .sj-pillars { gap: 6px; }
+    .sj-pillars :global(.sj-ch) { font-size: 1.6rem; }
+    .sj-stars, .sj-lucky { grid-template-columns: 1fr; gap: 0; }
+    .sj-go { width: 100%; }
+  }
+</style>
