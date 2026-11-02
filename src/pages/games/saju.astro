@@ -332,8 +332,14 @@ const HOURS = [
       new CustomEvent('share:update', {
         detail: {
           title: `나의 사주: ${meName}`,
-          // 카드 아래 목록(itemContent)은 누르면 앱 기본 주소로 가서 404가 나므로 쓰지 않고 설명에 담습니다.
-          text: `${r.structure.title} · 오늘 총운 ${overall}`,
+          // 카드 아래 목록(itemContent)은 누르면 카카오 앱 기본 주소(https://wyszkd93.github.io)로 갑니다.
+          text: `${r.structure.title} · 나도 내 사주를 봐 볼까?`,
+          items: [
+            { item: '일간', itemOp: meName },
+            { item: '구조', itemOp: r.structure.title.split(' · 용신')[0] },
+            { item: '용신', itemOp: `${ELEMENT_KO[r.yongsin]}(${ELEMENT_HANJA[r.yongsin]})` },
+            { item: '오늘 총운', itemOp: overall },
+          ],
           image: () => drawSajuCard({ saju: s, meTitle: me.title, meIcon: me.icon, summary: r.structure.title, todayStars: overall }),
           viewQuery: `s=${encodeShare(dateStr, hourStr, genderStr)}`,
         },
