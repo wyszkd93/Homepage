@@ -1,0 +1,180 @@
+---
+import Base from '../layouts/Base.astro';
+import { PROFILE } from '../consts';
+import { Image } from 'astro:assets';
+import moguFace from '../assets/mogu-face.webp';
+
+// ✏️ 소개 페이지 문구는 여기서 수정합니다.
+const points = [
+  { icon: '🛠️', tone: 'warm', title: '직접 해 본 것만', desc: '설치부터 장애 대응까지 손으로 확인한 내용' },
+  { icon: '🔎', tone: 'teal', title: '다시 찾기 쉽게', desc: '필요할 때 바로 꺼내 쓰는 명령어와 절차' },
+  { icon: '🛡️', tone: 'violet', title: '멈추지 않는 데이터', desc: '운영자의 눈으로 보는 안정성과 성능' },
+];
+---
+
+<Base title="소개" description="Oracle DBA 모구(mogu)를 소개합니다.">
+  <div class="about">
+    <header class="about-head">
+      <Image class="about-face" src={moguFace} width={88} height={88} alt="" loading="eager" />
+      <h1>기록하는 DBA <span>모구</span></h1>
+      <p class="about-sub">구축에서 운영까지, 데이터가 멈추지 않도록</p>
+    </header>
+
+    <section class="about-card">
+      <p>
+        Oracle을 중심으로 <strong>DB · EAI · 백업 솔루션</strong>을 다루며, 구축부터 운영까지 데이터가 멈추지 않는 환경을 만드는 DBA입니다.
+      </p>
+      <p>현장에서 부딪힌 문제는 대부분 어딘가에 답이 있지만, 막상 필요할 때는 잘 보이지 않습니다.</p>
+
+      <blockquote class="about-quote">
+        <p>"분명 예전에 해 봤는데, 그때 어떻게 했더라?"</p>
+        <p>그 질문에 답하려고 기록을 시작했습니다.</p>
+      </blockquote>
+
+      <p class="about-statement">내가 다시 찾아보는 메모가, 누군가에게는 지름길이 되길 바랍니다.</p>
+
+      <ul class="about-points">
+        {points.map((p) => (
+          <li>
+            <span class={`about-icon ${p.tone}`} aria-hidden="true">{p.icon}</span>
+            <strong>{p.title}</strong>
+            <span>{p.desc}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    <section class="about-card about-meta">
+      <div>
+        <h2>관심 분야</h2>
+        <ul class="chips">{PROFILE.interests.map((i) => <li class="chip">{i}</li>)}</ul>
+      </div>
+      <div>
+        <h2>기술 스택</h2>
+        <ul class="chips">{PROFILE.stack.map((s) => <li class="chip">{s}</li>)}</ul>
+      </div>
+    </section>
+
+    <ul class="about-links">
+      {PROFILE.links.map((l) => <li><a class="cta-btn" href={l.url}>{l.label}</a></li>)}
+    </ul>
+
+    <p class="about-closing">설치에서 운영까지, 함께 기록해 나가요.</p>
+  </div>
+</Base>
+
+<style>
+  .about {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 48px 0 24px;
+  }
+  .about-head {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+  .about-face {
+    width: 88px;
+    height: 88px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    margin-bottom: 12px;
+  }
+  .about-head h1 {
+    font-size: clamp(1.9rem, 5vw, 2.4rem);
+    margin: 0 0 12px;
+    letter-spacing: -0.02em;
+  }
+  .about-head h1 span { color: var(--accent); }
+  .about-sub {
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    margin: 0;
+  }
+  .about-card {
+    background: var(--surface-1);
+    border: 1px solid var(--hairline);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 32px 28px;
+    margin-bottom: 20px;
+    line-height: 1.8;
+  }
+  .about-card > p { margin: 0 0 14px; }
+  .about-quote {
+    margin: 22px 0;
+    padding: 18px 22px;
+    background: var(--surface-2);
+    border-radius: 10px;
+    color: var(--ink-muted);
+    font-size: 0.95rem;
+  }
+  .about-quote p { margin: 0; }
+  .about-statement {
+    text-align: center;
+    font-weight: 700;
+    font-size: 1.08rem;
+    margin: 28px 0 26px !important;
+  }
+  .about-points {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    text-align: center;
+  }
+  .about-points li {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .about-points strong { margin-top: 8px; }
+  .about-points li > span:last-child {
+    color: var(--text-muted);
+    font-size: 0.86rem;
+    line-height: 1.5;
+  }
+  .about-icon {
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    font-size: 1.5rem;
+  }
+  .about-icon.warm { background: var(--accent-soft); }
+  .about-icon.teal { background: var(--teal-soft); }
+  .about-icon.violet { background: color-mix(in srgb, #8b5cf6 12%, var(--surface-1)); }
+  .about-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  .about-meta h2 {
+    font-size: 1rem;
+    margin: 0 0 10px;
+  }
+  .about-links {
+    list-style: none;
+    padding: 0;
+    margin: 28px 0 0;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .about-closing {
+    text-align: center;
+    font-style: italic;
+    color: var(--text-muted);
+    margin: 28px 0 0;
+  }
+  @media (max-width: 640px) {
+    .about { padding-top: 28px; }
+    .about-card { padding: 24px 18px; }
+    .about-points, .about-meta { grid-template-columns: 1fr; }
+  }
+</style>

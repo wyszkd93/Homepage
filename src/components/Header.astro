@@ -8,7 +8,8 @@ import Search from './Search.astro';
 const path = Astro.url.pathname.replace(/\/+$/, '');
 const home = url('/').replace(/\/+$/, '');
 const nav = [
-  { href: url('/'), label: '소개', match: (p: string) => p === home },
+  { href: url('/'), label: '홈', match: (p: string) => p === home },
+  { href: url('/about/'), label: '소개', match: (p: string) => p.startsWith(url('/about')) },
   { href: url('/blog/'), label: '블로그', match: (p: string) => p.startsWith(url('/blog')) },
   { href: url('/snippets/'), label: '스니펫', match: (p: string) => p.startsWith(url('/snippets')) },
 ];
