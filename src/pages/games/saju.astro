@@ -62,6 +62,11 @@ const HOURS = [
       <button class="sj-go" type="submit">🔮 사주 보기</button>
     </form>
 
+    <div id="sj-shared" class="sj-shared" hidden>
+      <p>👀 친구가 공유한 사주 결과예요. 나의 사주도 궁금하다면?</p>
+      <button id="sj-mine" class="sj-go" type="button">🔮 나도 해보기</button>
+    </div>
+
     <div id="sj-result" class="sj-result" hidden>
       <section class="tool-panel">
         <h2>사주팔자</h2>
@@ -229,6 +234,21 @@ const HOURS = [
     return '★'.repeat(s) + '☆'.repeat(5 - s);
   }
 
+  // 공유 주소에 담는 값: 생년월일|시|성별 (base64url). 암호화는 아니고 주소를 짧고 덜 눈에 띄게 하는 정도입니다.
+  const encodeShare = (d: string, h: string, g: string) =>
+    btoa(`${d}|${h}|${g}`).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  function decodeShare(v: string) {
+    try {
+      const [d, h = '', g = ''] = atob(v.replace(/-/g, '+').replace(/_/g, '/')).split('|');
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return null;
+      if (h !== '' && !/^(\d|1[01])$/.test(h)) return null;
+      if (!['', 'male', 'female'].includes(g)) return null;
+      return { d, h, g };
+    } catch {
+      return null;
+    }
+  }
+
   function render(dateStr: string, hourStr: string, genderStr: string) {
     const [y, m, d] = dateStr.split('-').map(Number);
     if (!y || !m || !d) return;
@@ -320,23 +340,47 @@ const HOURS = [
             { item: '오늘 총운', itemOp: overall },
           ],
           image: () => drawSajuCard({ saju: s, meTitle: me.title, meIcon: me.icon, summary: r.structure.title, todayStars: overall }),
+          viewQuery: `s=${encodeShare(dateStr, hourStr, genderStr)}`,
         },
       }),
     );
     $('sj-result').hidden = false;
   }
 
+  function leaveShared() {
+    $('sj-shared').hidden = true;
+    form.hidden = false;
+    document.querySelector<HTMLElement>('.kk-wrap')?.removeAttribute('hidden');
+    if (new URLSearchParams(location.search).has('s')) history.replaceState(null, '', location.pathname + location.hash);
+  }
+
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     if (!dateIn.value) return;
+    leaveShared();
     try { localStorage.setItem(KEY, JSON.stringify({ date: dateIn.value, hour: hourIn.value, gender: genderIn.value })); } catch {}
     render(dateIn.value, hourIn.value, genderIn.value);
     $('sj-result').scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 
   // 카카오톡 공유 카드('나도 해보기')로 들어오면 저장된 결과를 불러오지 않고 빈 입력 화면에서 시작합니다.
+  // 카드 본문·'결과 보기'(?s=...)로 들어오면 공유한 사람의 결과를 보여 줍니다. 이 결과는 저장하지 않습니다.
   const params = new URLSearchParams(location.search);
-  const fromShare = params.has('from');
+  const shared = params.get('s') ? decodeShare(params.get('s')!) : null;
+  if (shared) {
+    render(shared.d, shared.h, shared.g);
+    $('sj-shared').hidden = false;
+    form.hidden = true;
+    document.querySelector<HTMLElement>('.kk-wrap')?.setAttribute('hidden', '');
+  }
+  $('sj-mine').addEventListener('click', () => {
+    leaveShared();
+    $('sj-result').hidden = true;
+    form.reset();
+    form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    dateIn.focus();
+  });
+  const fromShare = params.has('from') || !!shared;
   if (fromShare) {
     params.delete('from');
     const qs = params.toString();
@@ -479,6 +523,20 @@ const HOURS = [
     line-height: 1.6;
   }
   .sj-gender { flex: 0 1 140px !important; }
+  .sj-shared {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px 16px;
+    margin-bottom: 16px;
+    padding: 14px 18px;
+    border-radius: 14px;
+    background: var(--accent-soft);
+    border: 1px solid var(--accent-line);
+  }
+  .sj-shared[hidden], .sj-form[hidden] { display: none; }
+  .sj-shared p { margin: 0; font-weight: 600; }
   .sj-read p { margin: 0 0 10px; line-height: 1.8; }
   .sj-read p:last-child { margin-bottom: 0; }
   .sj-read :global(p) { margin: 0 0 10px; line-height: 1.8; }

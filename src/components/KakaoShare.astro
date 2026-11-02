@@ -23,7 +23,7 @@ const { title, description, label = '카카오톡으로 공유하기' } = Astro.
 <script>
   import { shareKakao, type ShareOptions } from '../lib/kakao';
 
-  type Update = { text?: string; title?: string; items?: ShareOptions['items']; image?: ShareOptions['image'] };
+  type Update = { text?: string; title?: string; items?: ShareOptions['items']; image?: ShareOptions['image']; viewQuery?: string };
 
   for (const btn of document.querySelectorAll<HTMLButtonElement>('.kk-btn')) {
     let extra: Update = {};
@@ -40,6 +40,7 @@ const { title, description, label = '카카오톡으로 공유하기' } = Astro.
         description: btn.dataset.desc ?? '',
         items: extra.items,
         image: extra.image,
+        viewQuery: extra.viewQuery,
       }).catch((err) => {
         console.error(err);
         alert('카카오톡 공유를 열지 못했어요. 잠시 후 다시 시도해 주세요.');
@@ -51,6 +52,7 @@ const { title, description, label = '카카오톡으로 공유하기' } = Astro.
 
 <style>
   .kk-wrap { display: flex; justify-content: center; margin: 20px 0 8px; }
+  .kk-wrap[hidden] { display: none; }
   .kk-btn {
     display: inline-flex;
     align-items: center;
