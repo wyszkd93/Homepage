@@ -307,8 +307,17 @@ const HOURS = [
     $('sj-result').scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 
+  // 카카오톡 공유 카드('나도 해보기')로 들어오면 저장된 결과를 불러오지 않고 빈 입력 화면에서 시작합니다.
+  const params = new URLSearchParams(location.search);
+  const fromShare = params.has('from');
+  if (fromShare) {
+    params.delete('from');
+    const qs = params.toString();
+    history.replaceState(null, '', location.pathname + (qs ? `?${qs}` : '') + location.hash);
+  }
+
   try {
-    const saved = JSON.parse(localStorage.getItem(KEY) ?? 'null');
+    const saved = fromShare ? null : JSON.parse(localStorage.getItem(KEY) ?? 'null');
     if (saved?.date) {
       dateIn.value = saved.date;
       hourIn.value = saved.hour ?? '';
