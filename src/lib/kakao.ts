@@ -43,6 +43,8 @@ export interface ShareOptions {
   items?: ShareItem[];
   /** 카드 이미지로 쓸 그림. 카카오 서버에 올린 뒤 사용하고, 실패하면 페이지 대표 그림을 씁니다. */
   image?: () => Promise<Blob | null>;
+  /** 카드를 눌렀을 때 공유한 결과를 보여 줄 주소 뒤에 붙일 값 (예: 's=...'). 있으면 '결과 보기'·'나도 해보기' 버튼 두 개 */
+  viewQuery?: string;
 }
 
 /** 지금 페이지를 카카오톡으로 공유합니다. */
@@ -70,10 +72,14 @@ export async function shareKakao(opts: ShareOptions) {
     document.querySelector<HTMLMetaElement>('meta[property="og:image"]')?.content ??
     `${location.origin}/favicon.png`;
   const link = { mobileWebUrl: url, webUrl: url };
+  const viewUrl = opts.viewQuery ? `${page}?${opts.viewQuery}` : null;
+  const viewLink = viewUrl ? { mobileWebUrl: viewUrl, webUrl: viewUrl } : link;
   Kakao.Share.sendDefault({
     objectType: 'feed',
-    content: { title: opts.title, description: opts.description, imageUrl, link, ...(uploaded ? { imageWidth: 800, imageHeight: 800 } : {}) },
+    content: { title: opts.title, description: opts.description, imageUrl, link: viewLink, ...(uploaded ? { imageWidth: 800, imageHeight: 800 } : {}) },
     ...(opts.items?.length ? { itemContent: { items: opts.items.slice(0, 5) } } : {}),
-    buttons: [{ title: opts.buttonTitle ?? '나도 해보기', link }],
+    buttons: viewUrl
+      ? [{ title: '결과 보기', link: viewLink }, { title: opts.buttonTitle ?? '나도 해보기', link }]
+      : [{ title: opts.buttonTitle ?? '나도 해보기', link }],
   });
 }
