@@ -276,8 +276,8 @@ import KakaoShare from '../../components/KakaoShare.astro';
       new CustomEvent('share:update', {
         detail: {
           title: `${d.breed.name} '${d.name}'의 견생 ${ageText(age)}`,
-          text: `${d.personality.name} · ${d.family.name} · 행복 점수 ${score}점. 나는 어떤 강아지로 태어날까?`,
-          items: stats.slice(0, 4).map(([item, itemOp]) => ({ item, itemOp })),
+          // 카드 아래 목록(itemContent)은 누르면 앱 기본 주소로 가서 404가 나므로 쓰지 않습니다.
+          text: `산책 ${fmt(d.walks)}번 · 간식 ${fmt(d.treats)}개 · 친구 ${d.friends}마리 · 행복 ${score}점`,
           image: () => drawCard(d, stats, score),
         },
       }),
