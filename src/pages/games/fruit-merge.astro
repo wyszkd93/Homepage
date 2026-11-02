@@ -1,5 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
+import heroArt from '../../assets/fruit-merge-art.jpg';
+import { Image } from 'astro:assets';
 import Leaderboard from '../../components/Leaderboard.astro';
 import KakaoShare from '../../components/KakaoShare.astro';
 ---
@@ -9,7 +11,17 @@ import KakaoShare from '../../components/KakaoShare.astro';
   description="같은 과일끼리 부딪혀 더 큰 과일로 키우는 물리 퍼즐 게임"
   heading="과일 합치기"
   tagline="같은 과일이 닿으면 한 단계 큰 과일이 돼요"
+  ogImage={heroArt}
 >
+  <Image
+    slot="aside"
+    class="hero-art hero-art-sm"
+    src={heroArt}
+    widths={[200, 300]}
+    sizes="(max-width: 720px) 96px, 150px"
+    alt="포메라니안 모구가 과일이 가득한 유리 상자 위에서 체리를 들고 있고 커다란 수박이 반짝이는 그림"
+    loading="eager"
+  />
   <div class="fm-wrap">
     <Leaderboard game="fruit-merge" />
     <div class="fm-bar">

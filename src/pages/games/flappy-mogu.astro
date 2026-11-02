@@ -1,5 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
+import heroArt from '../../assets/flappy-mogu-art.webp';
+import { Image } from 'astro:assets';
 import sprite from '../../assets/flappy-mogu.png';
 import Leaderboard from '../../components/Leaderboard.astro';
 import KakaoShare from '../../components/KakaoShare.astro';
@@ -10,7 +12,17 @@ import KakaoShare from '../../components/KakaoShare.astro';
   description="날개 달린 도트 모구가 파닥파닥 날아 기둥 사이를 통과하는 레트로 미니게임"
   heading="플래피 모구"
   tagline="누를 때마다 모구가 파닥! 기둥 사이를 지나가요"
+  ogImage={heroArt}
 >
+  <Image
+    slot="aside"
+    class="hero-art hero-art-sm"
+    src={heroArt}
+    widths={[200, 300]}
+    sizes="(max-width: 720px) 96px, 150px"
+    alt="하얀 날개를 단 포메라니안 모구가 초록 기둥 사이를 날아가는 그림"
+    loading="eager"
+  />
   <div class="fl-wrap">
     <Leaderboard game="flappy-mogu" />
     <div class="fl-bar">
