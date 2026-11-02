@@ -108,10 +108,10 @@ import { Image } from 'astro:assets';
 
 <script>
   import {
-    born, eventsForYear, applyEffect, tick, stageOf, ageText, nameGa, CHOICES,
+    born, eventsForYear, applyEffect, tick, stageOf, ageText, nameGa, CHOICES, BREEDS, NAMES, FAMILIES, PERSONALITIES,
     type Dog, type LifeEvent,
   } from '../../utils/dog-life';
-  import { encodeResult, decodeResult, clearShareParams } from '../../lib/share-param';
+  import { clearShareParams } from '../../lib/share-param';
 
   const $ = (id: string) => document.getElementById(id)!;
   const KEY = 'game:dog-life';
@@ -258,6 +258,22 @@ import { Image } from 'astro:assets';
   // 공유 링크에 담는 요약 (짧은 키)
   type Summary = { b: string; n: string; y: number; w: number; t: number; f: number; s: number; fam: string; p: string; e?: string; m?: string[] };
 
+  // 공유 링크는 카카오 모바일 크기 제한(10KB) 안에 들도록 숫자만 짧게 담습니다.
+  // 견종.이름.가족.성격.나이(×10).산책.간식.친구.점수 (목록의 번호)
+  function packShare(d: Dog, x: Summary) {
+    return [
+      BREEDS.indexOf(d.breed), NAMES.indexOf(d.name), FAMILIES.indexOf(d.family), PERSONALITIES.indexOf(d.personality),
+      Math.round(x.y * 10), x.w, x.t, x.f, x.s,
+    ].join('.');
+  }
+  function unpackShare(v: string | null): Summary | null {
+    if (!v || !/^\d+(\.\d+){8}$/.test(v)) return null;
+    const [bi, ni, fi, pi, y10, w, t, f, sc] = v.split('.').map(Number);
+    const breed = BREEDS[bi], name = NAMES[ni], fam = FAMILIES[fi], per = PERSONALITIES[pi];
+    if (!breed || !name || !fam || !per || y10 > 300 || sc > 100) return null;
+    return { b: breed.name, n: name, y: y10 / 10, w, t, f, s: sc, fam: fam.name, p: per.name };
+  }
+
   /** 마지막 화면을 그립니다. 내 견생이든 친구가 공유한 견생이든 같은 화면을 씁니다. */
   function renderEnd(x: Summary) {
     $('dl-end-title').textContent = `${x.b} '${x.n}'의 견생`;
@@ -315,7 +331,7 @@ import { Image } from 'astro:assets';
           // 카드 아래 목록(itemContent)은 누르면 앱 기본 주소로 가서 404가 나므로 쓰지 않습니다.
           text: `산책 ${fmt(d.walks)}번 · 간식 ${fmt(d.treats)}개 · 친구 ${d.friends}마리 · 행복 ${score}점`,
           image: () => drawCard(d, stats, score),
-          viewQuery: `r=${encodeResult(sum)}`,
+          viewQuery: `r=${packShare(d, sum)}`,
         },
       }),
     );
@@ -420,14 +436,9 @@ import { Image } from 'astro:assets';
   renderPast();
 
   // 친구가 공유한 견생(?r=)으로 들어오면 그 마지막 화면을 보여 줍니다. 저장은 하지 않아요.
-  const shared = decodeResult<Summary>(new URLSearchParams(location.search).get('r'));
-  if (shared && typeof shared.b === 'string' && typeof shared.n === 'string' && Number.isFinite(shared.y)) {
-    const clip = (v: unknown, n = 20) => String(v ?? '').slice(0, n);
-    renderEnd({
-      b: clip(shared.b), n: clip(shared.n, 12), y: Math.max(0, Math.min(30, Number(shared.y))),
-      w: Number(shared.w) || 0, t: Number(shared.t) || 0, f: Number(shared.f) || 0, s: Number(shared.s) || 0,
-      fam: clip(shared.fam, 30), p: clip(shared.p), m: Array.isArray(shared.m) ? shared.m.slice(0, 3).map((x) => clip(x, 80)) : [],
-    });
+  const shared = unpackShare(new URLSearchParams(location.search).get('r'));
+  if (shared) {
+    renderEnd(shared);
     $('dl-start').hidden = true;
     $('dl-end').hidden = false;
     $('dl-shared').hidden = false;

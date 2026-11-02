@@ -28,8 +28,8 @@ export const BREEDS: Breed[] = [
   { id: 'labrador', name: '래브라도 리트리버', emoji: '🦮', size: 'large', weight: 2, life: [10, 12], trait: '먹는 걸 좋아하는 친구' },
 ];
 
-const NAMES = ['콩이', '보리', '초코', '뭉치', '두부', '코코', '몽이', '해피', '별이', '구름', '밤이', '쿠키', '라떼', '모카', '호두', '땅콩', '감자', '사랑', '누리', '하루', '루이', '토리', '봄이', '까미'];
-const PERSONALITIES = [
+export const NAMES = ['콩이', '보리', '초코', '뭉치', '두부', '코코', '몽이', '해피', '별이', '구름', '밤이', '쿠키', '라떼', '모카', '호두', '땅콩', '감자', '사랑', '누리', '하루', '루이', '토리', '봄이', '까미'];
+export const PERSONALITIES = [
   { id: 'sweet', name: '애교쟁이', note: '사람만 보면 배를 보여 줘요' },
   { id: 'shy', name: '겁쟁이', note: '낯선 소리에 숨지만 가족 품에선 용감해요' },
   { id: 'foodie', name: '먹보', note: '부스럭 소리만 나도 달려와요' },
@@ -38,7 +38,7 @@ const PERSONALITIES = [
   { id: 'curious', name: '호기심 대장', note: '산책길 냄새를 하나도 그냥 안 지나쳐요' },
   { id: 'sleepy', name: '잠꾸러기', note: '하루 대부분을 꿈속에서 보내요' },
 ] as const;
-const FAMILIES = [
+export const FAMILIES = [
   { id: 'single', name: '혼자 사는 직장인 집사', walk: 1.2 },
   { id: 'couple', name: '신혼부부', walk: 1.6 },
   { id: 'kids', name: '아이 둘 있는 시끌벅적한 집', walk: 1.8 },
