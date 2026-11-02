@@ -130,13 +130,13 @@ const blogNotes = ['직접 해 본 것만', '다시 찾기 쉽게', '오픈소�
     margin: 0;
     padding: 0;
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 20px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px 22px;
   }
   .note {
     --c: #f2a65e;
     position: relative;
-    padding: 28px 20px 22px;
+    padding: 28px 26px 24px;
     border-radius: 14px;
     background: color-mix(in srgb, var(--c) 16%, var(--surface-1));
     border: 1px solid color-mix(in srgb, var(--c) 30%, var(--surface-1));
@@ -171,20 +171,26 @@ const blogNotes = ['직접 해 본 것만', '다시 찾기 쉽게', '오픈소�
     list-style: none;
     margin: 0;
     padding: 0;
-    line-height: 1.9;
-    font-size: 0.93rem;
-    color: var(--ink-muted);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--ink);
+    word-break: keep-all;
   }
   .note ul li {
-    position: relative;
-    padding-left: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
   .note ul li::before {
-    content: '·';
-    position: absolute;
-    left: 2px;
-    font-weight: 700;
-    color: color-mix(in srgb, var(--c) 80%, var(--ink));
+    content: '';
+    flex: none;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--c);
   }
   .note a { font-weight: 600; }
   .tags {
@@ -210,9 +216,6 @@ const blogNotes = ['직접 해 본 것만', '다시 찾기 쉽게', '오픈소�
     margin: 28px 8px 0;
   }
 
-  @media (max-width: 860px) {
-    .notes { grid-template-columns: repeat(2, 1fr); }
-  }
   @media (max-width: 640px) {
     .me { padding-top: 24px; }
     .hello { grid-template-columns: 1fr; justify-items: center; gap: 28px; }
