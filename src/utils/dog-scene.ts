@@ -144,12 +144,21 @@ export class DogScene {
     });
 
     // 가족
-    const people = d ? FAMILY_SCENE[d.family.id]?.people ?? [] : [];
+    // 기본 가족 - 떠난 사람 + 새로 생긴 가족
+    const base = d ? FAMILY_SCENE[d.family.id]?.people ?? [] : [];
+    const EXTRA: Record<string, Person> = {
+      adult: { hair: '#4a2f22', shirt: '#c97b63', pants: '#3a3f4b', h: 15 },
+      child: { hair: '#2b211b', shirt: '#7fb3d5', pants: '#4a4f63', h: 10 },
+      baby: { hair: '#6b4a32', shirt: '#f7d6e0', pants: '#f7d6e0', h: 7 },
+    };
+    const people = d
+      ? [...base.slice(0, Math.max(1, base.length - d.household.away)), ...d.household.extra.map((k) => EXTRA[k])]
+      : [];
     // 사람은 1.7배로 그려서 강아지보다 확실히 크게
     people.forEach((p, i) => {
       ctx.save();
       const PS = 1.7;
-      ctx.translate(18 + i * 20, GROUND);
+      ctx.translate(14 + i * (people.length > 4 ? 16 : 20), GROUND);
       ctx.scale(PS, PS);
       ctx.translate(0, -GROUND);
       this.drawPerson(p, 0, now, i);
@@ -172,6 +181,11 @@ export class DogScene {
         }
       }
       const walking = speed > 0 && this.pause <= 0;
+      // 동생 강아지는 조금 뒤에서 따라 걸어요
+      if (d.sibling) {
+        const sx = this.x - this.dir * 22;
+        this.drawDog({ ...d, breed: d.sibling }, sx, GROUND, Math.max(1, stage - 1), walking, now + 70);
+      }
       this.drawDog(d, this.x, GROUND, stage, walking, now);
       if (this.bubble && now < this.bubble.until) this.drawBubble(this.bubble.icon, this.x, stage);
     }

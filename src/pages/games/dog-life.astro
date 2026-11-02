@@ -124,6 +124,7 @@ import { Image } from 'astro:assets';
         <p class="dl-end-icon">🌈</p>
         <p id="dl-end-title" class="dl-end-title"></p>
         <p id="dl-end-text" class="dl-end-text"></p>
+        <p id="dl-titles" class="dl-titles" hidden></p>
         <blockquote id="dl-letter" class="dl-letter" hidden></blockquote>
         <ul id="dl-end-stats" class="dl-end-stats"></ul>
         <div class="dl-memories">
@@ -146,7 +147,7 @@ import { Image } from 'astro:assets';
 
 <script>
   import {
-    born, eventsForYear, applyEffect, tick, stageOf, ageText, nameGa, lastWords, BREEDS, NAMES, FAMILIES, PERSONALITIES,
+    born, eventsForYear, applyEffect, tick, stageOf, ageText, nameGa, lastWords, choose, titlesOf, BREEDS, NAMES, FAMILIES, PERSONALITIES,
     type Dog, type LifeEvent,
   } from '../../utils/dog-life';
   import { DogScene, homeOf, coatName, SEASON_NAME } from '../../utils/dog-scene';
@@ -383,7 +384,7 @@ import { Image } from 'astro:assets';
       b.textContent = o.label;
       b.addEventListener('click', () => {
         if (!dog) return;
-        applyEffect(dog, o.effect);
+        choose(dog, c, c.options.indexOf(o));
         picks[c.id] = c.options.indexOf(o);
         log('🗳️', `${o.label} → ${o.text}`, age, 'is-choice');
         choiceIdx++;
@@ -404,7 +405,10 @@ import { Image } from 'astro:assets';
     last = now;
     if (dog) {
       scene.frame(now, age, !paused && !waiting);
-      $('dl-scene-cap').textContent = `${homeOf(dog.family.id)} · ${dog.family.name} · ${SEASON_NAME[Math.floor((age % 1) * 4) % 4]}`;
+      const home = homeOf(dog.family.id);
+      const extra = dog.household.extra.length ? ` +${dog.household.extra.length}` : '';
+      const who = dog.family.name.includes(home) ? dog.family.name : `${home} · ${dog.family.name}`;
+      $('dl-scene-cap').textContent = `${who}${extra}${dog.sibling ? ` · 동생 ${dog.sibling.name}` : ''} · ${SEASON_NAME[Math.floor((age % 1) * 4) % 4]}`;
     }
     if (!dog || paused || waiting) return;
     let next = age + (dtMs / YEAR_MS) * speed;
@@ -430,7 +434,9 @@ import { Image } from 'astro:assets';
     while (queue.length && queue[0].age <= next && queue[0].age < dog.lifespan) {
       const e = queue.shift()!;
       applyEffect(dog, e.effect);
-      log(e.icon, e.text, e.age, e.memory ? 'is-memory' : '');
+      e.apply?.(dog);
+      if (e.rare) dog.rare++;
+      log(e.icon, e.rare ? `✨ ${e.text}` : e.text, e.age, e.rare ? 'is-memory is-rare' : e.memory ? 'is-memory' : '');
       scene.say(e.icon, now);
       if (e.memory) {
         dog.memories.push(`${ageText(e.age)} · ${e.text}`);
@@ -466,7 +472,7 @@ import { Image } from 'astro:assets';
   function renderEnd(x: Summary) {
     $('dl-end-title').textContent = `${x.b} '${x.n}'의 견생`;
     $('dl-end-text').textContent =
-      `${x.fam}에서 ${ageText(x.y)}을 살고 무지개다리를 건넜어요. 지금쯤 모구와 함께 들판을 뛰어다니고 있을 거예요.`;
+      `${x.fam} 곁에서 ${ageText(x.y)}을 살고 무지개다리를 건넜어요. 지금쯤 모구와 함께 들판을 뛰어다니고 있을 거예요.`;
     const stats = [
       ['함께한 시간', ageText(x.y)],
       ['산책', `${fmt(x.w)}번`],
@@ -508,6 +514,14 @@ import { Image } from 'astro:assets';
       f: d.friends, s: score, fam: d.family.name, p: d.personality.name, e: d.breed.emoji, m: d.memories.slice(-3),
     };
     const stats = renderEnd(sum);
+    const titles = titlesOf(d, memLog.length);
+    $('dl-titles').innerHTML = '';
+    for (const t of titles) {
+      const span = document.createElement('span');
+      span.textContent = t;
+      $('dl-titles').append(span);
+    }
+    $('dl-titles').hidden = false;
     const lt = $('dl-letter');
     lt.innerHTML = '';
     const h = document.createElement('p');
@@ -533,7 +547,7 @@ import { Image } from 'astro:assets';
         detail: {
           title: `${d.breed.name} '${d.name}'의 견생 ${ageText(age)}`,
           // 카드 아래 목록(itemContent)은 누르면 카카오 앱 기본 주소(https://wyszkd93.github.io)로 갑니다.
-          text: `${d.personality.name} · ${d.family.name} · 행복 점수 ${score}점. 나는 어떤 강아지로 태어날까?`,
+          text: `${titles.join(' · ')} · 행복 점수 ${score}점. 나는 어떤 강아지로 태어날까?`,
           items: stats.slice(0, 4).map(([item, itemOp]) => ({ item, itemOp })),
           image: () => drawCard(d, stats, score),
           viewQuery: `r=${packShare(d, sum)}`,
@@ -647,6 +661,7 @@ import { Image } from 'astro:assets';
   if (shared) {
     renderEnd(shared);
     $('dl-letter').hidden = true;
+    $('dl-titles').hidden = true;
     $('dl-start').hidden = true;
     $('dl-end').hidden = false;
     $('dl-shared').hidden = false;
@@ -837,6 +852,10 @@ import { Image } from 'astro:assets';
   .dl-shared[hidden], .dl-memories[hidden] { display: none; }
   .dl-shared p { margin: 0; font-weight: 600; }
   .dl-end-card { text-align: center; }
+  .dl-titles { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 0 0 16px; }
+  .dl-titles[hidden] { display: none; }
+  .dl-titles :global(span) { padding: 4px 12px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--accent-line); font-weight: 700; font-size: 0.88rem; }
+  .dl-log :global(li.is-rare) { color: #b8860b; }
   .dl-letter {
     margin: 0 0 18px;
     padding: 16px 18px;
