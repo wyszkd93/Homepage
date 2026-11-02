@@ -75,7 +75,6 @@ const gameTitle = TOOLS.find((t) => t.slug === game)?.title ?? game;
   import { kakaoEnabled, shareKakao } from '../lib/kakao';
 
   const GAMES = ['flappy-mogu', 'fruit-merge', '2048'];
-  const SKIP_KEY = 'lb:skip-login';
   const root = document.querySelector<HTMLElement>('.lb');
   if (root) init(root);
 
@@ -271,12 +270,7 @@ const gameTitle = TOOLS.find((t) => t.slug === game)?.title ?? game;
       }
     }
     $$('.lb-login').forEach((b) => b.addEventListener('click', () => login(b)));
-    $('.lb-skip').addEventListener('click', () => {
-      try {
-        sessionStorage.setItem(SKIP_KEY, '1');
-      } catch {}
-      startDlg.close();
-    });
+    $('.lb-skip').addEventListener('click', () => startDlg.close());
     $('.lb-logout').addEventListener('click', () => signOut(auth));
 
     // ── 결과 창 버튼 ──
@@ -362,12 +356,8 @@ const gameTitle = TOOLS.find((t) => t.slug === game)?.title ?? game;
           await loadTop();
         }
       } else if (first) {
-        // 처음 들어왔을 때 로그인 안내 (같은 방문 중 '로그인 없이 하기'를 누르면 다시 안 띄움)
-        let skipped = false;
-        try {
-          skipped = sessionStorage.getItem(SKIP_KEY) === '1';
-        } catch {}
-        if (!skipped) open(startDlg);
+        // 로그인하지 않은 상태로 게임 페이지에 들어올 때마다 로그인 안내를 띄웁니다.
+        open(startDlg);
       }
     });
   }
