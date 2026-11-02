@@ -59,7 +59,11 @@ export interface Choice {
   options: { label: string; effect: Partial<Stats> & { life?: number; walk?: number; treat?: number }; text: string }[];
 }
 
-export interface LifeEvent { age: number; month: number; icon: string; text: string; effect?: Partial<Stats>; memory?: boolean; key?: string }
+export interface LifeEvent {
+  age: number; month: number; icon: string; text: string; effect?: Partial<Stats>; memory?: boolean; key?: string;
+  rare?: boolean; // 아주 드물게 일어나는 일
+  apply?: (d: Dog) => void; // 가족 구성 변화 같은 추가 효과
+}
 
 export interface Dog {
   breed: Breed;
@@ -76,6 +80,10 @@ export interface Dog {
   friends: number;
   memories: string[];
   choices: Choice[]; // 이번 생에 마주칠 가족의 선택 (생마다 다르게 뽑음)
+  flags: string[]; // 선택이 남긴 흔적 → 나중에 이어지는 사건
+  household: { extra: ('adult' | 'child' | 'baby')[]; away: number }; // 가족 구성 변화 (장면에 반영)
+  sibling: Breed | null; // 함께 사는 강아지 동생
+  rare: number; // 희귀한 일을 겪은 횟수
 }
 
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
@@ -121,6 +129,10 @@ export function born(): Dog {
     friends: 0,
     memories: [],
     choices: [],
+    flags: [],
+    household: { extra: [], away: 0 },
+    sibling: null,
+    rare: 0,
   };
   d.choices = pickChoices(d);
   return d;
@@ -253,6 +265,26 @@ const CHOICE_BANDS: ReturnType<typeof C>[][] = [
     ]),
   ],
 ];
+// 선택이 남기는 흔적. 같은 생의 뒤쪽 사건이 이 흔적을 보고 이어집니다.
+const CHOICE_FLAGS: Record<string, [string, string]> = {
+  school: ['kinder', ''], crate: ['bedbuddy', ''], socialize: ['brave', ''], name: ['', 'nickname'],
+  weekend: ['hiker', 'couch'], trip: ['traveler', ''], sport: ['athlete', ''], cafe: ['social', ''], hobby: ['runner', 'camper'], photo: ['sns', 'album'],
+  diet: ['fit', 'chubby'], sibling: ['sibling', ''], move: ['park', 'homebody'], alone: ['', 'morning'], toy: ['', 'nose'],
+  checkup: ['checked', ''], swim: ['swimmer', ''], teeth: ['', ''], massage: ['massage', ''], weight: ['', ''], stairs: ['', 'carried'],
+  stroller: ['stroller', ''], bucket: ['forest', 'party'], night: ['', ''], anniversary: ['', ''], portrait: ['portrait', 'paw'],
+};
+/** 가족의 선택을 반영합니다: 효과 + 흔적 + (동생 입양이면) 동생 강아지 */
+export function choose(d: Dog, c: Choice, k: number) {
+  const o = c.options[k];
+  applyEffect(d, o.effect);
+  const flag = CHOICE_FLAGS[c.id]?.[k];
+  if (flag && !d.flags.includes(flag)) d.flags.push(flag);
+  if (flag === 'sibling') {
+    d.sibling = pickBreed();
+    d.friends++;
+  }
+}
+
 /** 선택 후보 전체 (테스트·참고용) */
 export const CHOICES: Choice[] = CHOICE_BANDS.flat();
 
@@ -268,7 +300,14 @@ function pickChoices(d: Dog): Choice[] {
 // 같은 사건도 문장을 여러 가지로
 const V = (...lines: string[]) => (d: Dog) => pick(lines).replaceAll('{이름}', d.name).replaceAll('{이름이}', nameGa(d.name));
 
-type Pool = { min: number; max: number; icon: string; text: (d: Dog) => string; effect?: Partial<Stats>; friend?: boolean; memory?: boolean; key?: string; when?: (d: Dog) => boolean }[];
+type Pool = {
+  min: number; max: number; icon: string; text: (d: Dog) => string; effect?: Partial<Stats>; friend?: boolean; memory?: boolean; key?: string;
+  when?: (d: Dog) => boolean;
+  need?: string; // 이 흔적(선택)이 있을 때만
+  rare?: boolean;
+  apply?: (d: Dog) => void;
+  once?: string; // 같은 묶음 안에서는 한 번만 (가족 변화 등)
+}[];
 
 const POOL: Pool = [
   { min: 0, max: 0.4, icon: '🏠', text: (d) => `${d.family.name}에 입양됐어요. 오늘부터 이름은 '${d.name}'!`, effect: { bond: 10 }, memory: true, key: 'adopt' },
@@ -283,7 +322,6 @@ const POOL: Pool = [
   { min: 1, max: 9, icon: '🌊', text: () => '처음으로 바다에 갔어요. 파도한테 짖었어요.', effect: { happy: 7 }, memory: true, key: 'sea' },
   { min: 1.5, max: 8, icon: '⛺', text: () => '가족과 캠핑을 떠났어요. 텐트 안이 제일 좋았대요.', effect: { happy: 6, bond: 5 }, memory: true, key: 'camping' },
   { min: 2, max: 10, icon: '🐱', text: () => '집에 고양이 동생이 왔어요. 아직은 서로 눈치 보는 중.', effect: { happy: -2 }, friend: true },
-  { min: 2, max: 10, icon: '👶', text: () => '사람 아기가 태어났어요. 아기 침대 옆을 지키는 경비원이 됐어요.', effect: { bond: 6 }, memory: true, key: 'baby', when: (d) => d.family.id === 'couple' },
   { min: 2, max: 11, icon: '📦', text: () => '이사를 했어요. 새 집 구석구석 냄새 확인 완료.', effect: { happy: -1, bond: 2 } },
   { min: 2, max: 12, icon: '❄️', text: () => '첫눈이 왔어요. 눈밭에서 미친 듯이 뛰어다녔어요.', effect: { happy: 6 }, memory: true, key: 'snow' },
   { min: 1, max: 12, icon: '😴', text: V('햇볕 드는 창가에서 낮잠. 오늘도 평화로운 하루.', '빨래 바구니 속에서 잠든 채 발견됐어요.', '가족 발밑에서 코를 골며 낮잠을 잤어요.', '비 오는 날, 하루 종일 이불 속에서 뒹굴었어요.'), effect: { happy: 3 }, when: (d) => d.personality.id === 'sleepy' || Math.random() < 0.5 },
@@ -308,6 +346,39 @@ const POOL: Pool = [
   { min: 1, max: 12, icon: '🍂', text: () => '낙엽 더미에 뛰어들어 온몸에 나뭇잎을 붙이고 왔어요.', effect: { happy: 4 }, memory: true, key: 'leaves' },
   { min: 3, max: 12, icon: '🚗', text: () => '창문 열린 차 안에서 귀를 휘날리며 드라이브했어요.', effect: { happy: 5 }, memory: true, key: 'drive' },
   { min: 5, max: 14, icon: '🐶', text: () => '새로 온 아기 강아지에게 산책 길을 가르쳐 줬어요.', effect: { happy: 3, bond: 2 }, friend: true, memory: true, key: 'teacher', when: (d) => d.personality.id === 'calm' || Math.random() < 0.3 },
+  // ── 선택이 이어지는 사건 ──
+  { min: 1, max: 4, icon: '🎓', text: () => '강아지 유치원 졸업식에서 "모범견상"을 받았어요.', effect: { happy: 5, bond: 3 }, memory: true, key: 'kgrad', need: 'kinder' },
+  { min: 1, max: 8, icon: '🛌', text: () => '오늘도 이불 속 제일 따뜻한 자리를 먼저 차지했어요.', effect: { bond: 3 }, need: 'bedbuddy' },
+  { min: 2, max: 9, icon: '🚇', text: () => '처음 타 본 지하철에서도 의젓하게 앉아 있었어요. 사회화의 힘!', effect: { happy: 3 }, need: 'brave' },
+  { min: 3, max: 10, icon: '⛰️', text: () => '주말 등산 백 번째! 산 정상에서 기념사진을 찍었어요.', effect: { health: 4, happy: 4 }, memory: true, key: 'hike100', need: 'hiker' },
+  { min: 3, max: 10, icon: '🛋️', text: () => '소파에 내 엉덩이 모양 자국이 생겼어요. 우리 둘만의 명당.', effect: { bond: 4 }, need: 'couch' },
+  { min: 3, max: 10, icon: '✈️', text: () => '제주도 여행! 비행기는 무서웠지만 바다는 최고였어요.', effect: { happy: 7 }, memory: true, key: 'jeju', need: 'traveler' },
+  { min: 3, max: 9, icon: '🥈', text: V('어질리티 대회 은메달! 터널 앞에서 잠깐 망설인 게 아쉬웠어요.', '어질리티 대회 금메달! 관중석에서 가족이 제일 크게 소리쳤어요.'), effect: { happy: 7 }, memory: true, key: 'medal', need: 'athlete' },
+  { min: 3, max: 10, icon: '🏃', text: () => '가족과 5km 마라톤을 끝까지 완주했어요.', effect: { health: 5, happy: 5 }, memory: true, key: 'marathon', need: 'runner' },
+  { min: 3, max: 10, icon: '🔥', text: () => '단골 캠핑장 사장님이 이름을 외워 간식을 챙겨 줘요.', effect: { happy: 4 }, friend: true, need: 'camper' },
+  { min: 3, max: 10, icon: '📱', text: V('사진 한 장이 인기 게시물에 올라갔어요. 팔로워 1만 돌파!', '팬이 손편지와 간식을 보내왔어요.'), effect: { happy: 5 }, memory: true, key: 'famous', need: 'sns' },
+  { min: 5, max: 12, icon: '🏋️', text: () => '동물병원에서 "몸매 관리 모범견"이라고 칭찬받았어요.', effect: { health: 3 }, need: 'fit' },
+  { min: 5, max: 12, icon: '⚖️', text: () => '체중계에 올라간 순간 가족이 웃음을 참지 못했어요.', effect: { happy: 2, health: -2 }, need: 'chubby' },
+  { min: 5, max: 12, icon: '🐕', text: (d) => `동생 ${d.sibling?.name ?? '강아지'}랑 산책하다 줄이 서로 꼬였어요.`, effect: { happy: 4 }, need: 'sibling' },
+  { min: 6, max: 14, icon: '🍚', text: () => '동생에게 밥그릇을 한 입 양보했어요. 형·언니가 다 됐어요.', effect: { bond: 4 }, memory: true, key: 'sibshare', need: 'sibling' },
+  { min: 6, max: 14, icon: '🌳', text: () => '창밖 공원 벤치가 우리 가족의 아침 산책 출발점이에요.', effect: { health: 3 }, need: 'park' },
+  { min: 8, max: 15, icon: '🩺', text: () => '정기 검진에서 작은 혹을 일찍 발견해 바로 치료했어요. 금방 회복!', effect: { health: 6, bond: 3 }, memory: true, key: 'earlycatch', need: 'checked' },
+  { min: 8, max: 16, icon: '🏊', text: () => '수영장 선생님이 "제일 오래 다닌 학생"이라며 메달을 걸어 줬어요.', effect: { happy: 5 }, need: 'swimmer' },
+  { min: 8, max: 16, icon: '💆', text: () => '마사지 시간만 되면 먼저 와서 배를 보이고 누워요.', effect: { bond: 4 }, need: 'massage' },
+  // ── 가족의 변화 (장면 속 가족도 바뀌어요) ──
+  { min: 2, max: 9, icon: '💒', text: () => '집사가 결혼했어요. 새 가족이 생겼어요!', effect: { bond: 3, happy: 3 }, memory: true, key: 'newfamily', once: 'family', when: (d) => (d.family.id === 'single' || d.family.id === 'student') && Math.random() < 0.6, apply: (d) => { d.household.extra.push('adult'); d.flags.push('once:wed'); } },
+  { min: 2, max: 9, icon: '👶', text: () => '사람 아기가 태어났어요. 아기 침대 옆을 지키는 경비원이 됐어요.', effect: { bond: 6 }, memory: true, key: 'baby', once: 'baby', when: (d) => (d.family.id === 'couple' || d.flags.includes('once:wed')) && Math.random() < 0.6, apply: (d) => d.household.extra.push('baby') },
+  { min: 5, max: 12, icon: '🎒', text: () => '큰아이가 대학에 가서 집을 떠났어요. 주말에 돌아오면 제일 먼저 달려가요.', effect: { happy: -2, bond: 3 }, memory: true, key: 'leave', once: 'family', when: (d) => d.family.id === 'kids' && Math.random() < 0.6, apply: (d) => { d.household.away = 1; } },
+  { min: 2, max: 10, icon: '👧', text: () => '손주가 여름방학 내내 놀러 와서 매일 같이 뛰어놀았어요.', effect: { happy: 6 }, memory: true, key: 'grandkid', once: 'family', when: (d) => d.family.id === 'grand' && Math.random() < 0.6, apply: (d) => d.household.extra.push('child') },
+  { min: 2, max: 10, icon: '👵', text: () => '시골집에 이웃 할머니가 자주 놀러 와서 누룽지를 챙겨 줘요.', effect: { happy: 4 }, friend: true, once: 'family', when: (d) => d.family.id === 'farm' && Math.random() < 0.6, apply: (d) => d.household.extra.push('adult') },
+  // ── 아주 드문 순간 ✨ ──
+  { min: 2, max: 12, icon: '📺', text: () => 'TV 동물 프로그램에 출연했어요! 방송 다음 날 동네 스타가 됐어요.', effect: { happy: 8 }, memory: true, key: 'tv', rare: true, when: () => Math.random() < 0.03 },
+  { min: 2, max: 12, icon: '🦸', text: () => '길 잃은 아이 옆을 지키며 짖어서 엄마를 찾게 도왔어요.', effect: { bond: 8, happy: 5 }, memory: true, key: 'hero', rare: true, when: () => Math.random() < 0.025 },
+  { min: 3, max: 12, icon: '🏅', text: () => '치료견 자격증을 땄어요. 병원 어르신들을 만나러 다녀요.', effect: { happy: 6, bond: 5 }, memory: true, key: 'therapy', rare: true, when: (d) => (d.personality.id === 'calm' || d.personality.id === 'sweet') && Math.random() < 0.05 },
+  { min: 2, max: 10, icon: '👑', text: () => '도그쇼에서 "베스트 인 쇼"를 받았어요!', effect: { happy: 8 }, memory: true, key: 'bestshow', rare: true, when: () => Math.random() < 0.02 },
+  { min: 2, max: 12, icon: '🗓️', text: () => '사진이 반려견 달력 표지에 실렸어요.', effect: { happy: 6 }, memory: true, key: 'calendar', rare: true, when: () => Math.random() < 0.03 },
+  { min: 2, max: 14, icon: '🚨', text: () => '한밤중 이상한 타는 냄새를 먼저 알아채고 짖어서 가족을 깨웠어요.', effect: { bond: 10 }, memory: true, key: 'alarm', rare: true, when: () => Math.random() < 0.02 },
+  { min: 1, max: 10, icon: '🍀', text: () => '산책길 풀숲에서 네잎클로버를 물고 왔어요.', effect: { happy: 5 }, memory: true, key: 'clover', rare: true, when: () => Math.random() < 0.03 },
   // ── 아기 시절 ──
   { min: 0.1, max: 1, icon: '🦴', text: V('처음 받은 개껌을 하루 종일 지켰어요.', '이가 간지러워 의자 다리를 살짝 갉았어요.'), effect: { happy: 3 } },
   { min: 0.1, max: 1, icon: '🪞', text: () => '거울 속 강아지에게 한참을 짖었어요. 범인은 자기 자신.', effect: { happy: 3 } },
@@ -362,6 +433,8 @@ export function eventsForYear(d: Dog, year: number, used: Set<number>): LifeEven
   const out: LifeEvent[] = [];
   const cands = POOL.map((p, i) => ({ p, i })).filter(({ p, i }) => {
     if (used.has(i) && !(p.icon === '🐾' || p.icon === '😴')) return false;
+    if (p.need && !d.flags.includes(p.need)) return false;
+    if (p.once && d.flags.includes(`once:${p.once}`)) return false;
     const lo = Math.max(p.min, year);
     const hi = Math.min(p.max, year + 1, d.lifespan);
     return lo < hi && (!p.when || p.when(d));
@@ -369,13 +442,19 @@ export function eventsForYear(d: Dog, year: number, used: Set<number>): LifeEven
   // 0살은 입양을 반드시 먼저
   if (year === 0) cands.sort((a, b) => a.p.min - b.p.min);
   for (let k = 0; k < count && cands.length; k++) {
-    const idx = year === 0 && k === 0 ? 0 : Math.floor(Math.random() * cands.length);
+    // 선택이 이어지는 사건·가족 변화는 3배 잘 뽑히게
+    const w = cands.map(({ p }) => (p.need || p.once ? 3 : 1));
+    let r = Math.random() * w.reduce((a, b) => a + b, 0);
+    let wi = 0;
+    while (wi < w.length - 1 && (r -= w[wi]) > 0) wi++;
+    const idx = year === 0 && k === 0 ? 0 : wi;
     const { p, i } = cands.splice(idx, 1)[0];
     used.add(i);
+    if (p.once) d.flags.push(`once:${p.once}`);
     const lo = Math.max(p.min, year);
     const hi = Math.min(p.max, year + 1, d.lifespan);
     const age = year === 0 ? lo + (hi - lo) * (k / 3 + Math.random() * 0.2) : rand(lo, hi);
-    out.push({ age, month: Math.floor((age % 1) * 12), icon: p.icon, text: p.text(d), effect: p.effect, memory: p.memory, key: p.key });
+    out.push({ age, month: Math.floor((age % 1) * 12), icon: p.icon, text: p.text(d), effect: p.effect, memory: p.memory, key: p.key, rare: p.rare, apply: p.apply });
     if (p.friend) d.friends++;
   }
   return out.sort((a, b) => a.age - b.age);
@@ -412,6 +491,27 @@ export function ageText(age: number) {
   const y = Math.floor(age);
   const m = Math.floor((age - y) * 12);
   return y === 0 ? `${m}개월` : m ? `${y}살 ${m}개월` : `${y}살`;
+}
+
+// ── 견생 칭호: 살아온 기록으로 붙는 별명 (최대 3개) ──
+export function titlesOf(d: Dog, memories: number): string[] {
+  const t: [boolean, string][] = [ // 드문 칭호부터
+    [d.rare >= 2, '✨ 전설의 강아지'],
+    [d.rare === 1, '✨ 특별한 순간을 가진 강아지'],
+    [d.flags.includes('sns') || d.flags.includes('athlete'), '🌟 동네 스타'],
+    [d.friends >= 4, '🐾 동네 인싸'],
+    [!!d.sibling, '🐕 든든한 형·언니'],
+    [d.lifespan > d.breed.life[1], '🎖️ 장수견'],
+    [d.walks > 10000, '👟 산책왕'],
+    [d.treats > 13000, '🍖 간식 감별사'],
+    [d.personality.id === 'shy' && d.flags.includes('brave'), '🦁 용감해진 겁쟁이'],
+    [d.stats.health >= 60 && d.lifespan > (d.breed.life[0] + d.breed.life[1]) / 2, '💪 건강 지킴이'],
+    // 흔한 칭호는 뒤에: 다른 칭호가 적을 때만 보여요
+    [memories >= 13, '📔 추억 부자'],
+    [d.stats.bond >= 99, '💞 가족 바라기'],
+  ];
+  const out = t.filter(([ok]) => ok).map(([, s]) => s);
+  return (out.length ? out : ['🏡 우리 집 막내']).slice(0, 3);
 }
 
 // ── 강아지별로 가기 전, 가족에게 남기는 말 ──
@@ -462,6 +562,24 @@ const BY_MEMORY: Record<string, string[]> = {
   oldfriend: ['산책길에서 다시 만난 친구한테, 내가 먼저 갔다고 전해 줘.'],
   album: ['사진첩 넘기며 웃던 너를 보는 게 좋았어. 가끔 그 사진첩 꺼내 봐.'],
   moon: ['보름달 뜬 밤에 빈 소원, 사실 너랑 오래오래 있게 해 달라는 거였어.'],
+  kgrad: ['유치원 모범견상, 그거 사실 간식 때문에 받은 거야.'],
+  hike100: ['백 번 오른 산, 정상에서 맡던 바람 냄새 아직 코끝에 있어.'],
+  jeju: ['제주도 바다, 비행기는 무서웠지만 너랑 가서 괜찮았어.'],
+  medal: ['어질리티 메달, 사실 네 응원 소리 듣고 달린 거야.'],
+  marathon: ['5km 완주한 날, 너랑 나 둘 다 헥헥거렸잖아.'],
+  famous: ['팔로워 1만 명보다 네 한 명이 더 좋았어.'],
+  sibshare: ['동생한테 밥 양보한 거, 다음엔 걔가 너한테 양보할 거야.'],
+  earlycatch: ['검진 덕분에 아픈 걸 일찍 찾았잖아. 네가 날 지켜 준 거야.'],
+  newfamily: ['새 가족이 생긴 날, 나도 가족이 하나 더 생겼어.'],
+  leave: ['주말마다 돌아오는 발소리, 나는 멀리서도 다 알아들었어.'],
+  grandkid: ['손주랑 뛰어놀던 여름방학, 그해 여름이 제일 짧았어.'],
+  tv: ['TV에 나왔던 거, 강아지별 친구들한테 자랑할 거야.'],
+  hero: ['길 잃은 아이 지켜 준 날, 너한테 배운 대로 한 거야.'],
+  therapy: ['병원 어르신들 손 잡아 드리던 일, 너 닮아서 잘했던 거야.'],
+  bestshow: ['베스트 인 쇼 트로피, 거실 제일 잘 보이는 데 놔 줘.'],
+  calendar: ['달력 표지의 나, 일 년 내내 너를 지켜보고 있었어.'],
+  alarm: ['그날 밤 짖은 거, 너를 지키는 게 내 일이었으니까.'],
+  clover: ['네잎클로버, 사실 너한테 행운 주려고 물어 온 거야.'],
   teacher: ['동생 강아지한테 산책길 다 가르쳐 줬어. 이제 걔가 너를 지켜 줄 거야.'],
 };
 const BY_PERSONALITY: Record<string, string[]> = {
