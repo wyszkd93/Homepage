@@ -37,6 +37,14 @@ const HOURS = [
           {HOURS.map(([h, name, range], i) => <option value={i}>{name} ({h}) · {range}</option>)}
         </select>
       </label>
+      <label class="sj-gender">
+        <span>성별</span>
+        <select id="sj-gender" class="tool-select">
+          <option value="">선택 안 함</option>
+          <option value="female">여성</option>
+          <option value="male">남성</option>
+        </select>
+      </label>
       <button class="sj-go" type="submit">🔮 사주 보기</button>
     </form>
 
@@ -65,6 +73,37 @@ const HOURS = [
         <p id="sj-me-text"></p>
       </section>
 
+      <section class="tool-panel sj-read">
+        <h2>원국 구조와 성격 <span id="sj-st-title" class="sj-sub"></span></h2>
+        <p id="sj-gods" class="sj-gods"></p>
+        <div id="sj-structure"></div>
+      </section>
+
+      <section class="tool-panel sj-read">
+        <h2>재물과 직업</h2>
+        <div id="sj-money"></div>
+      </section>
+
+      <section class="tool-panel sj-read">
+        <h2>인간관계와 연애·결혼</h2>
+        <div id="sj-relation"></div>
+      </section>
+
+      <section class="tool-panel sj-read">
+        <h2>대운 흐름 <span id="sj-du-note" class="sj-sub"></span></h2>
+        <div id="sj-daeun"></div>
+      </section>
+
+      <section class="tool-panel sj-read">
+        <h2>올해의 운세 <span id="sj-year-title" class="sj-sub"></span></h2>
+        <div id="sj-year"></div>
+      </section>
+
+      <section class="tool-panel sj-read">
+        <h2>개운(開運) 습관 3가지</h2>
+        <ol id="sj-habits" class="sj-habits"></ol>
+      </section>
+
       <section class="tool-panel sj-today">
         <h2>오늘의 운세 <span id="sj-today-date" class="sj-sub"></span></h2>
         <p id="sj-today-sum" class="sj-today-sum"></p>
@@ -74,7 +113,8 @@ const HOURS = [
       </section>
 
       <p class="sj-disclaimer">
-        절기는 해마다 하루쯤 차이가 나서 평균 날짜로 계산했어요. 절기 무렵에 태어났다면 월주가 다를 수 있어요.
+        절기는 해마다 하루쯤 차이가 나서 평균 날짜로 계산했어요. 절기 무렵에 태어났다면 월주·대운수가 다를 수 있어요.
+        풀이는 자평명리의 기본 규칙(십성, 신강·신약, 억부 용신)을 단순화해 자동으로 만든 것이라 실제 상담과 다를 수 있어요.
         결과는 재미로만 봐 주세요. 입력한 생년월일은 이 브라우저에만 저장되고 어디에도 보내지 않아요.
       </p>
     </div>
@@ -87,12 +127,15 @@ const HOURS = [
     STEMS, STEMS_KO, BRANCHES, BRANCHES_KO, ANIMALS, ELEMENTS, ELEMENT_KO, ELEMENT_HANJA,
     type Element, type Pillar, type Relation,
   } from '../../utils/saju';
+  import { reading, type Gender } from '../../utils/saju-reading';
 
   const KEY = 'game:saju';
   const $ = (id: string) => document.getElementById(id)!;
   const form = $('sj-form') as HTMLFormElement;
   const dateIn = $('sj-date') as HTMLInputElement;
   const hourIn = $('sj-hour') as HTMLSelectElement;
+  const genderIn = $('sj-gender') as HTMLSelectElement;
+  const paras = (list: string[]) => list.map((t) => `<p>${t}</p>`).join('');
 
   const COLOR: Record<Element, string> = { wood: '#3f9b5a', fire: '#e0563b', earth: '#c9952a', metal: '#8a8f98', water: '#3b6fd1' };
   const LUCKY: Record<Element, { color: string; num: string; dir: string; food: string }> = {
@@ -169,11 +212,13 @@ const HOURS = [
     return '★'.repeat(s) + '☆'.repeat(5 - s);
   }
 
-  function render(dateStr: string, hourStr: string) {
+  function render(dateStr: string, hourStr: string, genderStr: string) {
     const [y, m, d] = dateStr.split('-').map(Number);
     if (!y || !m || !d) return;
     const hour = hourStr === '' ? null : Number(hourStr);
     const s = calcSaju(y, m, d, hour);
+    const gender = (genderStr === 'male' || genderStr === 'female' ? genderStr : null) as Gender;
+    const r = reading(s, { y, m, d }, gender);
 
     $('sj-pillars').innerHTML = cell('시주', s.hour) + cell('일주', s.day) + cell('월주', s.month) + cell('년주', s.year);
     $('sj-animal').textContent =
@@ -190,11 +235,11 @@ const HOURS = [
     const max = Math.max(...ELEMENTS.map((e) => s.counts[e]));
     const strong = ELEMENTS.filter((e) => s.counts[e] === max).map((e) => ELEMENT_KO[e]);
     const missing = ELEMENTS.filter((e) => s.counts[e] === 0);
-    const weakest = [...ELEMENTS].sort((a, b) => s.counts[a] - s.counts[b])[0];
     $('sj-balance').textContent =
       `${strong.join('·')} 기운이 가장 강해요. ` +
+      `내게 필요한 기운(용신)은 ${ELEMENT_KO[r.yongsin]}${r.yongsin === 'wood' || r.yongsin === 'metal' ? '이라' : '라'}, ${LUCKY[r.yongsin].color}색 소품으로 채워 보면 좋아요. ` +
       (missing.length
-        ? `${missing.map((e) => ELEMENT_KO[e]).join('·')} 기운이 없어서, ${LUCKY[missing[0]].color}색 소품으로 채워 보면 좋아요.`
+        ? `${missing.map((e) => ELEMENT_KO[e]).join('·')} 기운은 없어요.`
         : '다섯 기운이 모두 있어 균형이 좋은 편이에요.');
 
     const me = ME[s.day.stem];
@@ -215,7 +260,7 @@ const HOURS = [
     $('sj-stars').innerHTML = cats
       .map((c, i) => `<li><span>${c}</span><span class="sj-star">${stars(t.base + t.bias[i] + (rand() - 0.5) * 2)}</span></li>`)
       .join('');
-    const lucky = LUCKY[weakest];
+    const lucky = LUCKY[r.yongsin];
     $('sj-lucky').innerHTML = [
       ['🎨 행운의 색', lucky.color],
       ['🔢 행운의 숫자', lucky.num],
@@ -224,14 +269,33 @@ const HOURS = [
     ].map(([k, v]) => `<li><span>${k}</span><strong>${v}</strong></li>`).join('');
     $('sj-mogu').textContent = `🐶 모구의 한마디: ${MOGU[Math.floor(rand() * MOGU.length)]}`;
 
+    $('sj-st-title').textContent = r.structure.title;
+    $('sj-gods').textContent = r.structure.gods;
+    $('sj-structure').innerHTML = paras(r.structure.paras);
+    $('sj-money').innerHTML = paras(r.money);
+    $('sj-relation').innerHTML = paras(r.relation);
+    if (r.daeun) {
+      $('sj-du-note').textContent = r.daeun.note;
+      $('sj-daeun').innerHTML =
+        `<ul class="sj-du">${r.daeun.rows
+          .map((d) => `<li class="${d.current ? 'is-now' : ''}"><span class="sj-du-age">${d.age}</span><strong>${d.pillar}</strong><span>${d.theme}</span><span class="sj-fav sj-fav-${d.fav}">${d.fav}</span></li>`)
+          .join('')}</ul>` + paras(r.daeun.paras);
+    } else {
+      $('sj-du-note').textContent = '';
+      $('sj-daeun').innerHTML = paras(['대운은 성별에 따라 흐르는 방향이 달라요. 위에서 성별을 고르면 10년 단위 대운을 볼 수 있어요.']);
+    }
+    $('sj-year-title').textContent = r.year.title;
+    $('sj-year').innerHTML = paras(r.year.paras);
+    $('sj-habits').innerHTML = r.habits.map((h) => `<li>${h}</li>`).join('');
+
     $('sj-result').hidden = false;
   }
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     if (!dateIn.value) return;
-    try { localStorage.setItem(KEY, JSON.stringify({ date: dateIn.value, hour: hourIn.value })); } catch {}
-    render(dateIn.value, hourIn.value);
+    try { localStorage.setItem(KEY, JSON.stringify({ date: dateIn.value, hour: hourIn.value, gender: genderIn.value })); } catch {}
+    render(dateIn.value, hourIn.value, genderIn.value);
     $('sj-result').scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 
@@ -240,7 +304,8 @@ const HOURS = [
     if (saved?.date) {
       dateIn.value = saved.date;
       hourIn.value = saved.hour ?? '';
-      render(saved.date, hourIn.value);
+      genderIn.value = saved.gender ?? '';
+      render(saved.date, hourIn.value, genderIn.value);
     }
   } catch {}
 </script>
@@ -369,6 +434,46 @@ const HOURS = [
     background: var(--accent-soft);
     line-height: 1.6;
   }
+  .sj-gender { flex: 0 1 140px !important; }
+  .sj-read p { margin: 0 0 10px; line-height: 1.8; }
+  .sj-read p:last-child { margin-bottom: 0; }
+  .sj-read :global(p) { margin: 0 0 10px; line-height: 1.8; }
+  .sj-read :global(p:last-child) { margin-bottom: 0; }
+  .sj-gods {
+    font-size: 0.85rem;
+    color: var(--ink-muted);
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: var(--surface-2);
+    margin-bottom: 14px !important;
+  }
+  .sj-read :global(.sj-du) {
+    list-style: none;
+    margin: 0 0 14px;
+    padding: 0;
+  }
+  .sj-read :global(.sj-du li) {
+    display: grid;
+    grid-template-columns: 84px 110px 1fr 44px;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--hairline);
+    font-size: 0.9rem;
+  }
+  .sj-read :global(.sj-du li.is-now) {
+    background: var(--accent-soft);
+    border-radius: 10px;
+    border-bottom-color: transparent;
+  }
+  .sj-read :global(.sj-du-age) { color: var(--text-muted); font-size: 0.85rem; }
+  .sj-read :global(.sj-fav) { font-size: 0.78rem; font-weight: 700; text-align: center; border-radius: 6px; padding: 2px 0; }
+  .sj-read :global(.sj-fav-좋음) { color: #1f8a5b; background: color-mix(in srgb, #1f8a5b 13%, var(--surface-1)); }
+  .sj-read :global(.sj-fav-보통) { color: var(--ink-muted); background: var(--surface-2); }
+  .sj-read :global(.sj-fav-주의) { color: #d0343f; background: color-mix(in srgb, #d0343f 12%, var(--surface-1)); }
+  .sj-habits { margin: 0; padding-left: 1.3em; line-height: 1.8; }
+  .sj-habits :global(li) { margin-bottom: 8px; }
+  .sj-habits :global(li:last-child) { margin-bottom: 0; }
   .sj-disclaimer { font-size: 0.8rem; color: var(--text-muted); line-height: 1.7; }
 
   @media (max-width: 560px) {
@@ -376,5 +481,7 @@ const HOURS = [
     .sj-pillars :global(.sj-ch) { font-size: 1.6rem; }
     .sj-stars, .sj-lucky { grid-template-columns: 1fr; gap: 0; }
     .sj-go { width: 100%; }
+    .sj-read :global(.sj-du li) { grid-template-columns: 70px 1fr 40px; }
+    .sj-read :global(.sj-du li > span:nth-child(3)) { grid-column: 2; grid-row: 2; font-size: 0.8rem; color: var(--text-muted); }
   }
 </style>
