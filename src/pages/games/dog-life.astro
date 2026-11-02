@@ -99,6 +99,21 @@ import { Image } from 'astro:assets';
       <ol id="dl-log" class="tool-panel dl-log" aria-live="polite"></ol>
     </section>
 
+    <div id="dl-movie" class="dl-movie" hidden>
+      <button id="dl-skip" class="dl-skip" type="button">건너뛰기</button>
+      <div id="dl-m-intro" class="dl-m-intro">
+        <h2 id="dl-m-title"></h2>
+        <div id="dl-m-lines"></div>
+      </div>
+      <div id="dl-m-reel" class="dl-m-reel" hidden>
+        <canvas id="dl-m-canvas" aria-hidden="true"></canvas>
+        <p id="dl-m-age" class="dl-m-age"></p>
+        <p id="dl-m-text" class="dl-m-text"></p>
+        <div id="dl-m-bar" class="dl-m-bar"></div>
+      </div>
+      <p class="dl-m-hint">화면을 누르면 다음으로 넘어가요</p>
+    </div>
+
     <div id="dl-shared" class="dl-shared" hidden>
       <p>👀 친구가 공유한 견생이에요. 나는 어떤 강아지로 태어날까요?</p>
       <button id="dl-mine" class="dl-btn" type="button">🐾 나도 해보기</button>
@@ -109,6 +124,7 @@ import { Image } from 'astro:assets';
         <p class="dl-end-icon">🌈</p>
         <p id="dl-end-title" class="dl-end-title"></p>
         <p id="dl-end-text" class="dl-end-text"></p>
+        <blockquote id="dl-letter" class="dl-letter" hidden></blockquote>
         <ul id="dl-end-stats" class="dl-end-stats"></ul>
         <div class="dl-memories">
           <h2>함께한 기억</h2>
@@ -130,7 +146,7 @@ import { Image } from 'astro:assets';
 
 <script>
   import {
-    born, eventsForYear, applyEffect, tick, stageOf, ageText, nameGa, CHOICES, BREEDS, NAMES, FAMILIES, PERSONALITIES,
+    born, eventsForYear, applyEffect, tick, stageOf, ageText, nameGa, lastWords, CHOICES, BREEDS, NAMES, FAMILIES, PERSONALITIES,
     type Dog, type LifeEvent,
   } from '../../utils/dog-life';
   import { DogScene, homeOf, coatName, SEASON_NAME } from '../../utils/dog-scene';
@@ -181,6 +197,109 @@ import { Image } from 'astro:assets';
   }
 
   const scene = new DogScene($('dl-canvas') as HTMLCanvasElement);
+  let memLog: { age: number; icon: string; text: string }[] = [];
+  let picks: Record<string, number> = {};
+  let letter: string[] = [];
+
+  // ── 마지막: 지나온 날들이 스쳐 지나가는 장면 ──
+  const LAST_WORDS = [
+    '마지막으로 꼬리를 세 번 흔들었어요.',
+    '좋아하던 담요 위에서 가족의 손을 핥아 주었어요.',
+    '가족 품에 기대어 깊은 숨을 쉬었어요.',
+    '창가의 햇살 속에서 편안히 눈을 감았어요.',
+  ];
+  function playMovie(d: Dog, done: () => void) {
+    const movie = $('dl-movie');
+    const intro = $('dl-m-intro');
+    const reel = $('dl-m-reel');
+    const mScene = new DogScene($('dl-m-canvas') as HTMLCanvasElement);
+    mScene.setDog(d);
+    const slides = [
+      { age: 0, icon: '🍼', text: `${d.family.name}에 ${d.breed.name} '${d.name}'로 왔어요.` },
+      ...memLog.slice(-8),
+      { age: d.lifespan, icon: '🌈', text: '무지개다리를 건너 모구 친구들에게 갔어요.' },
+    ];
+    $('dl-m-title').textContent = `마지막 해, ${ageText(d.lifespan)}`;
+    const lines: [string, string][] = [
+      [`${d.family.name} 곁에서 편안히 잠들었어요.`, ''],
+      [LAST_WORDS[Math.floor(Math.random() * LAST_WORDS.length)], ''],
+      [`강아지별로 가기 전, ${nameGa(d.name)} 남긴 말`, 'dl-m-letter-h'],
+      ...letter.map((t): [string, string] => [`“${t}”`, 'dl-m-letter']),
+      ['눈을 감자, 함께한 날들이 스쳐 지나갔어요.', 'dl-m-last'],
+    ];
+    $('dl-m-lines').innerHTML = '';
+    lines.forEach(([t, cls], i) => {
+      const p = document.createElement('p');
+      p.textContent = t;
+      if (cls) p.className = cls;
+      p.style.animationDelay = `${0.6 + i * 1.3}s`;
+      $('dl-m-lines').append(p);
+    });
+    const bar = $('dl-m-bar');
+    bar.innerHTML = '';
+    slides.forEach(() => bar.append(document.createElement('span')));
+    intro.hidden = false;
+    reel.hidden = true;
+    movie.hidden = false;
+    document.body.style.overflow = 'hidden';
+
+    let phase: 'intro' | 'reel' = 'intro';
+    let idx = -1;
+    let slideStart = 0;
+    let mraf = 0;
+    let introTimer = window.setTimeout(() => toReel(), 2500 + lines.length * 1300 + 2500);
+    const SLIDE_MS = 2000;
+
+    function show(i: number, now: number) {
+      idx = i;
+      slideStart = now;
+      const sl = slides[i];
+      $('dl-m-age').textContent = ageText(Math.min(sl.age, d.lifespan));
+      const t = $('dl-m-text');
+      t.classList.remove('is-in');
+      void t.offsetWidth;
+      t.textContent = `${sl.icon} ${sl.text}`;
+      t.classList.add('is-in');
+      bar.querySelectorAll('span').forEach((el, k) => el.classList.toggle('on', k <= i));
+      mScene.ended = i === slides.length - 1;
+      if (!mScene.ended) mScene.say(sl.icon, now);
+    }
+    function toReel() {
+      clearTimeout(introTimer);
+      phase = 'reel';
+      intro.hidden = true;
+      reel.hidden = false;
+      const now = performance.now();
+      show(0, now);
+      mraf = requestAnimationFrame(tickReel);
+    }
+    function tickReel(now: number) {
+      mraf = requestAnimationFrame(tickReel);
+      const sl = slides[idx];
+      const nextAge = slides[idx + 1]?.age ?? sl.age;
+      const t = Math.min(1, (now - slideStart) / SLIDE_MS);
+      mScene.frame(now, sl.age + (nextAge - sl.age) * t * 0.3, true);
+      if (now - slideStart >= SLIDE_MS + (idx === slides.length - 1 ? 1200 : 0)) next();
+    }
+    function next() {
+      if (phase === 'intro') return toReel();
+      if (idx < slides.length - 1) show(idx + 1, performance.now());
+      else close();
+    }
+    function close() {
+      clearTimeout(introTimer);
+      cancelAnimationFrame(mraf);
+      movie.hidden = true;
+      document.body.style.overflow = '';
+      movie.removeEventListener('click', onTap);
+      $('dl-skip').removeEventListener('click', onSkip);
+      done();
+    }
+    const onTap = (e: Event) => { if ((e.target as HTMLElement).id !== 'dl-skip') next(); };
+    const onSkip = (e: Event) => { e.stopPropagation(); close(); };
+    movie.addEventListener('click', onTap);
+    $('dl-skip').addEventListener('click', onSkip);
+  }
 
   // 태어나면 먼저 등록증을 보여 줍니다.
   function start() {
@@ -219,6 +338,9 @@ import { Image } from 'astro:assets';
 
   function beginLife() {
     if (!dog) return;
+    memLog = [];
+    picks = {};
+    letter = [];
     age = 0;
     year = -1;
     queue = [];
@@ -262,6 +384,7 @@ import { Image } from 'astro:assets';
       b.addEventListener('click', () => {
         if (!dog) return;
         applyEffect(dog, o.effect);
+        picks[c.id] = c.options.indexOf(o);
         log('🗳️', `${o.label} → ${o.text}`, age, 'is-choice');
         choiceIdx++;
         waiting = false;
@@ -309,7 +432,10 @@ import { Image } from 'astro:assets';
       applyEffect(dog, e.effect);
       log(e.icon, e.text, e.age, e.memory ? 'is-memory' : '');
       scene.say(e.icon, now);
-      if (e.memory) dog.memories.push(`${ageText(e.age)} · ${e.text}`);
+      if (e.memory) {
+        dog.memories.push(`${ageText(e.age)} · ${e.text}`);
+        memLog.push({ age: e.age, icon: e.icon, text: e.text });
+      }
     }
     tick(dog, next, next - age);
     age = next;
@@ -373,17 +499,33 @@ import { Image } from 'astro:assets';
     cancelAnimationFrame(raf);
     const d = dog;
     age = d.lifespan;
+    letter = lastWords(d, memLog, picks);
     log('🌈', `${nameGa(d.name)} 가족 곁에서 편안히 잠들었어요.`, age, 'is-memory');
+    log('💌', `“${letter.join(' ')}”`, age, 'is-memory');
     const score = Math.round((d.stats.happy + d.stats.bond) / 2);
     const sum: Summary = {
       b: d.breed.name, n: d.name, y: Math.round(age * 100) / 100, w: Math.round(d.walks), t: Math.round(d.treats),
       f: d.friends, s: score, fam: d.family.name, p: d.personality.name, e: d.breed.emoji, m: d.memories.slice(-3),
     };
     const stats = renderEnd(sum);
+    const lt = $('dl-letter');
+    lt.innerHTML = '';
+    const h = document.createElement('p');
+    h.className = 'dl-letter-h';
+    h.textContent = `💌 강아지별로 가기 전, ${nameGa(d.name)} 남긴 말`;
+    lt.append(h);
+    for (const t of letter) {
+      const p = document.createElement('p');
+      p.textContent = t;
+      lt.append(p);
+    }
+    lt.hidden = false;
     $('dl-shared').hidden = true;
-    $('dl-live').hidden = true;
-    $('dl-end').hidden = false;
-    $('dl-end').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    playMovie(d, () => {
+      $('dl-live').hidden = true;
+      $('dl-end').hidden = false;
+      $('dl-end').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
 
     saveLife({ breed: d.breed.name, name: d.name, years: Math.round(age * 10) / 10, walks: Math.round(d.walks), score });
     window.dispatchEvent(
@@ -504,6 +646,7 @@ import { Image } from 'astro:assets';
   const shared = unpackShare(new URLSearchParams(location.search).get('r'));
   if (shared) {
     renderEnd(shared);
+    $('dl-letter').hidden = true;
     $('dl-start').hidden = true;
     $('dl-end').hidden = false;
     $('dl-shared').hidden = false;
@@ -543,6 +686,51 @@ import { Image } from 'astro:assets';
   .dl-past ul, .dl-memories ul { margin: 0; padding-left: 1.2em; color: var(--ink-muted); font-size: 0.9rem; line-height: 1.8; }
 
   .dl-live[hidden], .dl-end[hidden], .dl-start[hidden], .dl-choice[hidden], .dl-cert[hidden] { display: none; }
+
+  /* 마지막 장면 */
+  .dl-movie {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+    background: #0e1013;
+    color: #f3ece2;
+    text-align: center;
+    cursor: pointer;
+  }
+  .dl-movie[hidden], .dl-m-intro[hidden], .dl-m-reel[hidden] { display: none; }
+  .dl-skip {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: 1px solid #4a4f57;
+    background: transparent;
+    color: #f3ece2;
+    font: inherit;
+    cursor: pointer;
+  }
+  .dl-m-intro h2 { margin: 0 0 22px; font-size: clamp(1.8rem, 7vw, 2.6rem); font-weight: 800; animation: dl-fade 1s ease both; }
+  .dl-m-intro :global(p) { margin: 0 0 12px; font-size: 1.05rem; line-height: 1.7; opacity: 0; animation: dl-fade 1s ease forwards; }
+  .dl-m-reel { width: min(720px, 100%); }
+  .dl-m-reel canvas { display: block; width: 100%; height: auto; aspect-ratio: 240 / 110; image-rendering: pixelated; border-radius: 10px; }
+  .dl-m-intro :global(.dl-m-letter-h) { margin-top: 26px; color: #e9b77a; font-size: 0.92rem; font-weight: 700; }
+  .dl-m-intro :global(.dl-m-letter) { font-size: 1.08rem; color: #fff6ea; max-width: 30em; margin-left: auto; margin-right: auto; word-break: keep-all; }
+  .dl-m-intro :global(.dl-m-last) { margin-top: 26px; color: #a8a29a; }
+  .dl-m-intro { max-height: calc(100vh - 120px); overflow-y: auto; }
+  .dl-m-age { margin: 18px 0 6px; color: #a8a29a; font-size: 0.95rem; }
+  .dl-m-text { margin: 0; min-height: 3.4em; font-size: 1.15rem; line-height: 1.6; word-break: keep-all; opacity: 0; }
+  .dl-m-text:global(.is-in) { animation: dl-fade 0.6s ease forwards; }
+  .dl-m-bar { display: flex; gap: 3px; margin-top: 22px; }
+  .dl-m-bar :global(span) { flex: 1; height: 5px; border-radius: 2px; background: #2c3138; transition: background 0.3s; }
+  .dl-m-bar :global(span.on) { background: #6fbf8a; }
+  .dl-m-hint { position: absolute; bottom: 20px; left: 0; right: 0; margin: 0; color: #6f6a64; font-size: 0.85rem; }
+  @keyframes dl-fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
   /* 견생 등록증 */
   .dl-cert {
@@ -649,6 +837,19 @@ import { Image } from 'astro:assets';
   .dl-shared[hidden], .dl-memories[hidden] { display: none; }
   .dl-shared p { margin: 0; font-weight: 600; }
   .dl-end-card { text-align: center; }
+  .dl-letter {
+    margin: 0 0 18px;
+    padding: 16px 18px;
+    border-radius: 14px;
+    background: var(--accent-soft);
+    text-align: left;
+    line-height: 1.8;
+    word-break: keep-all;
+  }
+  .dl-letter[hidden] { display: none; }
+  .dl-letter :global(p) { margin: 0 0 6px; }
+  .dl-letter :global(p:last-child) { margin-bottom: 0; }
+  .dl-letter :global(.dl-letter-h) { font-weight: 700; color: var(--accent); margin-bottom: 8px; }
   .dl-end-icon { font-size: 2.6rem; margin: 0; }
   .dl-end-title { font-size: 1.3rem; font-weight: 800; margin: 6px 0 8px; }
   .dl-end-text { margin: 0 0 16px; line-height: 1.8; color: var(--ink-muted); }
