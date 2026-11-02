@@ -2,6 +2,7 @@
 import Base from '../../layouts/Base.astro';
 import KakaoShare from '../../components/KakaoShare.astro';
 import sajuMogu from '../../assets/saju-mogu.webp';
+import { Image } from 'astro:assets';
 
 // 태어난 시(시진). 한국 표준시 기준으로 30분씩 늦춰 나눕니다.
 const HOURS = [
@@ -27,6 +28,16 @@ const HOURS = [
   ogImage={sajuMogu}
   tagline="생년월일을 넣으면 모구가 사주팔자와 오늘의 운세를 봐 드려요 · 재미로만 봐 주세요"
 >
+  <Image
+    slot="aside"
+    class="hero-art"
+    src={sajuMogu}
+    widths={[320, 480, 720]}
+    sizes="(max-width: 720px) 240px, 320px"
+    alt="한복 조끼를 입은 포메라니안 모구가 수정구슬과 만세력을 앞에 두고 사주를 봐 주는 그림"
+    loading="eager"
+  />
+
   <div class="sj">
     <form id="sj-form" class="tool-panel sj-form">
       <label>
@@ -133,6 +144,7 @@ const HOURS = [
     type Element, type Pillar, type Relation,
   } from '../../utils/saju';
   import { reading, type Gender } from '../../utils/saju-reading';
+  import { drawSajuCard } from '../../utils/saju-card';
 
   const KEY = 'game:saju';
   const $ = (id: string) => document.getElementById(id)!;
@@ -262,9 +274,11 @@ const HOURS = [
     $('sj-today-date').textContent = `${now.getMonth() + 1}월 ${now.getDate()}일 · ${STEMS[today.stem]}${BRANCHES[today.branch]}일`;
     $('sj-today-sum').textContent = t.sum;
     const cats = ['💰 금전운', '💕 애정운', '💼 업무운', '🍀 건강운'];
+    const scores = cats.map((_, i) => t.base + t.bias[i] + (rand() - 0.5) * 2);
     $('sj-stars').innerHTML = cats
-      .map((c, i) => `<li><span>${c}</span><span class="sj-star">${stars(t.base + t.bias[i] + (rand() - 0.5) * 2)}</span></li>`)
+      .map((c, i) => `<li><span>${c}</span><span class="sj-star">${stars(scores[i])}</span></li>`)
       .join('');
+    const overall = stars(scores.reduce((a, b) => a + b, 0) / scores.length);
     const lucky = LUCKY[r.yongsin];
     $('sj-lucky').innerHTML = [
       ['🎨 행운의 색', lucky.color],
@@ -293,8 +307,21 @@ const HOURS = [
     $('sj-year').innerHTML = paras(r.year.paras);
     $('sj-habits').innerHTML = r.habits.map((h) => `<li>${h}</li>`).join('');
 
+    const meName = me.title.split(' · ')[0];
     window.dispatchEvent(
-      new CustomEvent('share:update', { detail: { text: `나는 ${me.title.split(' · ')[0]} · ${r.structure.title}. 너의 사주는?` } }),
+      new CustomEvent('share:update', {
+        detail: {
+          title: `나의 사주: ${meName}`,
+          text: `${r.structure.title} · 나도 내 사주를 봐 볼까?`,
+          items: [
+            { item: '일간', itemOp: meName },
+            { item: '구조', itemOp: r.structure.title.split(' · 용신')[0] },
+            { item: '용신', itemOp: `${ELEMENT_KO[r.yongsin]}(${ELEMENT_HANJA[r.yongsin]})` },
+            { item: '오늘 총운', itemOp: overall },
+          ],
+          image: () => drawSajuCard({ saju: s, meTitle: me.title, meIcon: me.icon, summary: r.structure.title, todayStars: overall }),
+        },
+      }),
     );
     $('sj-result').hidden = false;
   }

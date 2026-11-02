@@ -21,18 +21,30 @@ const { title, description, label = '카카오톡으로 공유하기' } = Astro.
 )}
 
 <script>
-  import { shareKakao } from '../lib/kakao';
+  import { shareKakao, type ShareOptions } from '../lib/kakao';
+
+  type Update = { text?: string; title?: string; items?: ShareOptions['items']; image?: ShareOptions['image'] };
 
   for (const btn of document.querySelectorAll<HTMLButtonElement>('.kk-btn')) {
+    let extra: Update = {};
     window.addEventListener('share:update', (e) => {
-      const text = (e as CustomEvent<{ text: string }>).detail?.text;
-      if (text) btn.dataset.desc = text;
+      const d = (e as CustomEvent<Update>).detail ?? {};
+      if (d.text) btn.dataset.desc = d.text;
+      if (d.title) btn.dataset.title = d.title;
+      extra = d;
     });
-    btn.addEventListener('click', () => {
-      shareKakao({ title: btn.dataset.title ?? document.title, description: btn.dataset.desc ?? '' }).catch((err) => {
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      await shareKakao({
+        title: btn.dataset.title ?? document.title,
+        description: btn.dataset.desc ?? '',
+        items: extra.items,
+        image: extra.image,
+      }).catch((err) => {
         console.error(err);
         alert('카카오톡 공유를 열지 못했어요. 잠시 후 다시 시도해 주세요.');
       });
+      btn.disabled = false;
     });
   }
 </script>
