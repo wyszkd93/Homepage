@@ -36,7 +36,9 @@ export async function shareKakao(opts: { title: string; description: string; but
   if (!kakaoEnabled) return;
   const Kakao = await loadSdk();
   if (!Kakao.isInitialized()) Kakao.init(KAKAO_JS_KEY);
-  const url = location.origin + location.pathname;
+  const page = location.origin + location.pathname;
+  // 카드에서 들어온 사람은 빈 화면에서 시작하도록 표시를 붙입니다.
+  const url = `${page}?from=kakao`;
   const imageUrl =
     document.querySelector<HTMLMetaElement>('meta[property="og:image"]')?.content ?? `${location.origin}/favicon.png`;
   const link = { mobileWebUrl: url, webUrl: url };
