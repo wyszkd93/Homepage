@@ -78,6 +78,7 @@ const gameTitle = TOOLS.find((t) => t.slug === game)?.title ?? game;
   import { auth, db } from '../lib/firebase';
   import { kakaoEnabled, shareKakao } from '../lib/kakao';
   import { encodeResult, decodeResult, clearShareParams } from '../lib/share-param';
+  import { drawScoreCard } from '../utils/score-card';
 
   const GAMES = ['flappy-mogu', 'fruit-merge', '2048'];
   const root = document.querySelector<HTMLElement>('.lb');
@@ -287,6 +288,17 @@ const gameTitle = TOOLS.find((t) => t.slug === game)?.title ?? game;
         title: `${root.dataset.title} ${fmt(lastScore)}점!`,
         description: '모구 홈페이지 쉬어가기에서 기록을 세웠어요. 나를 이길 수 있을까요?',
         viewQuery: `r=${encodeResult({ s: lastScore, ...(user ? { n: getName() } : {}) })}`,
+        image: () =>
+          drawScoreCard({
+            title: root.dataset.title ?? '',
+            score: lastScore!,
+            ...(user ? { name: getName(), best: myBest, rank: myRank } : {}),
+            // 링크 미리보기용 큰 그림(og:image)을 같은 사이트 주소로 불러옵니다.
+            art: (() => {
+              const og = document.querySelector<HTMLMetaElement>('meta[property="og:image"]')?.content;
+              return og ? new URL(og).pathname : document.querySelector<HTMLImageElement>('img.hero-art')?.currentSrc;
+            })(),
+          }),
       }).catch((e) => {
         console.error(e);
         show(msg, '카카오톡 공유를 열지 못했어요.', true);
