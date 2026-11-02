@@ -51,7 +51,7 @@ const blogNotes = ['직접 해 본 것만', '다시 찾기 쉽게', '오픈소�
         </li>
         <li class="note sky">
           <h3>💌 놀러 오세요</h3>
-          <ul>{PROFILE.links.map((l) => <li><a href={l.url}>{l.label}</a></li>)}</ul>
+          <ul class="links">{PROFILE.links.map((l) => <li><a href={l.url}>{l.label}</a></li>)}</ul>
         </li>
       </ul>
     </section>
@@ -163,36 +163,51 @@ const blogNotes = ['직접 해 본 것만', '다시 찾기 쉽게', '오픈소�
   .note.peach { --c: #f28b5b; }
   .note.sky { --c: #5b9cf2; }
   .note h3 {
-    font-size: 1rem;
+    font-size: 1.02rem;
     font-weight: 700;
-    margin: 0 0 12px;
+    letter-spacing: -0.01em;
+    margin: 0 0 14px;
   }
   .note ul {
     list-style: none;
     margin: 0;
     padding: 0;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px 20px;
+    counter-reset: n;
     font-size: 0.95rem;
-    font-weight: 500;
-    color: var(--ink);
     word-break: keep-all;
   }
   .note ul li {
+    counter-increment: n;
     display: flex;
-    align-items: center;
-    gap: 8px;
+    align-items: baseline;
+    gap: 14px;
+    padding: 10px 2px;
+    border-top: 1px solid color-mix(in srgb, var(--c) 28%, transparent);
+    color: var(--ink);
   }
+  .note ul li:first-child { border-top: 0; padding-top: 2px; }
+  .note ul li:last-child { padding-bottom: 0; }
   .note ul li::before {
-    content: '';
+    content: counter(n, decimal-leading-zero);
     flex: none;
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: var(--c);
+    font: 600 0.72rem/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    letter-spacing: 0.04em;
+    color: color-mix(in srgb, var(--c) 75%, var(--ink));
   }
-  .note a { font-weight: 600; }
+  .note .links a {
+    flex: 1;
+    display: flex;
+    justify-content: space-between;
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .note .links a::after {
+    content: '↗';
+    color: color-mix(in srgb, var(--c) 75%, var(--ink));
+    transition: transform 0.15s ease;
+  }
+  .note .links a:hover { text-decoration: none; color: var(--accent); }
+  .note .links a:hover::after { transform: translate(2px, -2px); }
   .tags {
     display: flex;
     flex-wrap: wrap;
