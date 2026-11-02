@@ -68,11 +68,11 @@ export const TOOLS: Tool[] = [
   },
   {
     kind: 'game',
-    slug: 'bubble-wrap',
-    title: '뽁뽁이',
-    description: '아무 생각 없이 톡톡 터뜨려요.',
-    color: '#3d9ad1',
-    icon: '<circle cx="7" cy="7" r="4"/><circle cx="17" cy="7.5" r="3.5"/><circle cx="7.5" cy="17" r="3.5"/><circle cx="17" cy="17" r="4"/>',
+    slug: 'saju',
+    title: '모구의 사주 카페',
+    description: '생년월일로 사주팔자와 오늘의 운세를 재미로 봐요.',
+    color: '#8a5cc4',
+    icon: '<circle cx="12" cy="12" r="9"/><path d="M12 3a4.5 4.5 0 0 0 0 9 4.5 4.5 0 0 1 0 9"/><circle cx="12" cy="7.5" r=".8"/><circle cx="12" cy="16.5" r=".8"/>',
     badge: 'NEW',
   },
 ];

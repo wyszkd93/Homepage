@@ -3,14 +3,16 @@
 // 게임 → 랭킹: window 'game:score' { game, score, final }  (final: 판이 끝남 → 결과 창을 띄움)
 // 랭킹 → 게임: window 'game:retry' { game }                (결과 창의 '다시 하기')
 import { url } from '../utils/url';
+import { TOOLS } from '../data/tools';
 
 interface Props {
   game: 'flappy-mogu' | 'fruit-merge' | '2048';
 }
 const { game } = Astro.props;
+const gameTitle = TOOLS.find((t) => t.slug === game)?.title ?? game;
 ---
 
-<div class="lb" data-game={game}>
+<div class="lb" data-game={game} data-title={gameTitle}>
   <div class="lb-bar">
     <span class="lb-status">랭킹 정보를 불러오는 중…</span>
     <span class="lb-actions">
@@ -44,6 +46,7 @@ const { game } = Astro.props;
     <p class="tool-msg lb-msg" aria-live="polite"></p>
     <div class="lb-buttons">
       <button class="tool-btn tool-btn-primary lb-retry" type="button" hidden>다시 하기</button>
+      <button class="tool-btn lb-share" type="button" hidden>카톡으로 자랑하기</button>
       <button class="tool-btn lb-close" type="button">닫기</button>
     </div>
   </dialog>
@@ -69,6 +72,7 @@ const { game } = Astro.props;
     collection, deleteDoc, doc, getCount, getDoc, getDocs, limit, orderBy, query, serverTimestamp, setDoc, where,
   } from 'firebase/firestore/lite';
   import { auth, db } from '../lib/firebase';
+  import { kakaoEnabled, shareKakao } from '../lib/kakao';
 
   const GAMES = ['flappy-mogu', 'fruit-merge', '2048'];
   const SKIP_KEY = 'lb:skip-login';
@@ -211,6 +215,7 @@ const { game } = Astro.props;
       $('.lb-r-title').textContent = isEnd ? '게임 끝!' : '🏆 랭킹 TOP 10';
       $('.lb-r-score').hidden = !isEnd;
       $('.lb-retry').hidden = !isEnd;
+      $('.lb-share').hidden = !(isEnd && kakaoEnabled && (score ?? 0) > 0);
       $('.lb-badge').hidden = true;
       if (isEnd) $('.lb-r-now').textContent = fmt(score);
       const login = $('.lb-r-login');
@@ -277,6 +282,17 @@ const { game } = Astro.props;
     // ── 결과 창 버튼 ──
     $('.lb-open').addEventListener('click', () => openResult(null));
     $('.lb-close').addEventListener('click', () => resultDlg.close());
+    $('.lb-share').addEventListener('click', () => {
+      if (lastScore === null) return;
+      shareKakao({
+        title: `${root.dataset.title} ${fmt(lastScore)}점!`,
+        description: '모구 홈페이지 쉬어가기에서 기록을 세웠어요. 나를 이길 수 있을까요?',
+        buttonTitle: '도전하기',
+      }).catch((e) => {
+        console.error(e);
+        show(msg, '카카오톡 공유를 열지 못했어요.', true);
+      });
+    });
     $('.lb-retry').addEventListener('click', () => {
       resultDlg.close();
       window.dispatchEvent(new CustomEvent('game:retry', { detail: { game } }));
@@ -402,4 +418,6 @@ const { game } = Astro.props;
   .lb-name { width: 100%; text-align: center; font-size: 1.05rem; }
   .lb-name-dlg .lb-delete { font-weight: 500; color: var(--text-muted); font-size: 0.82rem; }
   .lb-name-dlg .lb-delete:hover { color: #c2414b; }
+  .lb-share { background: #fee500; border-color: #fee500; color: #191919; font-weight: 700; }
+  .lb-share:hover { filter: brightness(0.97); }
 </style>
