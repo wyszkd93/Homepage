@@ -15,6 +15,7 @@ const recent = (await getPosts()).slice(0, 6);
 <Base heading={PROFILE.name} tagline={PROFILE.tagline}>
   <ul class="hero-links" slot="hero">
     {PROFILE.links.map((l) => <li><a class="cta-btn" href={l.url}>{l.label}</a></li>)}
+    <li class="hero-more"><a href={url('/about/')}>소개 더 보기 →</a></li>
   </ul>
   <Image
     slot="aside"
@@ -27,36 +28,12 @@ const recent = (await getPosts()).slice(0, 6);
   />
 
   <section class="section">
-    <h2 class="section-title">소개</h2>
-    <div class="lead">
-      {PROFILE.about.map((p) => <p>{p}</p>)}
+    <div class="section-title section-head">
+      <h2>최근 글</h2>
+      <a href={url('/blog/')}>전체 보기 →</a>
     </div>
+    <PostRows posts={recent} />
   </section>
-
-  <section class="section grid-2">
-    <div>
-      <h2 class="section-title">관심 분야</h2>
-      <ul class="chips">{PROFILE.interests.map((i) => <li class="chip">{i}</li>)}</ul>
-    </div>
-    <div>
-      <h2 class="section-title">기술 스택</h2>
-      <ul class="chips">{PROFILE.stack.map((s) => <li class="chip">{s}</li>)}</ul>
-    </div>
-  </section>
-
-  {PROFILE.projects.length > 0 && (
-    <section class="section">
-      <h2 class="section-title">프로젝트</h2>
-      <ul class="cards">
-        {PROFILE.projects.map((p) => (
-          <li class="card">
-            <h3 class="card-title">{p.url ? <a href={p.url}>{p.name}</a> : p.name}</h3>
-            <p class="card-desc">{p.description}</p>
-          </li>
-        ))}
-      </ul>
-    </section>
-  )}
 
   <section class="section">
     <h2 class="section-title">유용한 기능</h2>
@@ -67,12 +44,18 @@ const recent = (await getPosts()).slice(0, 6);
     <h2 class="section-title">쉬어가기</h2>
     <ToolCards items={TOOLS.filter((t) => t.kind === 'game')} />
   </section>
-
-  <section class="section">
-    <div class="section-title section-head">
-      <h2>최근 글</h2>
-      <a href={url('/blog/')}>전체 보기 →</a>
-    </div>
-    <PostRows posts={recent} />
-  </section>
 </Base>
+
+<style>
+  .hero-more {
+    display: flex;
+    align-items: center;
+    margin-left: 6px;
+  }
+  .hero-more a {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+  .hero-more a:hover { color: var(--accent); text-decoration: none; }
+</style>
