@@ -70,6 +70,9 @@
   - 티스토리 글은 `npm run import:tistory -- study-storage93`로 가져옵니다.
 - [ ] 오픈소스 DB(MySQL·MariaDB, PostgreSQL) 글이 생기면 해당 분야가 자동으로 표시됩니다.
 
+- [ ] 관리자 로그인 (보류): Firebase Google 로그인 + Firestore 규칙에 관리자 UID. 후보 기능: 랭킹 관리(삭제·초기화), 문의하기·방명록, 통계, 문구 수정. 블로그 글 쓰기는 GitHub 연동 CMS가 필요해 난이도 높음
+- [ ] 카카오 카드 목록·앱 이름을 누르면 404: 카카오가 앱 기본 주소(https://wyszkd93.github.io)로 보냄. 제품 링크 관리에 `/Homepage` 추가 시도 또는 `wyszkd93.github.io` 저장소(루트 → /Homepage/ 이동) 생성
+
 ## 작업 방식 메모
 
 - 작업 브랜치에서 수정 → PR → CI 빌드 통과 후 merge → main 배포를 확인합니다.
