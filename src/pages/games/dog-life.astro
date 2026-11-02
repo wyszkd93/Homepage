@@ -81,7 +81,10 @@ import { Image } from 'astro:assets';
           <li><span>친구</span><strong id="dl-friends">0</strong></li>
         </ul>
         <div class="dl-ctrl">
-          <button id="dl-pause" class="tool-btn" type="button">❚❚ 멈춤</button>
+          <span class="dl-ctrl-l">
+            <button id="dl-pause" class="tool-btn" type="button">❚❚ 멈춤</button>
+            <button id="dl-music" class="tool-btn" type="button" aria-pressed="true">♪ 음악</button>
+          </span>
           <span class="dl-speed" role="group" aria-label="빠르기">
             <button class="tool-btn" type="button" data-speed="1" aria-pressed="true">1×</button>
             <button class="tool-btn" type="button" data-speed="2" aria-pressed="false">2×</button>
@@ -150,6 +153,7 @@ import { Image } from 'astro:assets';
     born, eventsForYear, applyEffect, tick, stageOf, ageText, nameGa, lastWords, choose, titlesOf, BREEDS, NAMES, FAMILIES, PERSONALITIES,
     type Dog, type LifeEvent,
   } from '../../utils/dog-life';
+  import { Bgm } from '../../utils/bgm';
   import { DogScene, homeOf, coatName, SEASON_NAME } from '../../utils/dog-scene';
   import { clearShareParams } from '../../lib/share-param';
 
@@ -198,6 +202,26 @@ import { Image } from 'astro:assets';
   }
 
   const scene = new DogScene($('dl-canvas') as HTMLCanvasElement);
+
+  // ── 배경음악 (WebAudio로 만든 오르골) ──
+  const bgm = new Bgm();
+  const MUSIC_KEY = 'game:dog-life:bgm';
+  let musicOn = true;
+  try { musicOn = localStorage.getItem(MUSIC_KEY) !== '0'; } catch {}
+  const musicBtn = $('dl-music');
+  const renderMusic = () => {
+    musicBtn.textContent = musicOn ? '♪ 음악 켬' : '♪ 음악 끔';
+    musicBtn.setAttribute('aria-pressed', String(musicOn));
+  };
+  renderMusic();
+  musicBtn.addEventListener('click', () => {
+    musicOn = !musicOn;
+    try { localStorage.setItem(MUSIC_KEY, musicOn ? '1' : '0'); } catch {}
+    if (musicOn) bgm.start();
+    else bgm.stop();
+    renderMusic();
+  });
+  document.addEventListener('visibilitychange', () => bgm.suspend(document.hidden));
   let memLog: { age: number; icon: string; text: string; key?: string }[] = [];
   let picks: Record<string, number> = {};
   let letter: string[] = [];
@@ -214,6 +238,7 @@ import { Image } from 'astro:assets';
     const intro = $('dl-m-intro');
     const reel = $('dl-m-reel');
     const mScene = new DogScene($('dl-m-canvas') as HTMLCanvasElement);
+    bgm.setMood('ending');
     mScene.setDog(d);
     const slides = [
       { age: 0, icon: '🍼', text: `${d.family.name}에 ${d.breed.name} '${d.name}'로 왔어요.` },
@@ -363,6 +388,8 @@ import { Image } from 'astro:assets';
     $('dl-cert').hidden = true;
     $('dl-live').hidden = false;
     scene.setDog(dog);
+    bgm.setMood('life');
+    if (musicOn) bgm.start();
     log('✨', `${dog.breed.name} ${dog.personality.name}로 태어났어요. ${dog.personality.note}.`, 0, 'is-memory');
     renderLive();
     $('dl-live').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -404,6 +431,7 @@ import { Image } from 'astro:assets';
     const dtMs = Math.min(100, now - last);
     last = now;
     if (dog) {
+      if (age > dog.lifespan * 0.6) bgm.setMood('senior');
       scene.frame(now, age, !paused && !waiting);
       const home = homeOf(dog.family.id);
       const extra = dog.household.extra.length ? ` +${dog.household.extra.length}` : '';
@@ -810,6 +838,8 @@ import { Image } from 'astro:assets';
   .dl-count li { padding: 8px; border-radius: 10px; background: var(--surface-2); }
   .dl-count span { display: block; font-size: 0.78rem; color: var(--text-muted); }
   .dl-count strong { font-variant-numeric: tabular-nums; }
+  .dl-ctrl-l { display: inline-flex; gap: 6px; }
+  .dl-ctrl :global(#dl-music[aria-pressed='true']) { background: var(--accent-soft); border-color: var(--accent-line); color: var(--accent); }
   .dl-ctrl { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
   .dl-speed { display: inline-flex; gap: 4px; }
   .dl-speed :global(button[aria-pressed='true']) { background: var(--accent-soft); border-color: var(--accent-line); color: var(--accent); }
