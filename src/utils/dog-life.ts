@@ -66,6 +66,7 @@ export interface Dog {
   name: string;
   personality: Personality;
   family: Family;
+  sex: '수컷' | '암컷';
   lifespan: number; // 이번 생의 수명(년, 소수)
   stats: Stats;
   walkRate: number; // 하루 산책 횟수
@@ -109,6 +110,7 @@ export function born(): Dog {
     name: pick(NAMES),
     personality,
     family,
+    sex: Math.random() < 0.5 ? '수컷' : '암컷',
     lifespan,
     stats: { health: 80, happy: 60, bond: 25 },
     walkRate: family.walk,
