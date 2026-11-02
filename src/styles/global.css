@@ -149,7 +149,7 @@ main.narrow > * { max-width: var(--read); }
   /* 모바일에서는 ' · '로 나뉜 문장을 줄 단위로 보여 줍니다. */
   .page-head .tagline .tl-sep { display: none; }
   .page-head .tagline .tl-part { display: block; }
-  .page-head .tagline { font-size: 0.9rem; line-height: 1.55; }
+  .page-head .tagline { font-size: 10px; line-height: 1.6; }
 }
 
 .hero-links { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; margin: 20px 0 0; padding: 0; }
