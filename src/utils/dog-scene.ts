@@ -145,7 +145,16 @@ export class DogScene {
 
     // 가족
     const people = d ? FAMILY_SCENE[d.family.id]?.people ?? [] : [];
-    people.forEach((p, i) => this.drawPerson(p, 28 + i * 13, now, i));
+    // 사람은 1.7배로 그려서 강아지보다 확실히 크게
+    people.forEach((p, i) => {
+      ctx.save();
+      const PS = 1.7;
+      ctx.translate(18 + i * 20, GROUND);
+      ctx.scale(PS, PS);
+      ctx.translate(0, -GROUND);
+      this.drawPerson(p, 0, now, i);
+      ctx.restore();
+    });
 
     // 강아지
     if (d) {
@@ -248,7 +257,7 @@ export class DogScene {
   private drawDog(d: Dog, cx: number, ground: number, stage: number, walking: boolean, now: number) {
     const ctx = this.ctx;
     const c = COATS[d.breed.id] ?? COATS.mix;
-    const s = (stage === 0 ? 0.75 : d.breed.size === 'large' ? 1.3 : d.breed.size === 'medium' ? 1.15 : 1.05) * 1.45;
+    const s = stage === 0 ? 0.7 : d.breed.size === 'large' ? 1.25 : d.breed.size === 'medium' ? 1.08 : 0.95;
     const bodyL = c.long ? 15 : 11;
     const legH = c.short ? 2 : 3;
     const step = walking ? Math.floor(now / 140) % 2 : 0;
@@ -292,7 +301,7 @@ export class DogScene {
 
   private drawBubble(icon: string, x: number, stage: number) {
     const ctx = this.ctx;
-    const by = GROUND - (stage === 0 ? 34 : 44);
+    const by = GROUND - (stage === 0 ? 26 : 32);
     const bx = Math.max(12, Math.min(SW - 12, Math.round(x)));
     px(ctx, '#ffffff', bx - 9, by - 9, 18, 16);
     px(ctx, '#2b211b', bx - 9, by - 10, 18, 1);
