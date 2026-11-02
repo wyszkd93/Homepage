@@ -1,5 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro';
+import KakaoShare from '../../components/KakaoShare.astro';
 
 // 태어난 시(시진). 한국 표준시 기준으로 30분씩 늦춰 나눕니다.
 const HOURS = [
@@ -111,6 +112,8 @@ const HOURS = [
         <ul id="sj-lucky" class="sj-lucky"></ul>
         <p id="sj-mogu" class="sj-mogu"></p>
       </section>
+
+      <KakaoShare title="모구의 사주 카페" description="생년월일로 사주팔자와 오늘의 운세를 재미로 봐요" label="카카오톡으로 결과 공유하기" />
 
       <p class="sj-disclaimer">
         절기는 해마다 하루쯤 차이가 나서 평균 날짜로 계산했어요. 절기 무렵에 태어났다면 월주·대운수가 다를 수 있어요.
@@ -288,6 +291,9 @@ const HOURS = [
     $('sj-year').innerHTML = paras(r.year.paras);
     $('sj-habits').innerHTML = r.habits.map((h) => `<li>${h}</li>`).join('');
 
+    window.dispatchEvent(
+      new CustomEvent('share:update', { detail: { text: `나는 ${me.title.split(' · ')[0]} · ${r.structure.title}. 너의 사주는?` } }),
+    );
     $('sj-result').hidden = false;
   }
 
