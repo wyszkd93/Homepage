@@ -103,7 +103,13 @@ const jsonLd = article
         <div class:list={['wrap page-head-inner', { 'has-aside': hasAside }]}>
           <div class="page-head-text">
             <h1 data-pagefind-meta="title">{heading}</h1>
-            {tagline && <p class="tagline">{tagline}</p>}
+            {tagline && (
+              <p class="tagline">
+                {tagline.split(' · ').map((part, i) => (
+                  <>{i > 0 && <span class="tl-sep"> · </span>}<span class="tl-part">{part}</span></>
+                ))}
+              </p>
+            )}
             <slot name="hero" />
           </div>
           <slot name="aside" />
