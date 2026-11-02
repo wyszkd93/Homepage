@@ -63,7 +63,7 @@ const blogNotes = ['직접 해 본 것만', '다시 찾기 쉽게', '오픈소�
 <style>
   .me {
     --hand: 'Gaegu', 'Pretendard Variable', Pretendard, system-ui, sans-serif;
-    max-width: 960px;
+    max-width: 1040px;
     margin: 0 auto;
     padding: 40px 0 16px;
   }
@@ -118,7 +118,14 @@ const blogNotes = ['직접 해 본 것만', '다시 찾기 쉽게', '오픈소�
   }
 
   /* 메모판 */
-  .board { margin-top: 64px; }
+  .board {
+    margin-top: 64px;
+    padding: 30px 26px 30px;
+    border-radius: 22px;
+    background: var(--surface-1);
+    border: 1px solid var(--hairline);
+    box-shadow: var(--shadow);
+  }
   .board-title {
     font-family: var(--hand);
     font-size: 1.9rem;
@@ -130,13 +137,13 @@ const blogNotes = ['직접 해 본 것만', '다시 찾기 쉽게', '오픈소�
     margin: 0;
     padding: 0;
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 24px 22px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
   }
   .note {
     --c: #f2a65e;
     position: relative;
-    padding: 28px 26px 24px;
+    padding: 26px 18px 20px;
     border-radius: 14px;
     background: color-mix(in srgb, var(--c) 16%, var(--surface-1));
     border: 1px solid color-mix(in srgb, var(--c) 30%, var(--surface-1));
@@ -163,25 +170,26 @@ const blogNotes = ['직접 해 본 것만', '다시 찾기 쉽게', '오픈소�
   .note.peach { --c: #f28b5b; }
   .note.sky { --c: #5b9cf2; }
   .note h3 {
-    font-size: 1.02rem;
+    font-size: 0.98rem;
     font-weight: 700;
     letter-spacing: -0.01em;
-    margin: 0 0 14px;
+    margin: 0 0 12px;
   }
   .note ul {
     list-style: none;
     margin: 0;
     padding: 0;
     counter-reset: n;
-    font-size: 0.95rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
     word-break: keep-all;
   }
   .note ul li {
     counter-increment: n;
     display: flex;
     align-items: baseline;
-    gap: 14px;
-    padding: 10px 2px;
+    gap: 10px;
+    padding: 9px 0;
     border-top: 1px solid color-mix(in srgb, var(--c) 28%, transparent);
     color: var(--ink);
   }
@@ -231,6 +239,9 @@ const blogNotes = ['직접 해 본 것만', '다시 찾기 쉽게', '오픈소�
     margin: 28px 8px 0;
   }
 
+  @media (max-width: 900px) {
+    .notes { grid-template-columns: repeat(2, 1fr); }
+  }
   @media (max-width: 640px) {
     .me { padding-top: 24px; }
     .hello { grid-template-columns: 1fr; justify-items: center; gap: 28px; }
@@ -249,6 +260,7 @@ const blogNotes = ['직접 해 본 것만', '다시 찾기 쉽게', '오픈소�
       border-color: transparent transparent var(--surface-1) transparent;
     }
     .bubble-hi { font-size: 1.7rem; }
+    .board { padding: 24px 16px; }
     .notes { grid-template-columns: 1fr; gap: 26px; }
     .sign { text-align: center; }
   }
