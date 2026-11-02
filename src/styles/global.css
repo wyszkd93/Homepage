@@ -146,9 +146,6 @@ main.narrow > * { max-width: var(--read); }
 .page-head .tagline { margin: 0; color: var(--text-muted); font-size: 1.05rem; line-height: 1.6; max-width: 40em; }
 .page-head .tagline { word-break: keep-all; }
 @media (max-width: 560px) {
-  /* 모바일에서는 ' · '로 나뉜 문장을 줄 단위로 보여 줍니다. */
-  .page-head .tagline .tl-sep { display: none; }
-  .page-head .tagline .tl-part { display: block; }
   .page-head .tagline { font-size: 10px; line-height: 1.6; }
 }
 
