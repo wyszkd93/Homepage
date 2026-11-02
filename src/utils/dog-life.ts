@@ -59,7 +59,7 @@ export interface Choice {
   options: { label: string; effect: Partial<Stats> & { life?: number; walk?: number; treat?: number }; text: string }[];
 }
 
-export interface LifeEvent { age: number; month: number; icon: string; text: string; effect?: Partial<Stats>; memory?: boolean }
+export interface LifeEvent { age: number; month: number; icon: string; text: string; effect?: Partial<Stats>; memory?: boolean; key?: string }
 
 export interface Dog {
   breed: Breed;
@@ -75,6 +75,7 @@ export interface Dog {
   treats: number;
   friends: number;
   memories: string[];
+  choices: Choice[]; // 이번 생에 마주칠 가족의 선택 (생마다 다르게 뽑음)
 }
 
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
@@ -105,7 +106,7 @@ export function born(): Dog {
   const spread = (breed.life[1] - breed.life[0]) / 2 + 0.8;
   const g = (Math.random() + Math.random() + Math.random()) / 3 - 0.5; // -0.5~0.5, 가운데에 몰림
   const lifespan = Math.max(8, mid + g * 2 * spread);
-  return {
+  const d: Dog = {
     breed,
     name: pick(NAMES),
     personality,
@@ -119,76 +120,140 @@ export function born(): Dog {
     treats: 0,
     friends: 0,
     memories: [],
+    choices: [],
   };
+  d.choices = pickChoices(d);
+  return d;
 }
 
-export const CHOICES: Choice[] = [
-  {
-    id: 'neuter', age: 0.8, q: '동물병원 선생님이 중성화 수술을 권해요.',
-    options: [
+// 나이대별 선택 후보. 한 생에서는 나이대마다 하나씩, 모두 5번 고르게 됩니다.
+type Opt = Choice['options'][number];
+const C = (id: string, age: number, q: string, options: Opt[], when?: (d: Dog) => boolean) => ({ id, age, q, options, when });
+const CHOICE_BANDS: ReturnType<typeof C>[][] = [
+  [
+    C('neuter', 0.8, '동물병원 선생님이 중성화 수술을 권해요.', [
       { label: '수술할게요', effect: { health: 6, life: 0.6, happy: -3 }, text: '며칠 넥카라를 했지만 금방 회복했어요.' },
       { label: '조금 더 생각해 볼게요', effect: { happy: 2 }, text: '조금 더 지켜보기로 했어요.' },
-    ],
-  },
-  {
-    id: 'weekend', age: 2.5, q: '주말에는 무엇을 할까요?',
-    options: [
+    ]),
+    C('school', 0.7, '동네에 강아지 유치원이 생겼대요.', [
+      { label: '보내 볼게요', effect: { happy: 4, bond: -2 }, text: '친구들 사이에서 인기 만점이래요.' },
+      { label: '집에서 같이 놀래요', effect: { bond: 6 }, text: '거실이 곧 놀이터예요.' },
+    ]),
+    C('crate', 0.5, '밤마다 낑낑 울어요. 어디서 재울까요?', [
+      { label: '침대에서 같이 자기', effect: { bond: 8, happy: 3 }, text: '이불 속이 제일 따뜻한 자리가 됐어요.' },
+      { label: '전용 집에서 혼자 자기 연습', effect: { health: 2, bond: 2 }, text: '며칠 울더니 이제 자기 집이 제일 좋대요.' },
+    ]),
+  ],
+  [
+    C('weekend', 2.5, '주말에는 무엇을 할까요?', [
       { label: '멀리 산책·등산', effect: { health: 6, happy: 4, bond: 4, walk: 0.3 }, text: '주말마다 새로운 냄새를 맡으러 떠나요.' },
       { label: '집에서 같이 뒹굴기', effect: { happy: 5, bond: 6, health: -2 }, text: '소파는 이제 둘만의 자리예요.' },
-    ],
-  },
-  {
-    id: 'diet', age: 5, q: '체중이 조금 늘었대요. 간식을 어떻게 할까요?',
-    options: [
+    ]),
+    C('trip', 2.2, '가족 여행을 가요. 강아지는 어떻게 할까요?', [
+      { label: '애견 동반 숙소로 같이 가기', effect: { happy: 8, bond: 5 }, text: '바닷가 숙소에서 같이 노을을 봤어요.' },
+      { label: '믿을 만한 호텔에 맡기기', effect: { happy: -3, health: 1 }, text: '돌아오자 꼬리가 떨어질 듯 흔들렸어요.' },
+    ]),
+    C('sport', 3, '어질리티(장애물 달리기)에 재능이 보인대요.', [
+      { label: '대회에 나가 보자', effect: { health: 5, happy: 5, walk: 0.2 }, text: '터널을 통과할 때 관중들이 박수를 쳤어요.' },
+      { label: '그냥 동네에서 즐기기', effect: { happy: 3, bond: 3 }, text: '놀이터 미끄럼틀이 우리만의 코스예요.' },
+    ], (d) => d.breed.size !== 'small' || d.personality.id === 'curious'),
+  ],
+  [
+    C('diet', 5, '체중이 조금 늘었대요. 간식을 어떻게 할까요?', [
       { label: '다이어트 시작', effect: { health: 8, life: 0.7, happy: -4, treat: -1 }, text: '간식은 줄고 산책은 늘었어요. 몸이 가벼워졌어요.' },
       { label: '그래도 간식은 행복이야', effect: { happy: 6, health: -6, life: -0.5, treat: 1 }, text: '오늘도 간식 앞에서 꼬리가 프로펠러처럼 돌아가요.' },
-    ],
-  },
-  {
-    id: 'checkup', age: 7.5, q: '이제 노견이 될 나이예요. 정기 건강검진을 받을까요?',
-    options: [
+    ]),
+    C('sibling', 4.5, '보호소에서 외로운 강아지를 데려올까 고민돼요.', [
+      { label: '동생을 데려오자', effect: { happy: 5, bond: -1 }, text: '처음엔 질투했지만 이제는 꼭 붙어 자요.' },
+      { label: '지금처럼 둘만', effect: { bond: 6 }, text: '가족의 사랑을 독차지하는 중이에요.' },
+    ]),
+    C('move', 5.5, '이사 갈 집을 골라야 해요.', [
+      { label: '공원 가까운 집', effect: { health: 4, happy: 4, walk: 0.3 }, text: '창밖으로 산책길이 보여서 매일 신나요.' },
+      { label: '회사 가까운 집', effect: { bond: 5, walk: -0.2 }, text: '가족이 일찍 퇴근해서 같이 있는 시간이 늘었어요.' },
+    ], (d) => d.family.id !== 'farm' && d.family.id !== 'grand'),
+  ],
+  [
+    C('checkup', 7.5, '이제 노견이 될 나이예요. 정기 건강검진을 받을까요?', [
       { label: '해마다 검진할게요', effect: { health: 6, life: 1, happy: -2 }, text: '작은 이상을 일찍 찾아 바로 관리했어요.' },
       { label: '아플 때만 갈게요', effect: { happy: 2 }, text: '병원 냄새는 여전히 싫은가 봐요.' },
-    ],
-  },
-  {
-    id: 'stroller', age: 11, q: '다리에 힘이 조금 빠졌어요. 산책은 어떻게 할까요?',
-    options: [
+    ]),
+    C('teeth', 8, '이가 조금 흔들린대요. 어떻게 할까요?', [
+      { label: '치과 치료 받기', effect: { health: 6, life: 0.5, happy: -3 }, text: '말랑한 간식으로 바꾸고 다시 잘 먹어요.' },
+      { label: '부드러운 사료로 바꾸기', effect: { happy: 3, health: 1 }, text: '불린 사료도 맛있게 먹어요.' },
+    ]),
+    C('swim', 7, '관절에 좋다는 강아지 수영장이 생겼어요.', [
+      { label: '주말마다 수영', effect: { health: 7, life: 0.6, happy: 3 }, text: '물속에서는 다시 어린 강아지 같아요.' },
+      { label: '물은 무서워해서 패스', effect: { happy: 1 }, text: '대신 마른 잔디에서 공놀이를 해요.' },
+    ]),
+  ],
+  [
+    C('stroller', 11, '다리에 힘이 조금 빠졌어요. 산책은 어떻게 할까요?', [
       { label: '강아지 유모차 사기', effect: { happy: 8, bond: 5 }, text: '유모차를 타고 좋아하던 공원에 다시 갔어요.' },
       { label: '집 앞만 천천히 걷기', effect: { health: 3, happy: 2, walk: -0.4 }, text: '느려도 매일 같은 길을 함께 걸어요.' },
-    ],
-  },
+    ]),
+    C('bucket', 10.5, '버킷리스트를 하나 이뤄 줄까요?', [
+      { label: '처음 가 보는 숲 여행', effect: { happy: 9, bond: 4 }, text: '이름 모를 꽃 냄새를 한참 맡았어요.' },
+      { label: '좋아하는 간식으로 생일상', effect: { happy: 7, bond: 6 }, text: '평생 먹은 간식 중 제일 큰 케이크였어요.' },
+    ]),
+    C('night', 11.5, '밤에 자주 깨서 서성여요.', [
+      { label: '가족이 옆에서 같이 자기', effect: { bond: 9, happy: 3 }, text: '손을 얹어 주면 금방 다시 잠들어요.' },
+      { label: '은은한 수면등 켜 두기', effect: { health: 2, happy: 2 }, text: '조용한 불빛 아래서 편안히 자요.' },
+    ]),
+  ],
 ];
+/** 선택 후보 전체 (테스트·참고용) */
+export const CHOICES: Choice[] = CHOICE_BANDS.flat();
 
-type Pool = { min: number; max: number; icon: string; text: (d: Dog) => string; effect?: Partial<Stats>; friend?: boolean; memory?: boolean; when?: (d: Dog) => boolean }[];
+function pickChoices(d: Dog): Choice[] {
+  return CHOICE_BANDS.map((band) => {
+    const ok = band.filter((c) => !c.when || c.when(d));
+    const c = pick(ok);
+    // 같은 나이대 안에서 시기를 조금씩 흔들어요
+    return { id: c.id, age: Math.max(0.4, c.age + (Math.random() - 0.5) * 0.8), q: c.q, options: c.options };
+  });
+}
+
+type Pool = { min: number; max: number; icon: string; text: (d: Dog) => string; effect?: Partial<Stats>; friend?: boolean; memory?: boolean; key?: string; when?: (d: Dog) => boolean }[];
 
 const POOL: Pool = [
-  { min: 0, max: 0.4, icon: '🏠', text: (d) => `${d.family.name}에 입양됐어요. 오늘부터 이름은 '${d.name}'!`, effect: { bond: 10 }, memory: true },
+  { min: 0, max: 0.4, icon: '🏠', text: (d) => `${d.family.name}에 입양됐어요. 오늘부터 이름은 '${d.name}'!`, effect: { bond: 10 }, memory: true, key: 'adopt' },
   { min: 0.1, max: 0.5, icon: '💉', text: () => '예방접종을 무사히 마쳤어요. 용감했어요!', effect: { health: 4 } },
   { min: 0.2, max: 0.9, icon: '🧻', text: () => '배변 패드를 드디어 정확히 맞혔어요. 온 가족이 박수!', effect: { bond: 4 } },
-  { min: 0.3, max: 1, icon: '🌸', text: () => '첫 산책! 세상이 이렇게 냄새로 가득한 줄 몰랐어요.', effect: { happy: 6 }, memory: true },
+  { min: 0.3, max: 1, icon: '🌸', text: () => '첫 산책! 세상이 이렇게 냄새로 가득한 줄 몰랐어요.', effect: { happy: 6 }, memory: true, key: 'firstwalk' },
   { min: 0.3, max: 1.5, icon: '🧦', text: () => '양말 한 짝이 사라졌어요. 범인은 꼬리를 흔들고 있어요.', effect: { happy: 3 }, when: (d) => d.personality.id === 'rascal' || Math.random() < 0.4 },
   { min: 1, max: 9, icon: '🐾', text: () => '공원에서 단짝 친구를 사귀었어요.', effect: { happy: 5 }, friend: true },
-  { min: 1, max: 10, icon: '🎂', text: (d) => `생일 파티! 강아지 케이크에 ${d.name}의 이름이 적혀 있었어요.`, effect: { happy: 5, bond: 3 }, memory: true },
+  { min: 1, max: 10, icon: '🎂', text: (d) => `생일 파티! 강아지 케이크에 ${d.name}의 이름이 적혀 있었어요.`, effect: { happy: 5, bond: 3 }, memory: true, key: 'birthday' },
   { min: 1, max: 12, icon: '🍗', text: () => '식탁 위 닭가슴살을 몰래 먹다 딱 걸렸어요.', effect: { happy: 4, bond: -1 }, when: (d) => d.personality.id === 'foodie' || Math.random() < 0.4 },
   { min: 1, max: 9, icon: '✂️', text: () => '미용실에서 돌아왔더니 다른 강아지 같대요. 본인도 당황.', effect: { happy: -2 } },
-  { min: 1, max: 9, icon: '🌊', text: () => '처음으로 바다에 갔어요. 파도한테 짖었어요.', effect: { happy: 7 }, memory: true },
-  { min: 1.5, max: 8, icon: '⛺', text: () => '가족과 캠핑을 떠났어요. 텐트 안이 제일 좋았대요.', effect: { happy: 6, bond: 5 }, memory: true },
+  { min: 1, max: 9, icon: '🌊', text: () => '처음으로 바다에 갔어요. 파도한테 짖었어요.', effect: { happy: 7 }, memory: true, key: 'sea' },
+  { min: 1.5, max: 8, icon: '⛺', text: () => '가족과 캠핑을 떠났어요. 텐트 안이 제일 좋았대요.', effect: { happy: 6, bond: 5 }, memory: true, key: 'camping' },
   { min: 2, max: 10, icon: '🐱', text: () => '집에 고양이 동생이 왔어요. 아직은 서로 눈치 보는 중.', effect: { happy: -2 }, friend: true },
-  { min: 2, max: 10, icon: '👶', text: () => '사람 아기가 태어났어요. 아기 침대 옆을 지키는 경비원이 됐어요.', effect: { bond: 6 }, memory: true, when: (d) => d.family.id === 'couple' },
+  { min: 2, max: 10, icon: '👶', text: () => '사람 아기가 태어났어요. 아기 침대 옆을 지키는 경비원이 됐어요.', effect: { bond: 6 }, memory: true, key: 'baby', when: (d) => d.family.id === 'couple' },
   { min: 2, max: 11, icon: '📦', text: () => '이사를 했어요. 새 집 구석구석 냄새 확인 완료.', effect: { happy: -1, bond: 2 } },
-  { min: 2, max: 12, icon: '❄️', text: () => '첫눈이 왔어요. 눈밭에서 미친 듯이 뛰어다녔어요.', effect: { happy: 6 }, memory: true },
+  { min: 2, max: 12, icon: '❄️', text: () => '첫눈이 왔어요. 눈밭에서 미친 듯이 뛰어다녔어요.', effect: { happy: 6 }, memory: true, key: 'snow' },
   { min: 1, max: 12, icon: '😴', text: () => '햇볕 드는 창가에서 낮잠. 오늘도 평화로운 하루.', effect: { happy: 3 }, when: (d) => d.personality.id === 'sleepy' || Math.random() < 0.5 },
   { min: 3, max: 12, icon: '🩺', text: () => '슬개골이 살짝 약하대요. 미끄럼 방지 매트를 깔았어요.', effect: { health: -5 }, when: (d) => d.breed.size === 'small' },
   { min: 4, max: 10, icon: '🩺', text: () => '고관절 관리를 시작했어요. 수영 재활도 같이 해요.', effect: { health: -5 }, when: (d) => d.breed.size === 'large' },
   { min: 3, max: 12, icon: '🦷', text: () => '스케일링을 받았어요. 입냄새가 사라졌대요.', effect: { health: 3 } },
-  { min: 4, max: 12, icon: '🏆', text: () => '동네 강아지 운동회 달리기에서 1등!', effect: { happy: 6 }, memory: true, when: (d) => d.stats.health > 70 },
+  { min: 4, max: 12, icon: '🏆', text: () => '동네 강아지 운동회 달리기에서 1등!', effect: { happy: 6 }, memory: true, key: 'race', when: (d) => d.stats.health > 70 },
   { min: 6, max: 20, icon: '🤍', text: () => '주둥이에 흰 털이 하나둘 생겼어요.', effect: {} },
   { min: 8, max: 20, icon: '💊', text: () => '관절 영양제를 먹기 시작했어요. 맛있는 츄르에 섞어서.', effect: { health: 2 } },
   { min: 8, max: 20, icon: '🛋️', text: () => '계단 대신 강아지 계단을 놓았어요. 소파는 포기 못 해요.', effect: { happy: 2 } },
   { min: 9, max: 20, icon: '👂', text: () => '귀가 조금 어두워졌어요. 대신 손짓을 더 잘 봐요.', effect: { bond: 3 } },
-  { min: 9, max: 20, icon: '🌅', text: (d) => `오늘은 ${nameGa(d.name)} 좋아하던 길을 아주 천천히 걸었어요.`, effect: { bond: 5, happy: 3 }, memory: true },
-  { min: 10, max: 20, icon: '📷', text: () => '가족이 함께 사진관에서 가족사진을 찍었어요.', effect: { bond: 6 }, memory: true },
+  { min: 9, max: 20, icon: '🌅', text: (d) => `오늘은 ${nameGa(d.name)} 좋아하던 길을 아주 천천히 걸었어요.`, effect: { bond: 5, happy: 3 }, memory: true, key: 'slowwalk' },
+  { min: 1, max: 6, icon: '🎾', text: () => '공을 백 번 던져 줘도 백한 번째를 기다려요.', effect: { happy: 4 }, memory: true, key: 'ball', when: (d) => d.personality.id !== 'sleepy' },
+  { min: 1, max: 10, icon: '🌧️', text: () => '천둥 치는 밤, 가족 품에 파고들어 겨우 잠들었어요.', effect: { bond: 5, happy: -1 }, memory: true, key: 'thunder', when: (d) => d.personality.id === 'shy' || Math.random() < 0.3 },
+  { min: 1, max: 10, icon: '🍉', text: () => '여름날 수박 한 조각을 얻어먹고 세상을 다 가진 표정이었어요.', effect: { happy: 5 }, memory: true, key: 'watermelon' },
+  { min: 1, max: 9, icon: '🎒', text: () => '아이 등굣길을 매일 현관에서 배웅해요.', effect: { bond: 5 }, memory: true, key: 'school', when: (d) => d.family.id === 'kids' },
+  { min: 2, max: 12, icon: '🧶', text: () => '할머니가 떠 준 목도리를 겨울 내내 둘렀어요.', effect: { happy: 4, bond: 4 }, memory: true, key: 'scarf', when: (d) => d.family.id === 'grand' },
+  { min: 1, max: 12, icon: '🐓', text: () => '마당 닭들한테 쫓겨 다니다 결국 친구가 됐어요.', effect: { happy: 5 }, friend: true, memory: true, key: 'chicken', when: (d) => d.family.id === 'farm' },
+  { min: 1, max: 9, icon: '🌙', text: () => '야근하고 돌아온 집사를 현관에서 꼬리로 맞았어요.', effect: { bond: 6 }, memory: true, key: 'latework', when: (d) => d.family.id === 'single' || d.family.id === 'student' },
+  { min: 2, max: 9, icon: '🎓', text: () => '집사의 졸업식에 따라가서 사진을 찍었어요.', effect: { bond: 5, happy: 3 }, memory: true, key: 'graduate', when: (d) => d.family.id === 'student' },
+  { min: 1, max: 10, icon: '🧺', text: () => '한강 공원 피크닉, 돗자리 한가운데를 차지했어요.', effect: { happy: 5, bond: 3 }, memory: true, key: 'picnic', when: (d) => d.family.id !== 'farm' },
+  { min: 1, max: 12, icon: '🍂', text: () => '낙엽 더미에 뛰어들어 온몸에 나뭇잎을 붙이고 왔어요.', effect: { happy: 4 }, memory: true, key: 'leaves' },
+  { min: 3, max: 12, icon: '🚗', text: () => '창문 열린 차 안에서 귀를 휘날리며 드라이브했어요.', effect: { happy: 5 }, memory: true, key: 'drive' },
+  { min: 5, max: 14, icon: '🐶', text: () => '새로 온 아기 강아지에게 산책 길을 가르쳐 줬어요.', effect: { happy: 3, bond: 2 }, friend: true, memory: true, key: 'teacher', when: (d) => d.personality.id === 'calm' || Math.random() < 0.3 },
+  { min: 10, max: 20, icon: '📷', text: () => '가족이 함께 사진관에서 가족사진을 찍었어요.', effect: { bond: 6 }, memory: true, key: 'photo' },
 ];
 
 /** 한 해 동안 일어날 사건 1~3개 (월 순서대로) */
@@ -210,7 +275,7 @@ export function eventsForYear(d: Dog, year: number, used: Set<number>): LifeEven
     const lo = Math.max(p.min, year);
     const hi = Math.min(p.max, year + 1, d.lifespan);
     const age = year === 0 ? lo + (hi - lo) * (k / 3 + Math.random() * 0.2) : rand(lo, hi);
-    out.push({ age, month: Math.floor((age % 1) * 12), icon: p.icon, text: p.text(d), effect: p.effect, memory: p.memory });
+    out.push({ age, month: Math.floor((age % 1) * 12), icon: p.icon, text: p.text(d), effect: p.effect, memory: p.memory, key: p.key });
     if (p.friend) d.friends++;
   }
   return out.sort((a, b) => a.age - b.age);
@@ -250,64 +315,107 @@ export function ageText(age: number) {
 }
 
 // ── 강아지별로 가기 전, 가족에게 남기는 말 ──
-// 살아온 기록(가족·성격·기억·선택·산책 수)을 보고 3~4문장을 고릅니다.
-const OPEN_BY_FAMILY: Record<string, string> = {
-  single: '혼자 퇴근하던 너의 저녁, 문 앞에서 기다리는 게 내 하루의 제일 큰 일이었어.',
-  couple: '둘이서 나를 부르던 목소리가 세상에서 제일 좋은 소리였어.',
-  kids: '꼬마들이 자라는 걸 옆에서 다 봤어. 내가 다 키운 거나 마찬가지야.',
-  grand: '할머니 할아버지 무릎이 세상에서 제일 따뜻한 자리였어.',
-  student: '좁은 방이었지만, 너랑 있어서 하나도 좁지 않았어.',
-  farm: '마당을 달리던 날들, 바람 냄새까지 다 기억할게.',
+// 살아온 기록(가족·기억·선택·성격·숫자)에서 서로 다른 이야기를 골라 4~5문장으로 엮습니다.
+// 같은 끝말("고마워" 등)이 두 번 넘게 나오지 않게 고릅니다.
+const OPEN_BY_FAMILY: Record<string, string[]> = {
+  single: ['혼자 퇴근하던 너의 저녁, 문 앞에서 기다리는 게 내 하루의 제일 큰 일이었어.', '불 꺼진 집에 네가 돌아오면 세상이 다시 환해졌어.', '우리 둘뿐이었지만 한 번도 외롭지 않았어.'],
+  couple: ['둘이서 나를 부르던 목소리가 세상에서 제일 좋은 소리였어.', '너희 둘 사이에 끼어 자던 밤이 제일 포근했어.', '싸우다가도 나를 보면 웃던 너희가 참 좋았어.'],
+  kids: ['꼬마들이 자라는 걸 옆에서 다 봤어. 내가 다 키운 거나 마찬가지야.', '시끌벅적한 우리 집이 세상에서 제일 재밌는 곳이었어.', '아이들 숙제할 때 발밑에서 자던 시간, 나도 같이 공부한 거야.'],
+  grand: ['할머니 할아버지 무릎이 세상에서 제일 따뜻한 자리였어.', '느린 걸음으로 같이 걷던 동네 한 바퀴가 나는 제일 좋았어.', '마루에 나란히 앉아 해 지는 걸 보던 오후들, 다 기억해.'],
+  student: ['좁은 방이었지만, 너랑 있어서 하나도 좁지 않았어.', '라면 끓이던 냄새 속에서 같이 밤새던 날들이 그리울 거야.', '시험 기간에 네 무릎 위가 내 자리였던 거 알지?'],
+  farm: ['마당을 달리던 날들, 바람 냄새까지 다 기억할게.', '흙냄새, 풀냄새, 그리고 네 손 냄새. 그게 내 세상 전부였어.', '마당 끝까지 달려가도 돌아보면 늘 네가 있었어.'],
 };
-const BY_MEMORY: Record<string, string> = {
-  '🌊': '바다에서 파도한테 짖던 날 기억나? 사실 좀 무서웠는데 네가 웃어서 괜찮았어.',
-  '❄️': '첫눈 오던 날, 우리 둘 다 바보처럼 뛰어다녔잖아.',
-  '🎂': '내 이름 적힌 케이크, 정말 맛있었어. 내년 몫까지 먹은 걸로 할게.',
-  '⛺': '캠핑 가서 텐트에 같이 누워 있던 밤이 자꾸 생각나.',
-  '🐱': '고양이 동생이랑은 결국 친해졌어. 내 몫까지 잘 챙겨 줘.',
-  '👶': '아기 침대 옆을 지키는 일, 나 꽤 잘했지?',
-  '🏆': '운동회 1등 한 거, 동네방네 자랑해도 돼.',
-  '📷': '가족사진에 나도 넣어 줘서 고마워. 거기서 나 제일 잘 나왔지?',
-  '🌅': '느려진 나랑 끝까지 같은 길을 걸어 줘서 고마워.',
-  '🌸': '처음 산책하던 날, 세상이 이렇게 좋은 냄새로 가득한 줄 몰랐어.',
-  '🏠': '처음 너희 집에 온 날, 사실 조금 떨렸어. 이렇게 좋은 집인 줄 몰랐거든.',
+const BY_MEMORY: Record<string, string[]> = {
+  adopt: ['처음 너희 집에 온 날, 사실 조금 떨렸어. 이렇게 좋은 집인 줄 몰랐거든.', '처음 안아 줬을 때 그 냄새가 아직도 기억나.'],
+  firstwalk: ['처음 산책하던 날, 세상이 이렇게 좋은 냄새로 가득한 줄 몰랐어.', '목줄 처음 했을 때 버둥거린 거, 이제 와서 미안해.'],
+  birthday: ['내 이름 적힌 케이크, 내년 몫까지 먹은 걸로 할게.', '생일마다 고깔모자 씌운 거, 사실 은근히 좋았어.'],
+  sea: ['바다에서 파도한테 짖던 날 기억나? 사실 좀 무서웠는데 네가 웃어서 괜찮았어.', '모래사장에 찍힌 내 발자국, 아직 거기 있을까?'],
+  camping: ['텐트 안에서 같이 별 보던 밤이 자꾸 생각나.', '캠핑장에서 구워 먹던 고기 냄새, 평생 못 잊어.'],
+  baby: ['아기 침대 옆을 지키는 일, 나 꽤 잘했지?', '아기가 처음 내 이름 부른 날, 나 진짜 신났었어.'],
+  snow: ['첫눈 오던 날, 우리 둘 다 바보처럼 뛰어다녔잖아.', '눈밭에 코 박고 놀다 콧물 났던 거 기억나?'],
+  race: ['운동회 1등 한 거, 동네방네 자랑해도 돼.', '그날 받은 메달, 내 보물 상자에 넣어 둬.'],
+  slowwalk: ['느려진 나랑 끝까지 같은 길을 걸어 준 거, 다 알아.', '마지막 산책길 햇살이 참 따뜻했어.'],
+  photo: ['가족사진에서 나 제일 잘 나왔지?', '사진관 아저씨가 나보고 모델이래. 기억해 둬.'],
+  ball: ['공은 백 번 던져 줘도 좋았어. 백한 번째도 기다렸을 거야.', '소파 밑에 숨겨 둔 공 세 개, 이제 네가 찾아도 돼.'],
+  thunder: ['천둥 치던 밤에 꼭 안아 준 거, 그 품이 내 피난처였어.'],
+  watermelon: ['여름에 얻어먹던 수박 한 조각, 그게 내 여름이었어.'],
+  school: ['아침마다 현관에서 아이들 배웅하던 일, 내가 제일 좋아하던 일이었어.'],
+  scarf: ['할머니가 떠 준 목도리, 강아지별에도 하고 갈게.'],
+  chicken: ['마당 닭들한테 내가 먼저 갔다고 전해 줘. 걔네도 친구였어.'],
+  latework: ['늦게 와도 괜찮았어. 현관 앞에서 기다리는 시간도 좋았거든.'],
+  graduate: ['네 졸업식 날, 나도 학사모 쓴 기분이었어.'],
+  picnic: ['돗자리 한가운데 내가 누웠던 피크닉, 그날 하늘 진짜 파랬지.'],
+  leaves: ['낙엽 더미에 뛰어들던 가을이 그리울 거야.'],
+  drive: ['창문 열린 차에서 귀 휘날리던 드라이브, 그게 나한텐 비행기였어.'],
+  teacher: ['동생 강아지한테 산책길 다 가르쳐 줬어. 이제 걔가 너를 지켜 줄 거야.'],
 };
-const BY_PERSONALITY: Record<string, string> = {
-  sweet: '배 만져 줄 때가 제일 행복했어. 그 손 잊지 않을게.',
-  shy: '겁 많은 나를 늘 먼저 안아 줘서 고마워. 너 덕분에 용감했어.',
-  foodie: '간식은… 솔직히 조금 더 먹고 싶었어. 그래도 네가 준 건 다 맛있었어.',
-  rascal: '양말 숨긴 거 미안해. 사실 네 냄새가 좋아서 그랬어.',
-  calm: '말은 못 했지만 나는 늘 네 옆에 있었어. 앞으로도 그럴 거야.',
-  curious: '산책길 냄새를 다 맡을 때까지 기다려 줘서 고마워.',
-  sleepy: '꿈속에서도 맨날 너랑 산책했어. 거기서도 계속할게.',
+const BY_PERSONALITY: Record<string, string[]> = {
+  sweet: ['배 만져 줄 때가 제일 행복했어. 그 손 잊지 않을게.', '애교는 너한테만 부렸던 거, 알지?'],
+  shy: ['겁 많은 나를 늘 먼저 안아 줬지. 너 덕분에 용감했어.', '낯선 소리가 나면 네 뒤에 숨었어. 거기가 제일 안전했거든.'],
+  foodie: ['간식은… 솔직히 조금 더 먹고 싶었어.', '네가 부스럭거리면 자다가도 달려간 거, 다 사랑이었어.'],
+  rascal: ['양말 숨긴 거 미안해. 사실 네 냄새가 좋아서 그랬어.', '휴지 뜯어 놓은 날 크게 혼내지 않아 줘서 다행이었어.'],
+  calm: ['말은 못 했지만 나는 늘 네 옆에 있었어.', '조용히 네 발밑에 누워 있던 시간이 나한텐 전부였어.'],
+  curious: ['산책길 냄새를 다 맡을 때까지 기다려 준 거, 나 다 알아.', '세상 구경 실컷 시켜 줘서 하나도 아쉽지 않아.'],
+  sleepy: ['꿈속에서도 맨날 너랑 산책했어. 거기서도 계속할게.', '네 옆에서 자던 낮잠이 세상에서 제일 달았어.'],
 };
+// 가족이 고른 선택 [첫 번째 선택지, 두 번째 선택지]
 const BY_PICK: Record<string, [string, string]> = {
+  neuter: ['넥카라 쓰고 부딪히던 거, 이제 생각하면 웃겨.', ''],
+  school: ['유치원 친구들한테 나 먼저 간다고 전해 줘.', '거실 놀이터가 세상에서 제일 넓은 운동장이었어.'],
+  crate: ['이불 속에서 같이 자던 밤들, 그게 내 집이었어.', '나만의 작은 집도 좋았지만, 네 방 문 앞이 더 좋았어.'],
+  weekend: ['주말마다 새 냄새 맡으러 데려가 준 거, 정말 신났어.', '소파에서 같이 뒹굴던 주말이 제일 좋았어.'],
+  trip: ['같이 본 바닷가 노을, 강아지별에서도 보일까?', '호텔에서 기다리던 날, 네가 데리러 온 순간을 잊지 못해.'],
+  sport: ['장애물 터널 통과할 때 네 박수 소리가 제일 컸어.', '놀이터 미끄럼틀은 우리 둘만의 경기장이었지.'],
+  diet: ['다이어트할 때 서운했던 거, 이제 다 이해해.', '간식 더 줘서 행복했어. 진짜로.'],
+  sibling: ['동생한테 내 자리 물려줄게. 소파 왼쪽 끝이야.', '사랑을 독차지해서 미안. 사실 좀 좋았어.'],
+  move: ['창밖으로 보이던 공원, 거기서 제일 많이 뛰었어.', '일찍 퇴근해 줘서 같이 있는 시간이 늘었잖아. 그게 제일 좋았어.'],
   checkup: ['병원은 싫었지만, 덕분에 너랑 더 오래 있을 수 있었어.', ''],
-  stroller: ['유모차 태워 줘서 고마워. 다리가 아파도 좋아하던 공원 바람을 맞을 수 있었어.', '느려진 걸음에 맞춰 천천히 걸어 줘서 고마워.'],
-  diet: ['다이어트할 때 서운했던 거, 이제 다 이해해.', ''],
-  weekend: ['주말마다 새 냄새 맡으러 데려가 줘서 신났어.', '소파에서 같이 뒹굴던 주말이 제일 좋았어.'],
+  teeth: ['이 아파도 말랑한 간식 덕분에 끝까지 맛있게 먹었어.', '불린 사료도 네가 주니까 맛있었어.'],
+  swim: ['물속에서 다시 어린 강아지가 된 것 같았어.', ''],
+  stroller: ['유모차 덕분에 다리가 아파도 좋아하던 공원 바람을 맞을 수 있었어.', '느려진 걸음에 맞춰 천천히 걸어 준 거, 다 느꼈어.'],
+  bucket: ['처음 가 본 숲, 그 꽃냄새 아직도 코끝에 있어.', '마지막 생일상, 평생 먹은 것 중에 제일 맛있었어.'],
+  night: ['밤에 깰 때마다 얹어 주던 손, 그거면 다시 잠들 수 있었어.', '수면등 불빛 아래서 꾼 꿈은 다 너였어.'],
 };
 const CLOSINGS = [
   '먼저 강아지별에 가서 기다릴게. 천천히, 아주 천천히 와. 사랑해.',
   '너무 오래 울지 말고, 맛있는 거 먹고 산책 많이 해. 사랑해.',
-  '나는 강아지별에서 꼬리 흔들면서 기다릴게. 고마웠어, 정말 많이.',
-  '다음에 또 만나면, 그때도 내가 먼저 달려갈게. 사랑해.',
+  '나는 강아지별에서 꼬리 흔들면서 기다릴게.',
+  '다음에 또 만나면, 그때도 내가 먼저 달려갈게.',
+  '하늘에 무지개 뜨면 나 생각해 줘. 그게 나야.',
+  '내 몫까지 오래오래 행복해야 해. 약속이야.',
 ];
 
-export function lastWords(d: Dog, memories: { icon: string }[], picks: Record<string, number>): string[] {
-  const out: string[] = [OPEN_BY_FAMILY[d.family.id] ?? '너희 집에 와서 정말 행복했어.'];
-  // 가장 최근의 특별한 기억 하나
-  const mem = [...memories].reverse().find((m) => BY_MEMORY[m.icon] && m.icon !== '🏠');
-  if (mem) out.push(BY_MEMORY[mem.icon]);
-  // 고른 선택 중 하나 (나중 선택 우선)
-  for (const id of ['stroller', 'checkup', 'weekend', 'diet']) {
-    if (id === 'stroller' && mem?.icon === '🌅') continue; // '천천히 걸어 줘서'가 겹치지 않게
-    const k = picks[id];
-    const line = k === undefined ? '' : BY_PICK[id]?.[k] ?? '';
-    if (line) { out.push(line); break; }
+const shuffle = <T,>(a: T[]) => a.map((v) => [Math.random(), v] as const).sort((x, y) => x[0] - y[0]).map((x) => x[1]);
+
+export function lastWords(d: Dog, memories: { icon?: string; key?: string }[], picks: Record<string, number>): string[] {
+  const body: string[] = [];
+  // 기억: 이번 생에 실제로 있었던 일 중에서 무작위로 최대 2개
+  const keys = [...new Set(memories.map((m) => m.key).filter((k): k is string => !!k && !!BY_MEMORY[k]))];
+  for (const k of shuffle(keys).slice(0, 2)) body.push(pick(BY_MEMORY[k]));
+  // 선택: 고른 것 중 하나
+  const pickLines = shuffle(Object.entries(picks)).map(([id, k]) => BY_PICK[id]?.[k] ?? '').filter(Boolean);
+  if (pickLines.length) body.push(pickLines[0]);
+  // 성격·숫자 이야기 후보
+  const extra = [pick(BY_PERSONALITY[d.personality.id] ?? [''])];
+  if (d.friends >= 3) extra.push(`친구 ${d.friends}마리한테 인사 다 하고 갈게.`);
+  if (d.walks > 3000) extra.push(`같이 걸은 ${Math.round(d.walks).toLocaleString('ko-KR')}번의 산책, 하나도 안 잊을게.`);
+  if (d.lifespan > d.breed.life[1]) extra.push('다들 내가 오래 살았대. 네가 잘 돌봐 줘서야.');
+  if (d.treats > 12000) extra.push(`간식 ${Math.round(d.treats).toLocaleString('ko-KR')}개, 하나하나 다 맛있었어.`);
+  body.push(...shuffle(extra.filter(Boolean)));
+
+  // 같은 끝말이 겹치지 않게: '고마워'는 한 번만, 같은 문장 반복 없음
+  const out: string[] = [pick(OPEN_BY_FAMILY[d.family.id] ?? ['너희 집에 와서 정말 행복했어.'])];
+  let thanks = /고마워/.test(out[0]) ? 1 : 0;
+  for (const line of body) {
+    if (out.length >= 4) break;
+    if (out.includes(line)) continue;
+    if (/고마워/.test(line)) {
+      if (thanks >= 1) continue;
+      thanks++;
+    }
+    out.push(line);
   }
-  if (out.length < 3) out.push(BY_PERSONALITY[d.personality.id] ?? '');
-  if (d.walks > 3000) out.push(`같이 걸은 ${Math.round(d.walks).toLocaleString('ko-KR')}번의 산책, 하나도 안 잊을게.`);
-  out.push(CLOSINGS[Math.floor(Math.random() * CLOSINGS.length)]);
-  return out.filter(Boolean).slice(0, 5);
+  const closing = shuffle(CLOSINGS).find((c) => !(thanks && /고마워/.test(c))) ?? CLOSINGS[0];
+  out.push(closing);
+  return out;
 }
