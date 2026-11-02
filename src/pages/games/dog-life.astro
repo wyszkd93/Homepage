@@ -1,6 +1,8 @@
 ---
 import Base from '../../layouts/Base.astro';
 import KakaoShare from '../../components/KakaoShare.astro';
+import dogLife from '../../assets/dog-life.jpg';
+import { Image } from 'astro:assets';
 ---
 
 <Base
@@ -8,7 +10,17 @@ import KakaoShare from '../../components/KakaoShare.astro';
   description="무작위 강아지로 태어나 견종별 수명 통계를 따라 한평생을 살아 보는 미니게임"
   heading="모구의 견생 한 바퀴"
   tagline="무작위 강아지로 태어나 한평생을 살아 봐요"
+  ogImage={dogLife}
 >
+  <Image
+    slot="aside"
+    class="hero-art hero-art-sm"
+    src={dogLife}
+    widths={[200, 300]}
+    sizes="(max-width: 720px) 96px, 150px"
+    alt="안경 쓴 포메라니안 모구가 강아지의 한평생이 담긴 앨범을 펼쳐 보이는 그림"
+    loading="eager"
+  />
   <div class="dl">
     <section id="dl-start" class="tool-panel dl-start">
       <p class="dl-intro">
