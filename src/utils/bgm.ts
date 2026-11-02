@@ -15,14 +15,15 @@ const PROG: Record<Mood, [string, string[]][]> = {
 };
 // 한 마디 8칸(8분음표)마다 화음의 몇 번째 음을 칠지 (-1은 쉼)
 const PATTERN: Record<Mood, number[][]> = {
-  life: [[0, 1, 2, 1, 0, 2, 1, 2], [2, -1, 1, 0, 1, -1, 2, 1], [0, 2, 1, 2, 0, -1, 2, -1]],
+  life: [[0, 2, 1, 2, 0, 2, 1, 2], [2, 1, 0, 1, 2, -1, 2, 1], [0, 1, 2, 1, 2, 1, 0, 2], [1, 2, -1, 2, 1, 0, 2, 0]],
   senior: [[0, -1, 1, -1, 2, -1, 1, -1], [2, -1, -1, 1, 0, -1, -1, -1]],
   ending: [[0, -1, 1, -1, 2, -1, -1, -1], [2, -1, 1, -1, 0, -1, -1, -1]],
 };
-const BPM: Record<Mood, number> = { life: 96, senior: 76, ending: 66 };
+const BPM: Record<Mood, number> = { life: 120, senior: 84, ending: 66 };
 
 export class Bgm {
   private ctx: AudioContext | null = null;
+  private noise: AudioBuffer | null = null;
   private master: GainNode | null = null;
   private timer = 0;
   private nextTime = 0;
@@ -44,6 +45,11 @@ export class Bgm {
     fb.gain.value = 0.25;
     delay.connect(fb).connect(delay);
     this.master.connect(this.ctx.destination);
+    // 하이햇용 짧은 잡음
+    const nb = this.ctx.createBuffer(1, this.ctx.sampleRate * 0.05, this.ctx.sampleRate);
+    const ch = nb.getChannelData(0);
+    for (let i = 0; i < ch.length; i++) ch[i] = Math.random() * 2 - 1;
+    this.noise = nb;
     this.master.connect(delay).connect(this.ctx.destination);
     return this.ctx;
   }
@@ -97,15 +103,54 @@ export class Bgm {
       const pats = PATTERN[this.mood];
       const pat = pats[Math.floor(this.bar / prog.length) % pats.length];
       const i = pat[this.step];
-      if (this.step === 0) this.tone(NOTE[bass], this.nextTime, eighth * 7, 'sine', 0.5);
-      if (this.step === 4 && this.mood === 'life') this.tone(NOTE[bass] * 1.5, this.nextTime, eighth * 3, 'sine', 0.25);
+      const t = this.nextTime;
+      if (this.mood === 'life') {
+        // 통통 튀는 베이스: 근음 - 5도 - 옥타브 - 5도
+        const bassStep = [1, 0, 1.5, 0, 2, 0, 1.5, 0][this.step];
+        if (bassStep) this.tone(NOTE[bass] * bassStep, t, eighth * 1.6, 'sine', this.step === 0 ? 0.5 : 0.32);
+        // 가벼운 드럼: 박마다 킥, 엇박에 하이햇, 2·4박에 손뼉
+        if (this.step % 4 === 0) this.kick(t);
+        if (this.step % 2 === 1) this.hat(t, 0.05);
+        if (this.step === 2 || this.step === 6) this.hat(t, 0.12, 1800);
+      } else {
+        if (this.step === 0) this.tone(NOTE[bass], t, eighth * 7, 'sine', 0.5);
+        if (this.mood === 'senior' && this.step === 4) this.tone(NOTE[bass] * 1.5, t, eighth * 3, 'sine', 0.22);
+      }
       if (i >= 0) this.tone(NOTE[chord[i]], this.nextTime, eighth * 3, 'triangle', 0.32);
       // 가끔 한 옥타브 위 반짝임
-      if (i >= 0 && this.mood !== 'ending' && Math.random() < 0.12) this.tone(NOTE[chord[i]] * 2, this.nextTime + eighth / 2, eighth * 2, 'sine', 0.1);
+      if (i >= 0 && this.mood !== 'ending' && Math.random() < (this.mood === 'life' ? 0.22 : 0.1)) this.tone(NOTE[chord[i]] * 2, this.nextTime + eighth / 2, eighth * 2, 'sine', 0.1);
       this.nextTime += eighth;
       this.step = (this.step + 1) % 8;
       if (this.step === 0) this.bar++;
     }
+  }
+
+  private kick(t: number) {
+    const ctx = this.ctx!;
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.frequency.setValueAtTime(130, t);
+    o.frequency.exponentialRampToValueAtTime(45, t + 0.12);
+    g.gain.setValueAtTime(0.45, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.16);
+    o.connect(g).connect(this.master!);
+    o.start(t);
+    o.stop(t + 0.18);
+  }
+
+  private hat(t: number, vol: number, cutoff = 7000) {
+    const ctx = this.ctx!;
+    const src = ctx.createBufferSource();
+    src.buffer = this.noise;
+    const f = ctx.createBiquadFilter();
+    f.type = 'highpass';
+    f.frequency.value = cutoff;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+    src.connect(f).connect(g).connect(this.master!);
+    src.start(t);
+    src.stop(t + 0.06);
   }
 
   private tone(freq: number, t: number, dur: number, type: OscillatorType, vol: number) {
