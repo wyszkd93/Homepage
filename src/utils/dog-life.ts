@@ -248,3 +248,66 @@ export function ageText(age: number) {
   const m = Math.floor((age - y) * 12);
   return y === 0 ? `${m}개월` : m ? `${y}살 ${m}개월` : `${y}살`;
 }
+
+// ── 강아지별로 가기 전, 가족에게 남기는 말 ──
+// 살아온 기록(가족·성격·기억·선택·산책 수)을 보고 3~4문장을 고릅니다.
+const OPEN_BY_FAMILY: Record<string, string> = {
+  single: '혼자 퇴근하던 너의 저녁, 문 앞에서 기다리는 게 내 하루의 제일 큰 일이었어.',
+  couple: '둘이서 나를 부르던 목소리가 세상에서 제일 좋은 소리였어.',
+  kids: '꼬마들이 자라는 걸 옆에서 다 봤어. 내가 다 키운 거나 마찬가지야.',
+  grand: '할머니 할아버지 무릎이 세상에서 제일 따뜻한 자리였어.',
+  student: '좁은 방이었지만, 너랑 있어서 하나도 좁지 않았어.',
+  farm: '마당을 달리던 날들, 바람 냄새까지 다 기억할게.',
+};
+const BY_MEMORY: Record<string, string> = {
+  '🌊': '바다에서 파도한테 짖던 날 기억나? 사실 좀 무서웠는데 네가 웃어서 괜찮았어.',
+  '❄️': '첫눈 오던 날, 우리 둘 다 바보처럼 뛰어다녔잖아.',
+  '🎂': '내 이름 적힌 케이크, 정말 맛있었어. 내년 몫까지 먹은 걸로 할게.',
+  '⛺': '캠핑 가서 텐트에 같이 누워 있던 밤이 자꾸 생각나.',
+  '🐱': '고양이 동생이랑은 결국 친해졌어. 내 몫까지 잘 챙겨 줘.',
+  '👶': '아기 침대 옆을 지키는 일, 나 꽤 잘했지?',
+  '🏆': '운동회 1등 한 거, 동네방네 자랑해도 돼.',
+  '📷': '가족사진에 나도 넣어 줘서 고마워. 거기서 나 제일 잘 나왔지?',
+  '🌅': '느려진 나랑 끝까지 같은 길을 걸어 줘서 고마워.',
+  '🌸': '처음 산책하던 날, 세상이 이렇게 좋은 냄새로 가득한 줄 몰랐어.',
+  '🏠': '처음 너희 집에 온 날, 사실 조금 떨렸어. 이렇게 좋은 집인 줄 몰랐거든.',
+};
+const BY_PERSONALITY: Record<string, string> = {
+  sweet: '배 만져 줄 때가 제일 행복했어. 그 손 잊지 않을게.',
+  shy: '겁 많은 나를 늘 먼저 안아 줘서 고마워. 너 덕분에 용감했어.',
+  foodie: '간식은… 솔직히 조금 더 먹고 싶었어. 그래도 네가 준 건 다 맛있었어.',
+  rascal: '양말 숨긴 거 미안해. 사실 네 냄새가 좋아서 그랬어.',
+  calm: '말은 못 했지만 나는 늘 네 옆에 있었어. 앞으로도 그럴 거야.',
+  curious: '산책길 냄새를 다 맡을 때까지 기다려 줘서 고마워.',
+  sleepy: '꿈속에서도 맨날 너랑 산책했어. 거기서도 계속할게.',
+};
+const BY_PICK: Record<string, [string, string]> = {
+  checkup: ['병원은 싫었지만, 덕분에 너랑 더 오래 있을 수 있었어.', ''],
+  stroller: ['유모차 태워 줘서 고마워. 다리가 아파도 좋아하던 공원 바람을 맞을 수 있었어.', '느려진 걸음에 맞춰 천천히 걸어 줘서 고마워.'],
+  diet: ['다이어트할 때 서운했던 거, 이제 다 이해해.', ''],
+  weekend: ['주말마다 새 냄새 맡으러 데려가 줘서 신났어.', '소파에서 같이 뒹굴던 주말이 제일 좋았어.'],
+};
+const CLOSINGS = [
+  '먼저 강아지별에 가서 기다릴게. 천천히, 아주 천천히 와. 사랑해.',
+  '너무 오래 울지 말고, 맛있는 거 먹고 산책 많이 해. 사랑해.',
+  '나는 강아지별에서 꼬리 흔들면서 기다릴게. 고마웠어, 정말 많이.',
+  '다음에 또 만나면, 그때도 내가 먼저 달려갈게. 사랑해.',
+];
+
+export function lastWords(d: Dog, memories: { icon: string }[], picks: Record<string, number>): string[] {
+  const out: string[] = [OPEN_BY_FAMILY[d.family.id] ?? '너희 집에 와서 정말 행복했어.'];
+  // 가장 최근의 특별한 기억 하나
+  const mem = [...memories].reverse().find((m) => BY_MEMORY[m.icon] && m.icon !== '🏠');
+  if (mem) out.push(BY_MEMORY[mem.icon]);
+  // 고른 선택 중 하나 (나중 선택 우선)
+  for (const id of ['stroller', 'checkup', 'weekend', 'diet']) {
+    if (id === 'stroller' && mem?.icon === '🌅') continue; // '천천히 걸어 줘서'가 겹치지 않게
+    const k = picks[id];
+    const line = k === undefined ? '' : BY_PICK[id]?.[k] ?? '';
+    if (line) { out.push(line); break; }
+  }
+  if (out.length < 3) out.push(BY_PERSONALITY[d.personality.id] ?? '');
+  if (d.walks > 3000) out.push(`같이 걸은 ${Math.round(d.walks).toLocaleString('ko-KR')}번의 산책, 하나도 안 잊을게.`);
+  out.push(CLOSINGS[Math.floor(Math.random() * CLOSINGS.length)]);
+  return out.filter(Boolean).slice(0, 5);
+}

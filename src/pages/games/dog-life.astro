@@ -124,6 +124,7 @@ import { Image } from 'astro:assets';
         <p class="dl-end-icon">🌈</p>
         <p id="dl-end-title" class="dl-end-title"></p>
         <p id="dl-end-text" class="dl-end-text"></p>
+        <blockquote id="dl-letter" class="dl-letter" hidden></blockquote>
         <ul id="dl-end-stats" class="dl-end-stats"></ul>
         <div class="dl-memories">
           <h2>함께한 기억</h2>
@@ -145,7 +146,7 @@ import { Image } from 'astro:assets';
 
 <script>
   import {
-    born, eventsForYear, applyEffect, tick, stageOf, ageText, nameGa, CHOICES, BREEDS, NAMES, FAMILIES, PERSONALITIES,
+    born, eventsForYear, applyEffect, tick, stageOf, ageText, nameGa, lastWords, CHOICES, BREEDS, NAMES, FAMILIES, PERSONALITIES,
     type Dog, type LifeEvent,
   } from '../../utils/dog-life';
   import { DogScene, homeOf, coatName, SEASON_NAME } from '../../utils/dog-scene';
@@ -197,6 +198,8 @@ import { Image } from 'astro:assets';
 
   const scene = new DogScene($('dl-canvas') as HTMLCanvasElement);
   let memLog: { age: number; icon: string; text: string }[] = [];
+  let picks: Record<string, number> = {};
+  let letter: string[] = [];
 
   // ── 마지막: 지나온 날들이 스쳐 지나가는 장면 ──
   const LAST_WORDS = [
@@ -217,16 +220,19 @@ import { Image } from 'astro:assets';
       { age: d.lifespan, icon: '🌈', text: '무지개다리를 건너 모구 친구들에게 갔어요.' },
     ];
     $('dl-m-title').textContent = `마지막 해, ${ageText(d.lifespan)}`;
-    const lines = [
-      `${d.family.name} 곁에서 편안히 잠들었어요.`,
-      LAST_WORDS[Math.floor(Math.random() * LAST_WORDS.length)],
-      '눈을 감자, 함께한 날들이 스쳐 지나갔어요.',
+    const lines: [string, string][] = [
+      [`${d.family.name} 곁에서 편안히 잠들었어요.`, ''],
+      [LAST_WORDS[Math.floor(Math.random() * LAST_WORDS.length)], ''],
+      [`강아지별로 가기 전, ${nameGa(d.name)} 남긴 말`, 'dl-m-letter-h'],
+      ...letter.map((t): [string, string] => [`“${t}”`, 'dl-m-letter']),
+      ['눈을 감자, 함께한 날들이 스쳐 지나갔어요.', 'dl-m-last'],
     ];
     $('dl-m-lines').innerHTML = '';
-    lines.forEach((t, i) => {
+    lines.forEach(([t, cls], i) => {
       const p = document.createElement('p');
       p.textContent = t;
-      p.style.animationDelay = `${0.6 + i * 0.9}s`;
+      if (cls) p.className = cls;
+      p.style.animationDelay = `${0.6 + i * 1.3}s`;
       $('dl-m-lines').append(p);
     });
     const bar = $('dl-m-bar');
@@ -241,7 +247,7 @@ import { Image } from 'astro:assets';
     let idx = -1;
     let slideStart = 0;
     let mraf = 0;
-    let introTimer = window.setTimeout(() => toReel(), 4600);
+    let introTimer = window.setTimeout(() => toReel(), 2500 + lines.length * 1300 + 2500);
     const SLIDE_MS = 2000;
 
     function show(i: number, now: number) {
@@ -333,6 +339,8 @@ import { Image } from 'astro:assets';
   function beginLife() {
     if (!dog) return;
     memLog = [];
+    picks = {};
+    letter = [];
     age = 0;
     year = -1;
     queue = [];
@@ -376,6 +384,7 @@ import { Image } from 'astro:assets';
       b.addEventListener('click', () => {
         if (!dog) return;
         applyEffect(dog, o.effect);
+        picks[c.id] = c.options.indexOf(o);
         log('🗳️', `${o.label} → ${o.text}`, age, 'is-choice');
         choiceIdx++;
         waiting = false;
@@ -490,13 +499,27 @@ import { Image } from 'astro:assets';
     cancelAnimationFrame(raf);
     const d = dog;
     age = d.lifespan;
+    letter = lastWords(d, memLog, picks);
     log('🌈', `${nameGa(d.name)} 가족 곁에서 편안히 잠들었어요.`, age, 'is-memory');
+    log('💌', `“${letter.join(' ')}”`, age, 'is-memory');
     const score = Math.round((d.stats.happy + d.stats.bond) / 2);
     const sum: Summary = {
       b: d.breed.name, n: d.name, y: Math.round(age * 100) / 100, w: Math.round(d.walks), t: Math.round(d.treats),
       f: d.friends, s: score, fam: d.family.name, p: d.personality.name, e: d.breed.emoji, m: d.memories.slice(-3),
     };
     const stats = renderEnd(sum);
+    const lt = $('dl-letter');
+    lt.innerHTML = '';
+    const h = document.createElement('p');
+    h.className = 'dl-letter-h';
+    h.textContent = `💌 강아지별로 가기 전, ${nameGa(d.name)} 남긴 말`;
+    lt.append(h);
+    for (const t of letter) {
+      const p = document.createElement('p');
+      p.textContent = t;
+      lt.append(p);
+    }
+    lt.hidden = false;
     $('dl-shared').hidden = true;
     playMovie(d, () => {
       $('dl-live').hidden = true;
@@ -623,6 +646,7 @@ import { Image } from 'astro:assets';
   const shared = unpackShare(new URLSearchParams(location.search).get('r'));
   if (shared) {
     renderEnd(shared);
+    $('dl-letter').hidden = true;
     $('dl-start').hidden = true;
     $('dl-end').hidden = false;
     $('dl-shared').hidden = false;
@@ -695,6 +719,10 @@ import { Image } from 'astro:assets';
   .dl-m-intro :global(p) { margin: 0 0 12px; font-size: 1.05rem; line-height: 1.7; opacity: 0; animation: dl-fade 1s ease forwards; }
   .dl-m-reel { width: min(720px, 100%); }
   .dl-m-reel canvas { display: block; width: 100%; height: auto; aspect-ratio: 240 / 110; image-rendering: pixelated; border-radius: 10px; }
+  .dl-m-intro :global(.dl-m-letter-h) { margin-top: 26px; color: #e9b77a; font-size: 0.92rem; font-weight: 700; }
+  .dl-m-intro :global(.dl-m-letter) { font-size: 1.08rem; color: #fff6ea; max-width: 30em; margin-left: auto; margin-right: auto; word-break: keep-all; }
+  .dl-m-intro :global(.dl-m-last) { margin-top: 26px; color: #a8a29a; }
+  .dl-m-intro { max-height: calc(100vh - 120px); overflow-y: auto; }
   .dl-m-age { margin: 18px 0 6px; color: #a8a29a; font-size: 0.95rem; }
   .dl-m-text { margin: 0; min-height: 3.4em; font-size: 1.15rem; line-height: 1.6; word-break: keep-all; opacity: 0; }
   .dl-m-text:global(.is-in) { animation: dl-fade 0.6s ease forwards; }
@@ -809,6 +837,19 @@ import { Image } from 'astro:assets';
   .dl-shared[hidden], .dl-memories[hidden] { display: none; }
   .dl-shared p { margin: 0; font-weight: 600; }
   .dl-end-card { text-align: center; }
+  .dl-letter {
+    margin: 0 0 18px;
+    padding: 16px 18px;
+    border-radius: 14px;
+    background: var(--accent-soft);
+    text-align: left;
+    line-height: 1.8;
+    word-break: keep-all;
+  }
+  .dl-letter[hidden] { display: none; }
+  .dl-letter :global(p) { margin: 0 0 6px; }
+  .dl-letter :global(p:last-child) { margin-bottom: 0; }
+  .dl-letter :global(.dl-letter-h) { font-weight: 700; color: var(--accent); margin-bottom: 8px; }
   .dl-end-icon { font-size: 2.6rem; margin: 0; }
   .dl-end-title { font-size: 1.3rem; font-weight: 800; margin: 6px 0 8px; }
   .dl-end-text { margin: 0 0 16px; line-height: 1.8; color: var(--ink-muted); }
