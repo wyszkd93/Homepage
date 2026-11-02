@@ -6,7 +6,10 @@ export const kakaoEnabled = KAKAO_JS_KEY !== '';
 type KakaoSDK = {
   isInitialized(): boolean;
   init(key: string): void;
-  Share: { sendDefault(opts: unknown): void };
+  Share: {
+    sendDefault(opts: unknown): void;
+    uploadImage(opts: { file: File[] }): Promise<{ infos: { original: { url: string } } }>;
+  };
 };
 declare global {
   interface Window { Kakao?: KakaoSDK }
@@ -31,20 +34,46 @@ function loadSdk(): Promise<KakaoSDK> {
   return loading;
 }
 
+export interface ShareItem { item: string; itemOp: string }
+export interface ShareOptions {
+  title: string;
+  description: string;
+  buttonTitle?: string;
+  /** 카드 아래 목록 (최대 5줄) */
+  items?: ShareItem[];
+  /** 카드 이미지로 쓸 그림. 카카오 서버에 올린 뒤 사용하고, 실패하면 페이지 대표 그림을 씁니다. */
+  image?: () => Promise<Blob | null>;
+}
+
 /** 지금 페이지를 카카오톡으로 공유합니다. */
-export async function shareKakao(opts: { title: string; description: string; buttonTitle?: string }) {
+export async function shareKakao(opts: ShareOptions) {
   if (!kakaoEnabled) return;
   const Kakao = await loadSdk();
   if (!Kakao.isInitialized()) Kakao.init(KAKAO_JS_KEY);
+  let uploaded: string | null = null;
+  if (opts.image) {
+    try {
+      const blob = await opts.image();
+      if (blob) {
+        const res = await Kakao.Share.uploadImage({ file: [new File([blob], 'result.png', { type: 'image/png' })] });
+        uploaded = res.infos.original.url;
+      }
+    } catch (e) {
+      console.warn('결과 이미지를 올리지 못해 기본 그림을 씁니다.', e);
+    }
+  }
   const page = location.origin + location.pathname;
   // 카드에서 들어온 사람은 빈 화면에서 시작하도록 표시를 붙입니다.
   const url = `${page}?from=kakao`;
   const imageUrl =
-    document.querySelector<HTMLMetaElement>('meta[property="og:image"]')?.content ?? `${location.origin}/favicon.png`;
+    uploaded ??
+    document.querySelector<HTMLMetaElement>('meta[property="og:image"]')?.content ??
+    `${location.origin}/favicon.png`;
   const link = { mobileWebUrl: url, webUrl: url };
   Kakao.Share.sendDefault({
     objectType: 'feed',
-    content: { title: opts.title, description: opts.description, imageUrl, link },
+    content: { title: opts.title, description: opts.description, imageUrl, link, ...(uploaded ? { imageWidth: 800, imageHeight: 800 } : {}) },
+    ...(opts.items?.length ? { itemContent: { items: opts.items.slice(0, 5) } } : {}),
     buttons: [{ title: opts.buttonTitle ?? '나도 해보기', link }],
   });
 }

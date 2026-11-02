@@ -84,6 +84,9 @@ const jsonLd = article
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
     />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400&display=swap" />
     <slot name="head" />
     <script is:inline>
       // 깜빡임 없이 저장된 테마를 먼저 적용
@@ -103,7 +106,13 @@ const jsonLd = article
         <div class:list={['wrap page-head-inner', { 'has-aside': hasAside }]}>
           <div class="page-head-text">
             <h1 data-pagefind-meta="title">{heading}</h1>
-            {tagline && <p class="tagline">{tagline}</p>}
+            {tagline && (
+              <p class="tagline">
+                {tagline.split(' · ').map((part, i) => (
+                  <>{i > 0 && <span class="tl-sep"> · </span>}<span class="tl-part">{part}</span></>
+                ))}
+              </p>
+            )}
             <slot name="hero" />
           </div>
           <slot name="aside" />

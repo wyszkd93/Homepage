@@ -27,6 +27,8 @@
   - 사주 카페: 계산은 `src/utils/saju.ts`, 풀이(십성·신강약·용신·대운·세운·개운)는 `src/utils/saju-reading.ts` (일주 기준 1900-01-01 甲戌, 절기는 평균 날짜로 근사). 오늘의 운세는 오늘 일진과 일간의 오행 관계 + 생일·날짜 고정 난수
   - 최고 점수, 진행 중인 2048 판, 사주 입력값은 그 브라우저에만 저장됩니다.
   - 뽁뽁이는 사주 카페로 교체하며 삭제했습니다.
+  - 사주 카페 결과 공유: 결과 요약 카드(`src/utils/saju-card.ts`, 캔버스 800x800)를 카카오 서버에 올려(uploadImage) 카드 이미지로 사용, 실패 시 사주 모구 그림. 카드 아래 일간·구조·용신·오늘 총운 목록
+  - 사주 카페 페이지 상단 그림·링크 미리보기: `src/assets/saju-mogu.webp`
   - 카카오톡 공유: `src/components/KakaoShare.astro`(게임 페이지 하단 버튼) + 랭킹 결과 창 '카톡으로 자랑하기'. 키는 `src/consts.ts`의 `KAKAO_JS_KEY`(비우면 버튼 숨김), 카카오 콘솔에 사이트 도메인 `https://wyszkd93.github.io` 등록 필요
 - **게임 공용 랭킹 (Firebase)**: 플래피 모구·과일 합치기·2048 (`src/components/Leaderboard.astro`)
   - Firebase 프로젝트 `mogu-homepage` (무료 Spark 요금제), 로그인은 Google, DB는 Firestore 서울(asia-northeast3)
