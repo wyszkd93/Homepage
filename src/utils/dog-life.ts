@@ -106,6 +106,9 @@ export interface LifeEvent {
   apply?: (d: Dog, age: number) => void; // 가족 구성 변화 같은 추가 효과
 }
 
+export type CatCoat = 'cheese' | 'black' | 'gray' | 'calico' | 'white';
+export const CAT_NAME: Record<CatCoat, string> = { cheese: '치즈냥이', black: '까망이', gray: '회색냥이', calico: '삼색이', white: '흰둥이' };
+
 export interface Dog {
   breed: Breed;
   name: string;
@@ -126,6 +129,7 @@ export interface Dog {
   household: { extra: ('adult' | 'child' | 'baby')[]; away: number }; // 가족 구성 변화 (장면에 반영)
   sibling: Breed | null; // 함께 사는 강아지 동생
   siblingAt: number; // 동생이 온 나이 (장면에서 동생을 아기→어른으로 그리기)
+  cat: { coat: CatCoat; at: number } | null; // 함께 사는 고양이 동생
   rare: number; // 희귀한 일을 겪은 횟수
   joy: { sum: number; t: number; base: number }; // 평생 행복 점수 누적값, base: 이 강아지의 평소 기분
 }
@@ -178,6 +182,7 @@ export function born(): Dog {
     household: { extra: [], away: 0 },
     sibling: null,
     siblingAt: 0,
+    cat: null,
     rare: 0,
     joy: { sum: 0, t: 0, base: 0 },
   };
@@ -520,6 +525,14 @@ export function choose(d: Dog, c: Choice, k: number) {
   if (c.id === 'move') d.home = HOMES[k === 0 ? 'parkapt' : 'nearwork'];
 }
 
+/** 고양이 동생을 들여요: 장면에 고양이가 함께 나와요. */
+export function adoptCat(d: Dog, age: number) {
+  if (d.cat) return;
+  const coats: CatCoat[] = ['cheese', 'black', 'gray', 'calico', 'white'];
+  d.cat = { coat: pick(coats), at: age };
+  if (!d.flags.includes('cat')) d.flags.push('cat');
+}
+
 /** 강아지 동생을 들여요: 장면에 동생이 함께 나오고, 동생과 이어지는 사건이 열립니다. */
 export function adoptSibling(d: Dog, age: number) {
   if (d.sibling) return;
@@ -716,7 +729,9 @@ const POOL: Pool = [
   { min: 1, max: 9, icon: '✂️', text: V('미용실에서 돌아왔더니 다른 강아지 같대요. 본인도 당황.', '{누구가} 집에서 털을 잘라 줬어요. 한쪽이 짝짝이가 됐어요.', '미용 끝나고 리본을 달았더니 하루 종일 으쓱했어요.'), effect: { happy: -2 } },
   { min: 1, max: 9, icon: '🌊', text: V('처음으로 바다에 갔어요. 파도한테 짖었어요.', '{누구와} 바닷가 모래사장에 구덩이를 팠어요.', '바다에 발을 담갔다가 짠맛에 깜짝 놀랐어요.'), effect: { happy: 7 }, memory: true, key: 'sea' },
   { min: 1.5, max: 8, icon: '⛺', text: V('가족과 캠핑을 떠났어요. 텐트 안이 제일 좋았대요.', '{누구가} 피운 모닥불 앞에서 별을 보며 졸았어요.', '캠핑장에서 옆 텐트 강아지와 친구가 됐어요.'), effect: { happy: 6, bond: 5 }, memory: true, key: 'camping' },
-  { min: 2, max: 10, icon: '🐱', text: V('집에 고양이 동생이 왔어요. 아직은 서로 눈치 보는 중.', '{누구가} 길에서 구조한 고양이가 가족이 됐어요. 첫날은 서로 하악질.', '고양이 동생이 내 방석을 빼앗았어요. 그래도 같이 쓰기로 했어요.'), effect: { happy: -2 }, friend: true },
+  { min: 2, max: 10, icon: '🐱', text: V('집에 아기 고양이 동생이 왔어요. 아직은 서로 눈치 보는 중.', '{누구가} 길에서 구조한 아기 고양이가 가족이 됐어요. 첫날은 서로 하악질.', '상자 속에서 야옹 소리가 났어요. 고양이 동생이 생겼어요.'), effect: { happy: -2 }, friend: true, memory: true, key: 'cat', when: (d) => !d.cat, apply: (d, age) => adoptCat(d, age) },
+  { min: 2, max: 14, icon: '🐈', text: V('고양이 동생이 내 방석을 빼앗았어요. 그래도 같이 쓰기로 했어요.', '고양이 동생이 내 꼬리를 장난감인 줄 알고 툭툭 쳐요.', '고양이 동생과 창가 햇볕 자리를 반씩 나눠 썼어요.', '밥그릇 앞에서 고양이 동생과 눈싸움을 했어요. 결국 내가 졌어요.'), effect: { happy: 3, bond: 1 }, need: 'cat' },
+  { min: 3, max: 14, icon: '😺', text: V('고양이 동생이 내 등에 올라와 식빵을 구웠어요.', '고양이 동생이 처음으로 내 얼굴을 핥아 줬어요. 까끌까끌했어요.', '{누구가} 둘이 꼭 붙어 자는 사진을 찍어 가족 단톡방에 올렸어요.'), effect: { happy: 4, bond: 2 }, memory: true, key: 'catfriend', need: 'cat' },
   { min: 2, max: 11, icon: '📦', text: V('이사를 했어요. 새 집 구석구석 냄새 확인 완료.', '집 가구 배치가 바뀌었어요. 소파 자리가 바뀌어서 한참 헤맸어요.', '새 방석이 생겼는데 결국 {누구} 이불이 더 좋대요.'), effect: { happy: -1, bond: 2 } },
   { min: 2, max: 12, icon: '❄️', text: V('첫눈이 왔어요. 눈밭에서 미친 듯이 뛰어다녔어요.', '{누구와} 눈사람을 만들었어요. 코는 내가 먹어 버렸어요.', '눈 쌓인 {장소}에 내 발자국을 잔뜩 찍었어요.'), effect: { happy: 6 }, memory: true, key: 'snow' },
   { min: 1, max: 12, icon: '😴', text: V('햇볕 드는 창가에서 낮잠. 오늘도 평화로운 하루.', '빨래 바구니 속에서 잠든 채 발견됐어요.', '가족 발밑에서 코를 골며 낮잠을 잤어요.', '비 오는 날, 하루 종일 이불 속에서 뒹굴었어요.'), effect: { happy: 3 }, when: (d) => d.personality.id === 'sleepy' || Math.random() < 0.5 },
@@ -844,6 +859,7 @@ const LATE: Pool = [
   { min: 6, max: 20, icon: '🫂', text: V('{누구가} 나가기 전에 꼭 안아 주고 가요. 문이 닫혀도 한참 그 자리에 있어요.', '{누구가} 소파에 누우면 다리 사이로 파고들어 같이 낮잠을 자요.'), effect: { bond: 6 } },
   { min: 6, max: 20, icon: '🌙', text: V('밤 산책에서 별을 봤어요. {누구가} "저기가 강아지별이래" 하고 알려 줬어요.', '달 밝은 밤, {누구} 무릎에 기대 오래 하늘을 봤어요.'), effect: { bond: 5 }, memory: true, key: 'starwalk' },
   { min: 6, max: 20, icon: '🐕', text: () => '동생 강아지가 내 밥그릇 앞에서 기다려 줘요. 내가 다 먹을 때까지.', effect: { happy: 4, bond: 2 }, need: 'sibling' },
+  { min: 6, max: 20, icon: '🐈', text: V('고양이 동생이 내 옆에 몸을 붙이고 골골송을 불러 줘요.', '잠든 내 옆을 고양이 동생이 밤새 지켜 줬대요.'), effect: { bond: 4, happy: 3 }, need: 'cat' },
   { min: 6, max: 20, icon: '🎾', text: () => '공을 던져 주니 세 걸음 뛰고 돌아왔어요. 그래도 표정은 대회 때 그대로예요.', effect: { happy: 5 }, need: 'athlete' },
   { min: 6, max: 20, icon: '⛺', text: () => '오랜만의 캠핑. 모닥불 앞에서 가족 무릎을 베고 잤어요.', effect: { happy: 5, bond: 4 }, need: 'camper', memory: true, key: 'lastcamp' },
   { min: 6, max: 20, icon: '⛰️', text: () => '예전에 오르던 산 입구까지만 갔어요. 거기서 냄새로 정상까지 다녀왔대요.', effect: { happy: 4 }, need: 'hiker' },
@@ -1000,6 +1016,7 @@ export function titlesOf(d: Dog, memories: number): string[] {
     [d.flags.includes('sns') || d.flags.includes('athlete'), '🌟 동네 스타'],
     [d.friends >= 4, '🐾 동네 인싸'],
     [!!d.sibling, '🐕 든든한 형·언니'],
+    [!!d.cat, '🐈 냥이와 한 지붕'],
     [d.lifespan > d.breed.life[1], '🎖️ 장수견'],
     [d.walks > 10000, '👟 산책왕'],
     [d.treats > 13000, '🍖 간식 감별사'],
@@ -1074,6 +1091,8 @@ const BY_MEMORY: Record<string, string[]> = {
   sibshare: ['동생한테 밥 양보한 거, 다음엔 걔가 너한테 양보할 거야.'],
   earlycatch: ['검진 덕분에 아픈 걸 일찍 찾았잖아. 네가 날 지켜 준 거야.'],
   newfamily: ['새 가족이 생긴 날, 나도 가족이 하나 더 생겼어.'],
+  cat: ['고양이 동생한테 내 방석 이제 다 가져도 된다고 전해 줘.'],
+  catfriend: ['고양이 동생이랑 붙어 자던 밤, 골골송이 제일 좋은 자장가였어.'],
   shopdog: ['가게 SNS 속 나, 단골손님들한테 고마웠다고 전해 줘.'],
   daughtergrad: ['졸업 사진 한가운데 앉혀 줘서 고마워. 우리 딸, 다 컸다.'],
   painted: ['전시회에 걸린 내 발도장, 그게 내 이름이야.'],

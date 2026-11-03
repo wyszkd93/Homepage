@@ -161,7 +161,7 @@ import { Image } from 'astro:assets';
 
 <script>
   import {
-    born, eventsForYear, applyEffect, tick, lifeScore, stageOf, ageText, nameGa, lastWords, choose, titlesOf, BREEDS, NAMES, FAMILIES, PERSONALITIES,
+    born, eventsForYear, applyEffect, tick, lifeScore, CAT_NAME, stageOf, ageText, nameGa, lastWords, choose, titlesOf, BREEDS, NAMES, FAMILIES, PERSONALITIES,
     type Dog, type LifeEvent,
   } from '../../utils/dog-life';
   import { Bgm } from '../../utils/bgm';
@@ -505,7 +505,7 @@ import { Image } from 'astro:assets';
       const home = homeOf(dog);
       const extra = dog.household.extra.length ? ` +${dog.household.extra.length}` : '';
       const who = dog.family.name.includes(home) ? dog.family.name : `${home} · ${dog.family.name}`;
-      $('dl-scene-cap').textContent = `${who}${extra}${dog.sibling ? ` · 동생 ${dog.sibling.name}` : ''} · ${SEASON_NAME[Math.floor((age % 1) * 4) % 4]}`;
+      $('dl-scene-cap').textContent = `${who}${extra}${dog.sibling ? ` · 동생 ${dog.sibling.name}` : ''}${dog.cat && age >= dog.cat.at ? ` · 고양이 ${CAT_NAME[dog.cat.coat]}` : ''} · ${SEASON_NAME[Math.floor((age % 1) * 4) % 4]}`;
     }
     if (!dog || paused || waiting) return;
     let next = age + (dtMs / YEAR_MS) * speed;
