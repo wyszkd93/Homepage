@@ -12,10 +12,10 @@ description: 사용자가 링크(GitHub 저장소, AI 뉴스, 블로그, 논문)
 |---|---|---|
 | AI 타임스 | https://www.aitimes.com/rss/allArticle.xml , https://www.aitimes.com/news/articleList.html?sc_section_code=S1N24&view_type=sm | ✅ (robots: /admin/만 금지) |
 | Anthropic | https://www.anthropic.com/news | ✅ |
-| OpenAI | https://openai.com/news/rss.xml (웹 페이지는 봇 차단 403) | ✅ RSS |
-| Google DeepMind | https://deepmind.google/blog/rss.xml , https://deepmind.google/blog/ | ✅ |
+| OpenAI | https://openai.com/news/rss.xml (웹 페이지는 봇 차단 403 → 본문을 못 읽으면 올리지 않음) | ✅ RSS |
+| Google DeepMind | https://deepmind.google/blog/rss.xml (gzip으로 와요: `curl --compressed`), https://deepmind.google/blog/ | ✅ |
 | Meta AI | https://ai.meta.com/blog/ | ✅ |
-| ZDNet Korea | https://zdnet.co.kr/feed/article_list.xml | ✅ (robots: /Include2/user/, /Contents/ 금지) |
+| ZDNet Korea | https://zdnet.co.kr/feed/article_list.xml (RSS가 아니라 sitemap 형식: `<url><loc>`) | ✅ (robots: /Include2/user/, /Contents/ 금지) |
 | PostgreSQL | https://www.postgresql.org/news.rss | ✅ |
 | GitHub 새 인기 저장소 | `https://api.github.com/search/repositories?q=topic:<주제>+created:>YYYY-MM-DD+stars:>=200&sort=stars&order=desc&per_page=10` (주제: llm, ai-agent, mcp, claude, rag, vector-database, text-to-sql / 최근 7일) — trending 웹은 403 | ✅ API (비로그인 분당 10회 제한) |
 | GeekNews | https://news.hada.io/rss/news → https://feeds.feedburner.com/geeknews-feed (웹 페이지는 403) | ✅ RSS (Atom) |
@@ -39,7 +39,7 @@ description: 사용자가 링크(GitHub 저장소, AI 뉴스, 블로그, 논문)
      3. `써 보기 전에 알아둘 것도 있어요.` 설치·사용 한 줄, 한계·주의점, 라이선스
      - 예시: `src/content/picks/anatomy.md`
    - `comment`(💬 한마디): 왜 볼 만한지 1~2문장. 본문 불릿과 같은 예시를 되풀이하지 않는다.
-   - 뉴스·블로그는 `card.image`(og:image), `card.site`를 넣는다.
+   - 뉴스·블로그는 `card.site`를 넣는다. `card.image`(og:image)는 이미지가 실제로 열리는지 확인될 때만 넣는다(확인 못 하면 빈 상자가 생기니 생략). 뉴스 og:image 사진은 언론사·제3자 저작물이라 핫링크만 하고 저장하지 않는다.
 4. **확인 후 배포**
    - `npm run build` 후 `/picks/`와 상세 페이지 스크린샷을 사용자에게 보여 주고 확인받는다.
    - 확인되면 작업 브랜치에 커밋 → PR → CI 통과 후 merge → main 배포 확인.
