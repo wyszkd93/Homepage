@@ -7,6 +7,20 @@ description: 사용자가 링크(GitHub 저장소, AI 뉴스, 블로그, 논문)
 
 링크 하나를 `src/content/picks/<slug>.md` 하나로 만든다. 예시: `src/content/picks/anthropic-sandbox-runtime.md`.
 
+## 자동 수집 출처 (2026-11-03 접속 확인)
+| 출처 | 읽을 주소 | 상태 |
+|---|---|---|
+| AI 타임스 | https://www.aitimes.com/rss/allArticle.xml , https://www.aitimes.com/news/articleList.html?sc_section_code=S1N24&view_type=sm | ✅ (robots: /admin/만 금지) |
+| Anthropic | https://www.anthropic.com/news | ✅ |
+| OpenAI | https://openai.com/news/rss.xml (웹 페이지는 봇 차단 403) | ✅ RSS |
+| Google DeepMind | https://deepmind.google/blog/rss.xml , https://deepmind.google/blog/ | ✅ |
+| Meta AI | https://ai.meta.com/blog/ | ✅ |
+| ZDNet Korea | https://zdnet.co.kr/feed/article_list.xml | ✅ (robots: /Include2/user/, /Contents/ 금지) |
+| PostgreSQL | https://www.postgresql.org/news.rss | ✅ |
+| GitHub 인기 저장소 | github.com/trending (403) | ❌ 대신 위 출처에 소개된 저장소를 `git clone --depth 1`로 읽기 |
+| GeekNews | news.hada.io (403), RSS는 feeds.feedburner.com으로 넘어감(차단) | ❌ feeds.feedburner.com 허용 시 https://news.hada.io/rss/news |
+| Oracle 블로그 | blogs.oracle.com (Akamai 403) | ❌ 사이트가 봇 차단 |
+
 ## 순서
 1. **저작권 확인 먼저**
    - 원문 본문을 복사해 붙이지 않는다. `original`에는 원문이 스스로 공개한 **한 줄 설명**(GitHub 저장소 설명, og:description)만 그대로 넣는다.
