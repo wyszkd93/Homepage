@@ -96,6 +96,15 @@ const jsonLd = article
         if (!theme) theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         document.documentElement.dataset.theme = theme;
       })();
+      // 기능·게임 페이지를 한 번 열면 홈 카드의 NEW를 그 기기에서 숨겨요 (링크로 바로 들어와도)
+      (() => {
+        const m = location.pathname.match(/\/(games|tools)\/([^/]+)\/?$/);
+        if (!m) return;
+        try {
+          const seen = JSON.parse(localStorage.getItem('seen:tools') || '[]');
+          if (!seen.includes(m[2])) { seen.push(m[2]); localStorage.setItem('seen:tools', JSON.stringify(seen)); }
+        } catch {}
+      })();
     </script>
   </head>
   <body>
