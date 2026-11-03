@@ -359,7 +359,6 @@ const HOURS = [
     e.preventDefault();
     if (!dateIn.value) return;
     leaveShared();
-    try { localStorage.setItem(KEY, JSON.stringify({ date: dateIn.value, hour: hourIn.value, gender: genderIn.value })); } catch {}
     render(dateIn.value, hourIn.value, genderIn.value);
     $('sj-result').scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
@@ -388,15 +387,8 @@ const HOURS = [
     history.replaceState(null, '', location.pathname + (qs ? `?${qs}` : '') + location.hash);
   }
 
-  try {
-    const saved = fromShare ? null : JSON.parse(localStorage.getItem(KEY) ?? 'null');
-    if (saved?.date) {
-      dateIn.value = saved.date;
-      hourIn.value = saved.hour ?? '';
-      genderIn.value = saved.gender ?? '';
-      render(saved.date, hourIn.value, genderIn.value);
-    }
-  } catch {}
+  // 입력은 저장하지 않아요. 들어올 때마다 빈 화면에서 시작하고, 예전에 저장된 값이 있으면 지웁니다.
+  try { localStorage.removeItem(KEY); } catch {}
 </script>
 
 <style>
