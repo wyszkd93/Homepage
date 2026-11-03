@@ -322,6 +322,10 @@ export class DogScene {
     ctx.scale(k, k);
     // 꼬리 (살랑살랑)
     const sway = Math.round(Math.sin(now / 400) * 2);
+    // 테두리: 몸·머리·귀·꼬리 실루엣을 1px 크게 먼저 칠해서 밝은 배경에서도 잘 보이게
+    const line = coat === 'black' ? '#6b6466' : '#5a4a40';
+    for (const [rx, ry, rw, rh] of [[5, -6, 2, 5], [6 + sway, -9, 2, 4], [-4, -7, 9, 7], [-6, -13, 7, 6], [-6, -15, 2, 2], [-1, -15, 2, 2]] as const)
+      px(ctx, line, rx - 1, ry - 1, rw + 2, rh + 2);
     px(ctx, dark, 5, -6, 2, 5);
     px(ctx, dark, 6 + sway, -9, 2, 4);
     // 앉은 몸
