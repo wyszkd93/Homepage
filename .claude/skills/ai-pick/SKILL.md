@@ -17,7 +17,7 @@ description: 사용자가 링크(GitHub 저장소, AI 뉴스, 블로그, 논문)
 | Meta AI | https://ai.meta.com/blog/ | ✅ |
 | ZDNet Korea | https://zdnet.co.kr/feed/article_list.xml | ✅ (robots: /Include2/user/, /Contents/ 금지) |
 | PostgreSQL | https://www.postgresql.org/news.rss | ✅ |
-| GitHub 인기 저장소 | github.com/trending (403) | ❌ 대신 위 출처에 소개된 저장소를 `git clone --depth 1`로 읽기 |
+| GitHub 새 인기 저장소 | `https://api.github.com/search/repositories?q=topic:<주제>+created:>YYYY-MM-DD+stars:>=200&sort=stars&order=desc&per_page=10` (주제: llm, ai-agent, mcp, claude, rag, vector-database, text-to-sql / 최근 7일) — trending 웹은 403 | ✅ API (비로그인 분당 10회 제한) |
 | GeekNews | https://news.hada.io/rss/news → https://feeds.feedburner.com/geeknews-feed (웹 페이지는 403) | ✅ RSS (Atom) |
 | Oracle 블로그 | blogs.oracle.com (Akamai 403) | ❌ 사이트가 봇 차단 |
 
