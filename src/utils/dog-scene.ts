@@ -323,7 +323,10 @@ export class DogScene {
     px(ctx, '#2b211b', bx - 10, by - 9, 1, 16);
     px(ctx, '#2b211b', bx + 9, by - 9, 1, 16);
     px(ctx, '#ffffff', bx - 1, by + 7, 3, 3);
+    // 기기에 따라 합성 이모지가 두 글자로 넓게 그려질 수 있어서, 말풍선 안(14px)에 들어가게 줄입니다.
     ctx.font = '12px sans-serif';
+    const w = ctx.measureText(icon).width;
+    if (w > 14) ctx.font = `${Math.max(6, Math.floor((12 * 14) / w))}px sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(icon, bx, by - 1);

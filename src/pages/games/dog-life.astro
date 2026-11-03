@@ -222,6 +222,7 @@ import { Image } from 'astro:assets';
   const bgm = new Bgm();
   const MUSIC_KEY = 'game:dog-life:bgm';
   let musicOn = true;
+  let lifeRunning = false;
   try { musicOn = localStorage.getItem(MUSIC_KEY) !== '0'; } catch {}
   const musicBtn = $('dl-music');
   const renderMusic = () => {
@@ -232,7 +233,8 @@ import { Image } from 'astro:assets';
   musicBtn.addEventListener('click', () => {
     musicOn = !musicOn;
     try { localStorage.setItem(MUSIC_KEY, musicOn ? '1' : '0'); } catch {}
-    if (musicOn) bgm.start();
+    // 음악은 견생이 흘러가는 동안(마지막 장면까지)만 나와요.
+    if (musicOn && lifeRunning) bgm.start();
     else bgm.stop();
     renderMusic();
   });
@@ -332,6 +334,9 @@ import { Image } from 'astro:assets';
       cancelAnimationFrame(mraf);
       movie.hidden = true;
       document.body.style.overflow = '';
+      // 마지막 장면이 끝나면 음악도 천천히 끕니다.
+      lifeRunning = false;
+      bgm.stop(2.5);
       movie.removeEventListener('click', onTap);
       $('dl-skip').removeEventListener('click', onSkip);
       done();
@@ -346,6 +351,8 @@ import { Image } from 'astro:assets';
   let lastName = '';
   function start() {
     cancelAnimationFrame(raf);
+    lifeRunning = false;
+    bgm.stop();
     dog = born();
     for (const id of ['dl-start', 'dl-end', 'dl-live', 'dl-shared', 'dl-cert']) $(id).hidden = true;
     document.querySelector<HTMLElement>('.kk-wrap')?.removeAttribute('hidden');
@@ -454,6 +461,7 @@ import { Image } from 'astro:assets';
     $('dl-live').hidden = false;
     scene.setDog(dog);
     bgm.setMood('life');
+    lifeRunning = true;
     if (musicOn) bgm.start();
     log('✨', `${dog.breed.name} ${dog.personality.name}로 태어났어요. ${dog.personality.note}.`, 0, 'is-memory');
     renderLive();
