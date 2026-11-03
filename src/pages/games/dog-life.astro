@@ -28,10 +28,6 @@ import { Image } from 'astro:assets';
         한평생은 1~2분이면 끝나요.
       </p>
       <button id="dl-born" class="dl-btn" type="button">🐾 견생으로 태어나기</button>
-      <div id="dl-past" class="dl-past" hidden>
-        <h2>지난 견생</h2>
-        <ul id="dl-past-list"></ul>
-      </div>
     </section>
 
     <section id="dl-naming" class="tool-panel dl-naming" hidden>
@@ -659,7 +655,6 @@ import { Image } from 'astro:assets';
       $('dl-end').scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 
-    saveLife({ breed: d.breed.name, name: d.name, years: Math.round(age * 10) / 10, walks: Math.round(d.walks), score });
     window.dispatchEvent(
       new CustomEvent('share:update', {
         detail: {
@@ -676,26 +671,6 @@ import { Image } from 'astro:assets';
   }
 
   // ── 지난 견생 기록 (이 브라우저에만 저장) ──
-  type Past = { breed: string; name: string; years: number; walks: number; score: number; at?: number };
-  function loadPast(): Past[] {
-    try { return JSON.parse(localStorage.getItem(KEY) ?? '[]'); } catch { return []; }
-  }
-  function saveLife(p: Past) {
-    const list = [{ ...p, at: Date.now() }, ...loadPast()].slice(0, 10);
-    try { localStorage.setItem(KEY, JSON.stringify(list)); } catch {}
-    renderPast();
-  }
-  function renderPast() {
-    const list = loadPast();
-    $('dl-past').hidden = list.length === 0;
-    $('dl-past-list').innerHTML = '';
-    for (const p of list) {
-      const li = document.createElement('li');
-      li.textContent = `${p.breed} '${p.name}' · ${p.years}년 · 산책 ${fmt(p.walks)}번 · 행복 ${p.score}점`;
-      $('dl-past-list').append(li);
-    }
-  }
-
   // ── 공유 카드 그림 (800×800) ──
   async function drawCard(d: Dog, stats: string[][], score: number): Promise<Blob | null> {
     try { await document.fonts?.ready; } catch {}
@@ -782,7 +757,8 @@ import { Image } from 'astro:assets';
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) last = performance.now();
   });
-  renderPast();
+  // 지난 견생 기록은 저장하지 않아요. 예전에 저장된 기록이 있으면 지웁니다.
+  try { localStorage.removeItem(KEY); } catch {}
 
   // 친구가 공유한 견생(?r=)으로 들어오면 그 마지막 화면을 보여 줍니다. 저장은 하지 않아요.
   const shared = unpackShare(new URLSearchParams(location.search).get('r'));
@@ -823,10 +799,8 @@ import { Image } from 'astro:assets';
   }
   :global(:root[data-theme='dark']) .dl-btn { color: #181412; }
   .dl-btn:hover { filter: brightness(1.08); }
-  .dl-past { margin-top: 20px; }
-  .dl-past[hidden] { display: none; }
-  .dl-past h2, .dl-memories h2 { font-size: 0.95rem; margin: 0 0 8px; }
-  .dl-past ul, .dl-memories ul { margin: 0; padding-left: 1.2em; color: var(--ink-muted); font-size: 0.9rem; line-height: 1.8; }
+  .dl-memories h2 { font-size: 0.95rem; margin: 0 0 8px; }
+  .dl-memories ul { margin: 0; padding-left: 1.2em; color: var(--ink-muted); font-size: 0.9rem; line-height: 1.8; }
 
   .dl-live[hidden], .dl-end[hidden], .dl-start[hidden], .dl-choice[hidden], .dl-cert[hidden], .dl-naming[hidden], .dl-name-err[hidden] { display: none; }
   .dl-naming { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
