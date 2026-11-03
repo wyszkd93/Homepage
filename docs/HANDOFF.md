@@ -53,6 +53,7 @@
       - 적용 시 API 키 허용 목록에 `Firebase App Check API`를 추가해야 함
   - 로컬 테스트: `PUBLIC_FIREBASE_EMULATOR=1 npm run build` → Firebase 에뮬레이터(auth 9099, firestore 8080)에 붙고 `window.__testSignIn(uid)`로 로그인. 배포 빌드에는 들어가지 않음
   - 예전 게임(모구 점프, SQL 타자 연습)은 '재미없다'는 의견으로 삭제했습니다.
+- **AI 픽** (`/picks/`, 상단 메뉴): 링크 하나를 큐레이션 카드로. 항목은 `src/content/picks/*.md`(스키마 `src/content.config.ts`), 카드 `src/components/PickCard.astro`. 올리는 절차는 `.claude/skills/ai-pick/SKILL.md`(원문 본문 복사 금지, 요약은 직접 작성, 원본은 공개된 한 줄 설명만)
 - **소개 페이지**: `/about/` (`src/pages/about.astro`, 상단 메뉴 '소개'). 모구 그림 + 말풍선 인사, '모구 한눈에 보기' 카드 4장(관심·스택·블로그·연락). 손글씨 글꼴 Gaegu는 이 페이지에만 로드
   - 관심 분야·기술 스택·링크는 `src/consts.ts`의 `PROFILE`에서 가져옵니다. 메인 홈의 소개 섹션도 같은 데이터를 씁니다.
   - 회사명, 재직 기간 같은 회사 관련 내용은 넣지 않기로 했습니다.

@@ -1,0 +1,70 @@
+---
+// AI 픽 링크 카드: GitHub이면 저장소 카드, 그 밖에는 미리보기 그림 카드
+import type { CollectionEntry } from 'astro:content';
+interface Props { pick: CollectionEntry<'picks'>; compact?: boolean }
+const { pick, compact = false } = Astro.props;
+const { url, kind, card, original } = pick.data;
+const host = new URL(url).hostname.replace(/^www\./, '');
+const fmt = (n?: number) => (n === undefined ? '' : n >= 1000 ? `${(n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, '')}k` : String(n));
+const stats = card.stats
+  ? [
+      ['Contributors', card.stats.contributors, '👥'],
+      ['Used by', card.stats.usedBy, '📦'],
+      ['Stars', card.stats.stars, '⭐'],
+      ['Forks', card.stats.forks, '🍴'],
+    ].filter(([, v]) => v !== undefined)
+  : [];
+---
+
+<a class:list={['pc', `pc-${kind}`, { 'pc-compact': compact }]} href={url} target="_blank" rel="noopener noreferrer">
+  {kind === 'github' ? (
+    <div class="pc-gh">
+      <div class="pc-gh-top">
+        <p class="pc-gh-name">{card.owner}/<strong>{card.name}</strong></p>
+        <span class="pc-gh-logo" aria-hidden="true">
+          <svg viewBox="0 0 16 16" width="40" height="40"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        </span>
+      </div>
+      {!compact && <p class="pc-gh-desc">{original}</p>}
+      {!compact && stats.length > 0 && (
+        <ul class="pc-gh-stats">
+          {stats.map(([k, v, i]) => <li><span class="pc-i" aria-hidden="true">{i}</span><strong>{fmt(v as number)}</strong><span>{k}</span></li>)}
+        </ul>
+      )}
+    </div>
+  ) : (
+    <div class="pc-web">
+      {card.image && <img src={card.image} alt="" loading="lazy" />}
+      <div class="pc-web-body">
+        <p class="pc-web-site">{card.site ?? host}</p>
+        {!compact && <p class="pc-web-desc">{original}</p>}
+      </div>
+    </div>
+  )}
+  <span class="pc-bar" aria-hidden="true"></span>
+</a>
+
+<style>
+  .pc { display: block; position: relative; overflow: hidden; border-radius: 14px; border: 1px solid var(--hairline); background: var(--surface-1); color: var(--ink); text-decoration: none; transition: box-shadow 0.2s, transform 0.2s; }
+  .pc:hover { text-decoration: none; box-shadow: var(--shadow); transform: translateY(-2px); }
+  .pc-bar { display: block; height: 6px; background: #3178c6; }
+  .pc-gh { padding: 28px 30px 22px; }
+  .pc-compact .pc-gh { padding: 14px 18px; }
+  .pc-gh-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+  .pc-gh-name { margin: 0; font-size: clamp(1.4rem, 4vw, 2.2rem); line-height: 1.2; color: var(--ink-muted); word-break: break-all; }
+  .pc-compact .pc-gh-name { font-size: 1rem; }
+  .pc-gh-name strong { color: var(--ink); }
+  .pc-gh-logo { color: var(--ink); flex: none; }
+  .pc-compact .pc-gh-logo svg { width: 22px; height: 22px; }
+  .pc-gh-desc { margin: 14px 0 18px; color: var(--text-muted); font-size: 1.05rem; line-height: 1.55; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .pc-gh-stats { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 10px 28px; }
+  .pc-gh-stats li { display: grid; grid-template-columns: auto auto; column-gap: 8px; align-items: center; }
+  .pc-gh-stats strong { font-size: 1.15rem; }
+  .pc-gh-stats li > span:last-child { grid-column: 2; font-size: 0.82rem; color: var(--text-muted); }
+  .pc-i { grid-row: span 2; font-size: 1rem; }
+  .pc-web { display: grid; grid-template-columns: 1fr; }
+  .pc-web img { width: 100%; aspect-ratio: 1.91; object-fit: cover; display: block; }
+  .pc-web-body { padding: 14px 18px; }
+  .pc-web-site { margin: 0; font-size: 0.82rem; color: var(--text-muted); }
+  .pc-web-desc { margin: 6px 0 0; line-height: 1.6; }
+</style>
