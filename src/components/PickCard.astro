@@ -26,6 +26,7 @@ const stats = card.stats
         </span>
       </div>
       {!compact && <p class="pc-gh-desc">{original}</p>}
+      {!compact && card.image && <img class="pc-gh-img" src={card.image.startsWith('/') ? `${import.meta.env.BASE_URL.replace(/\/$/, '')}${card.image}` : card.image} alt="" loading="lazy" />}
       {!compact && stats.length > 0 && (
         <ul class="pc-gh-stats">
           {stats.map(([k, v, i]) => <li><span class="pc-i" aria-hidden="true">{i}</span><strong>{fmt(v as number)}</strong><span>{k}</span></li>)}
@@ -57,6 +58,7 @@ const stats = card.stats
   .pc-gh-logo { color: var(--ink); flex: none; }
   .pc-compact .pc-gh-logo svg { width: 22px; height: 22px; }
   .pc-gh-desc { margin: 14px 0 18px; color: var(--text-muted); font-size: 1.05rem; line-height: 1.55; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .pc-gh-img { display: block; width: 100%; max-height: 360px; object-fit: contain; margin: 0 0 18px; border-radius: 10px; background: var(--surface-2); }
   .pc-gh-stats { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 10px 28px; }
   .pc-gh-stats li { display: grid; grid-template-columns: auto auto; column-gap: 8px; align-items: center; }
   .pc-gh-stats strong { font-size: 1.15rem; }
