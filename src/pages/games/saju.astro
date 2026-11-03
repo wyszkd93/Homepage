@@ -60,7 +60,6 @@ const HOURS = [
         </select>
       </label>
       <button class="sj-go" type="submit">🔮 사주 보기</button>
-      <button id="sj-reset" class="sj-reset" type="button" hidden>↺ 처음부터 다시</button>
     </form>
 
     <div id="sj-shared" class="sj-shared" hidden>
@@ -347,7 +346,6 @@ const HOURS = [
       }),
     );
     $('sj-result').hidden = false;
-    $('sj-reset').hidden = false;
   }
 
   function leaveShared() {
@@ -376,15 +374,6 @@ const HOURS = [
     form.hidden = true;
     document.querySelector<HTMLElement>('.kk-wrap')?.setAttribute('hidden', '');
   }
-  // 저장된 입력과 결과를 지우고 빈 입력 화면으로 돌아갑니다.
-  $('sj-reset').addEventListener('click', () => {
-    try { localStorage.removeItem(KEY); } catch {}
-    form.reset();
-    $('sj-result').hidden = true;
-    $('sj-reset').hidden = true;
-    document.querySelector<HTMLElement>('.kk-wrap')?.setAttribute('hidden', '');
-    form.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  });
   $('sj-mine').addEventListener('click', () => {
     leaveShared();
     $('sj-result').hidden = true;
@@ -441,9 +430,6 @@ const HOURS = [
   }
   :global(:root[data-theme='dark']) .sj-go { color: #181412; }
   .sj-go:hover { filter: brightness(1.08); }
-  .sj-reset { flex: 0 0 auto; height: 42px; padding: 0 16px; border: 1px solid var(--hairline); border-radius: 999px; background: var(--surface-1); color: var(--ink-muted); font: inherit; font-size: 0.9rem; cursor: pointer; }
-  .sj-reset:hover { color: var(--accent); border-color: var(--accent); }
-  .sj-reset[hidden] { display: none; }
 
   .sj-result .tool-panel h2 { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
   .sj-sub { font-size: 0.82rem; font-weight: 500; color: var(--text-muted); }
