@@ -2,6 +2,7 @@
 import { getCollection, render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import PickCard from '../../components/PickCard.astro';
+import PickKind from '../../components/PickKind.astro';
 import { url, formatDate } from '../../utils/url';
 
 export async function getStaticPaths() {
@@ -11,17 +12,17 @@ export async function getStaticPaths() {
 const { pick } = Astro.props;
 const { Content } = await render(pick);
 const d = pick.data;
-const KIND: Record<string, string> = { github: '깃헙', news: '뉴스', blog: '블로그', paper: '논문', video: '영상' };
+
 const label = d.card.owner && d.card.name ? `@${d.card.owner}/${d.card.name}` : new URL(d.url).hostname.replace(/^www\./, '');
 ---
 
 <Base title={d.title} description={d.comment} narrow>
   <article class="pd">
     <a class="pd-back" href={url('/picks/')}>← 목록으로</a>
-    <h1 class="pd-title">{d.title}</h1>
+    <h1 class="pd-title"><PickKind kind={d.kind} />{d.title}</h1>
     <p class="pd-src">{label}</p>
     <p class="pd-tags">
-      <span>#{KIND[d.kind]}</span>{d.tags.map((t) => <span>#{t}</span>)}
+      {d.tags.map((t) => <span>#{t}</span>)}
       <time datetime={d.date.toISOString()}>{formatDate(d.date)}</time>
     </p>
     <PickCard pick={pick} />
@@ -63,4 +64,5 @@ const label = d.card.owner && d.card.name ? `@${d.card.owner}/${d.card.name}` : 
   .pd-original { padding: 18px 22px; border: 1px solid var(--hairline); border-radius: 12px; background: var(--surface-1); }
   .pd-original p { margin: 0; line-height: 1.7; }
   .pd-link { margin-top: 10px !important; font-size: 0.82rem; color: var(--text-muted); word-break: break-all; }
+  .pd-title :global(.pick-kind) { margin-right: 10px; vertical-align: 0.3em; }
 </style>

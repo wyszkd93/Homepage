@@ -1,0 +1,12 @@
+---
+// AI 픽 종류 표시 (블로그 주제 라벨과 같은 .cat 스타일)
+const KINDS: Record<string, { name: string; color: string }> = {
+  github: { name: 'GitHub', color: '#3b4a5c' },
+  news: { name: '기사', color: '#c0632f' },
+  blog: { name: '블로그', color: '#2f7d6b' },
+  paper: { name: '논문', color: '#6b4fb3' },
+  video: { name: '영상', color: '#c2414b' },
+};
+const k = KINDS[Astro.props.kind] ?? KINDS.github;
+---
+<span class="cat pick-kind" style={`--cat: ${k.color}`}>{k.name}</span>

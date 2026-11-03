@@ -7,6 +7,20 @@ description: 사용자가 링크(GitHub 저장소, AI 뉴스, 블로그, 논문)
 
 링크 하나를 `src/content/picks/<slug>.md` 하나로 만든다. 예시: `src/content/picks/anthropic-sandbox-runtime.md`.
 
+## 자동 수집 출처 (2026-11-03 접속 확인)
+| 출처 | 읽을 주소 | 상태 |
+|---|---|---|
+| AI 타임스 | https://www.aitimes.com/rss/allArticle.xml , https://www.aitimes.com/news/articleList.html?sc_section_code=S1N24&view_type=sm | ✅ (robots: /admin/만 금지) |
+| Anthropic | https://www.anthropic.com/news | ✅ |
+| OpenAI | https://openai.com/news/rss.xml (웹 페이지는 봇 차단 403) | ✅ RSS |
+| Google DeepMind | https://deepmind.google/blog/rss.xml , https://deepmind.google/blog/ | ✅ |
+| Meta AI | https://ai.meta.com/blog/ | ✅ |
+| ZDNet Korea | https://zdnet.co.kr/feed/article_list.xml | ✅ (robots: /Include2/user/, /Contents/ 금지) |
+| PostgreSQL | https://www.postgresql.org/news.rss | ✅ |
+| GitHub 새 인기 저장소 | `https://api.github.com/search/repositories?q=topic:<주제>+created:>YYYY-MM-DD+stars:>=200&sort=stars&order=desc&per_page=10` (주제: llm, ai-agent, mcp, claude, rag, vector-database, text-to-sql / 최근 7일) — trending 웹은 403 | ✅ API (비로그인 분당 10회 제한) |
+| GeekNews | https://news.hada.io/rss/news → https://feeds.feedburner.com/geeknews-feed (웹 페이지는 403) | ✅ RSS (Atom) |
+| Oracle 블로그 | blogs.oracle.com (Akamai 403) | ❌ 사이트가 봇 차단 |
+
 ## 순서
 1. **저작권 확인 먼저**
    - 원문 본문을 복사해 붙이지 않는다. `original`에는 원문이 스스로 공개한 **한 줄 설명**(GitHub 저장소 설명, og:description)만 그대로 넣는다.
@@ -19,8 +33,12 @@ description: 사용자가 링크(GitHub 저장소, AI 뉴스, 블로그, 논문)
 3. **파일 쓰기** (frontmatter는 `src/content.config.ts`의 `picks` 스키마)
    - `title`: 무엇인지 한눈에 보이는 한국어 제목 (예: "컨테이너 없이 AI 에이전트를 가두는 Anthropic의 샌드박스, srt")
    - `kind`: github | news | blog | paper | video, `tags`: 2~4개
-   - 본문(큐레이터 요약): 3단락, 무엇인지 → 핵심 기능 → 쓰는 법·주의점. 말투는 사이트 기본 해요체.
-   - `comment`(💬 한마디): 왜 볼 만한지 1~2문장, 가능하면 DBA·운영자 관점 한 줄.
+   - 본문(큐레이터 요약): **원문(README·기사) 순서와 예시를 따라 쓰지 않는다.** 우리 식 3단 구성으로 직접 쓴다. 말투는 해요체.
+     1. `한 줄로 말하면 "…"예요.` 로 시작해 비유 한 줄 + 무엇인지 2~3문장 (굵게는 따옴표 안쪽 단어에만: `"…**울타리**"예요`)
+     2. `DBA 눈으로 보면 …` + 불릿 2~3개: 원문 예시 대신 Oracle·DB 운영 상황으로 직접 만든 쓰임새 (`- **상황**: 설명`)
+     3. `써 보기 전에 알아둘 것도 있어요.` 설치·사용 한 줄, 한계·주의점, 라이선스
+     - 예시: `src/content/picks/anatomy.md`
+   - `comment`(💬 한마디): 왜 볼 만한지 1~2문장. 본문 불릿과 같은 예시를 되풀이하지 않는다.
    - 뉴스·블로그는 `card.image`(og:image), `card.site`를 넣는다.
 4. **확인 후 배포**
    - `npm run build` 후 `/picks/`와 상세 페이지 스크린샷을 사용자에게 보여 주고 확인받는다.
