@@ -5,15 +5,18 @@ kind: github
 date: 2026-11-03
 tags: [Claude Code, 플러그인, Obsidian, 지식관리]
 license: "MIT"
-comment: "'읽고 끝'이던 링크를 요약·태그·연결까지 된 노트로 쌓고, 나중엔 질문 한 줄로 다시 꺼내는 흐름을 플러그인 하나로 묶었어요. 블로그 글감이나 장애 대응 자료를 모아 두는 용도로도 써 볼 만해요."
+comment: "'읽고 끝'이던 링크가 다시 꺼내 쓸 수 있는 지식으로 남는다는 점이 좋아요. 비슷한 장애를 두 번째 만났을 때 진가가 나올 도구예요."
 original: "A Claude Code plugin that turns what you read and watch into Obsidian notes, and finds those notes again later."
 card:
   owner: treylom
   name: knowledge-manager
 ---
 
-**Knowledge Manager**는 웹 글, 유튜브, PDF, 오피스 문서, Notion 페이지 같은 자료를 Obsidian 노트로 정리해 주는 Claude Code 플러그인이에요. `/km:knowledge-manager <링크>`를 치면 요약하고 태그를 달고, 이미 있는 관련 노트와 링크까지 이어서 vault에 저장해요. 저장 전에는 중복·모순·빠진 내용을 스스로 점검해요.
+한 줄로 말하면 "읽은 걸 **노트로 바꿔 쌓아 주는** 비서"예요. 링크 하나를 던지면 요약하고 태그를 달고, 내 Obsidian vault에 있는 비슷한 노트와 이어서 저장해 줘요. 웹 글, 유튜브, PDF, 오피스 문서, Notion 페이지까지 받아요.
 
-다시 찾을 땐 `/km:search 질문`이면 돼요. 짧은 키워드는 빠른 답, "비교·방법" 같은 문장형 질문은 연결된 노트까지 엮은 자세한 답으로 알아서 나눠 줘요. 검색 엔진은 GraphRAG 서버가 있으면 그걸, 없으면 Obsidian 검색이나 텍스트 검색으로 넘어가요.
+DBA 눈으로 보면 이렇게 쓸 만해요.
+- **장애 대응 자료 모으기**: 그때그때 본 MOS 문서·블로그 링크를 던져 두면, 같은 에러 코드끼리 알아서 엮여요
+- **나중에 다시 찾기**: `/km:search ORA-01555 대처법`처럼 물으면 쌓아 둔 노트를 엮어서 답해 줘요
+- **블로그 글감 창고**: 읽고 흘려보내던 글이 태그 붙은 메모로 남아서, 글 쓸 때 꺼내 쓰기 좋아요
 
-처음엔 `/km:setup`으로 vault 경로와 도구를 정하고 "어떤 일을 하는 사람인지" 짧은 인터뷰를 해요. 그 밖에 vault 구조 상담(`/km:interview`), 노트 수백 개의 폴더·링크를 계획서부터 만들어 한꺼번에 바꾸는 `/km:reform`, 큰 PDF를 쪼개 변환하는 `/km:pdf`도 들어 있어요. MIT 라이선스예요.
+써 보기 전에 알아둘 것도 있어요. 처음엔 `/km:setup`으로 vault 위치와 하는 일을 짧게 알려 줘야 해요. 노트가 수백 개로 늘면 `/km:reform`으로 폴더·링크를 한꺼번에 정리할 수 있고, 큰 PDF는 `/km:pdf`로 나눠서 바꿔요. MIT 라이선스예요.
