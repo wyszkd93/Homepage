@@ -19,4 +19,29 @@ const blog = defineCollection({
   }),
 });
 
-export const collections = { blog };
+// AI 픽: 링크 하나를 큐레이션 카드로 (요약은 직접 쓴 문장, 원본은 원문이 공개한 한 줄 설명만)
+const picks = defineCollection({
+  loader: glob({ base: './src/content/picks', pattern: '**/*.md' }),
+  schema: z.object({
+    title: z.string(), // 한국어 제목
+    url: z.string().url(), // 원문 주소
+    kind: z.enum(['github', 'news', 'blog', 'paper', 'video']).default('github'),
+    date: z.coerce.date(), // 올린 날
+    tags: z.array(z.string()).default([]),
+    comment: z.string(), // 💬 한마디
+    original: z.string(), // 원문이 공개한 한 줄 설명 (그대로 인용)
+    license: z.string().optional(),
+    // 링크 카드
+    card: z
+      .object({
+        owner: z.string().optional(),
+        name: z.string().optional(),
+        image: z.string().optional(), // 뉴스·블로그 미리보기 그림 주소
+        site: z.string().optional(),
+        stats: z.object({ contributors: z.number().optional(), usedBy: z.number().optional(), stars: z.number().optional(), forks: z.number().optional(), asOf: z.string() }).optional(),
+      })
+      .default({}),
+  }),
+});
+
+export const collections = { blog, picks };

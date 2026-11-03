@@ -1,0 +1,36 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import PickCard from '../../components/PickCard.astro';
+import { url, formatDate } from '../../utils/url';
+
+const picks = (await getCollection('picks')).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+const KIND: Record<string, string> = { github: '깃헙', news: '뉴스', blog: '블로그', paper: '논문', video: '영상' };
+---
+
+<Base title="AI 픽" description="모구가 골라 읽고 정리한 AI 도구·소식" heading="AI 픽" tagline="모구가 골라 읽고 한국어로 정리한 AI 도구와 소식">
+  <ul class="pk-list">
+    {picks.map((p) => (
+      <li class="pk-item">
+        <a class="pk-title" href={url(`/picks/${p.id}/`)}>{p.data.title}</a>
+        <p class="pk-meta">
+          <span class="pk-kind">#{KIND[p.data.kind]}</span>
+          {p.data.tags.map((t) => <span class="pk-tag">#{t}</span>)}
+          <time datetime={p.data.date.toISOString()}>{formatDate(p.data.date)}</time>
+        </p>
+        <p class="pk-comment">💬 {p.data.comment}</p>
+        <PickCard pick={p} compact />
+      </li>
+    ))}
+  </ul>
+  {picks.length === 0 && <p>아직 올린 픽이 없어요.</p>}
+</Base>
+
+<style>
+  .pk-list { list-style: none; margin: 0 auto; padding: 0; max-width: 840px; display: grid; gap: 28px; }
+  .pk-item { padding-bottom: 28px; border-bottom: 1px solid var(--hairline); }
+  .pk-title { display: block; font-size: 1.3rem; font-weight: 800; letter-spacing: -0.02em; color: var(--ink); margin-bottom: 6px; }
+  .pk-meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 10px; font-size: 0.85rem; color: var(--text-muted); }
+  .pk-kind, .pk-tag { color: var(--link); }
+  .pk-comment { margin: 0 0 14px; color: var(--ink-muted); font-style: italic; line-height: 1.7; }
+</style>

@@ -1,0 +1,66 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import PickCard from '../../components/PickCard.astro';
+import { url, formatDate } from '../../utils/url';
+
+export async function getStaticPaths() {
+  const picks = await getCollection('picks');
+  return picks.map((pick) => ({ params: { slug: pick.id }, props: { pick } }));
+}
+const { pick } = Astro.props;
+const { Content } = await render(pick);
+const d = pick.data;
+const KIND: Record<string, string> = { github: '깃헙', news: '뉴스', blog: '블로그', paper: '논문', video: '영상' };
+const label = d.card.owner && d.card.name ? `@${d.card.owner}/${d.card.name}` : new URL(d.url).hostname.replace(/^www\./, '');
+---
+
+<Base title={d.title} description={d.comment} narrow>
+  <article class="pd">
+    <a class="pd-back" href={url('/picks/')}>← 목록으로</a>
+    <h1 class="pd-title">{d.title}</h1>
+    <p class="pd-src">{label}</p>
+    <p class="pd-tags">
+      <span>#{KIND[d.kind]}</span>{d.tags.map((t) => <span>#{t}</span>)}
+      <time datetime={d.date.toISOString()}>{formatDate(d.date)}</time>
+    </p>
+    <PickCard pick={pick} />
+    {d.card.stats && <p class="pd-asof">숫자는 {d.card.stats.asOf} 기준이에요.</p>}
+
+    <section class="pd-summary">
+      <p class="pd-label">큐레이터 요약</p>
+      <div class="pd-body"><Content /></div>
+    </section>
+
+    <p class="pd-comment">💬 {d.comment}</p>
+
+    <section class="pd-original">
+      <p class="pd-label">원본 설명</p>
+      <p>{d.original}</p>
+      <p class="pd-link">
+        원문: <a href={d.url} target="_blank" rel="noopener noreferrer">{d.url}</a>
+        {d.license && <span> · 라이선스 {d.license}</span>}
+      </p>
+    </section>
+  </article>
+</Base>
+
+<style>
+  .pd { padding-top: 24px; }
+  .pd-back { font-size: 0.9rem; color: var(--text-muted); }
+  .pd-title { margin: 14px 0 10px; font-size: clamp(1.5rem, 4.5vw, 2rem); font-weight: 800; line-height: 1.35; letter-spacing: -0.03em; word-break: keep-all; }
+  .pd-src { margin: 0 0 10px; font-weight: 700; font-size: 0.92rem; }
+  .pd-tags { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 22px; font-size: 0.85rem; color: var(--link); }
+  .pd-tags time { color: var(--text-muted); }
+  .pd-asof { margin: 8px 0 0; font-size: 0.78rem; color: var(--text-muted); text-align: right; }
+  .pd-summary { margin: 24px 0 0; padding: 18px 22px; border-left: 4px solid #3178c6; border-radius: 4px 12px 12px 4px; background: var(--surface-2); }
+  .pd-label { margin: 0 0 8px; font-size: 0.82rem; font-weight: 700; color: var(--text-muted); }
+  .pd-body { line-height: 1.85; word-break: keep-all; }
+  .pd-body :global(p) { margin: 0 0 10px; }
+  .pd-body :global(p:last-child) { margin-bottom: 0; }
+  .pd-body :global(code) { font-size: 0.9em; padding: 1px 5px; border-radius: 5px; background: var(--surface-1); }
+  .pd-comment { margin: 22px 0; color: var(--ink-muted); font-style: italic; line-height: 1.8; word-break: keep-all; }
+  .pd-original { padding: 18px 22px; border: 1px solid var(--hairline); border-radius: 12px; background: var(--surface-1); }
+  .pd-original p { margin: 0; line-height: 1.7; }
+  .pd-link { margin-top: 10px !important; font-size: 0.82rem; color: var(--text-muted); word-break: break-all; }
+</style>
