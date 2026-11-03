@@ -525,6 +525,7 @@ a.cat:hover { text-decoration: none; filter: brightness(0.95); }
   color: var(--tool); background: color-mix(in srgb, var(--tool) 12%, var(--surface-1));
   border: 1px solid color-mix(in srgb, var(--tool) 25%, var(--surface-1));
 }
+.tool-badge[hidden] { display: none; }
 .tool-badge { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.02em; border-radius: 4px; padding: 1px 7px; }
 .tool-badge-new { color: #1f8a5b; background: color-mix(in srgb, #1f8a5b 13%, var(--surface-1)); }
 .tool-badge-hot { color: #d0343f; background: color-mix(in srgb, #d0343f 13%, var(--surface-1)); }
