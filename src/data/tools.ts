@@ -9,7 +9,7 @@ export interface Tool {
   color: string;
   icon: string;
   badge?: 'HOT'; // NEW는 added 날짜로 자동 표시
-  added: string; // 처음 올린 날 (YYYY-MM-DD): NEW_DAYS일 동안 NEW, 한 번 열어 보면 그 기기에선 숨김
+  added: string; // 처음 올린 날 (YYYY-MM-DD): 이날부터 NEW_DAYS일 동안 NEW (한국 시간 기준, 보는 순간의 날짜로 판단)
 }
 
 export const TOOLS: Tool[] = [
@@ -87,8 +87,11 @@ export const TOOLS: Tool[] = [
   },
 ];
 
-/** 올린 지 NEW_DAYS일 안이면 NEW (빌드할 때 기준) */
+/** 올린 지 NEW_DAYS일 안이면 NEW */
 export const NEW_DAYS = 3;
-export const isNew = (t: Tool, now = new Date()) => now.getTime() - new Date(t.added).getTime() < NEW_DAYS * 864e5;
+export const isNew = (t: Tool, now = new Date()) => {
+  const start = new Date(`${t.added}T00:00:00+09:00`).getTime();
+  return now.getTime() >= start && now.getTime() < start + NEW_DAYS * 864e5;
+};
 
 export const toolHref = (t: Tool) => `/${t.kind === 'game' ? 'games' : 'tools'}/${t.slug}/`;
