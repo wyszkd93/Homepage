@@ -194,6 +194,8 @@ export class DogScene {
         const sibStage = age - (d.siblingAt ?? 0) < 1 ? 0 : 1;
         this.drawDog({ ...d, breed: d.sibling }, sx, GROUND, sibStage, walking, now + 70);
       }
+      // 고양이 동생은 집 근처에 앉아 꼬리를 살랑거려요 (온 지 1년 안이면 아기 고양이)
+      if (d.cat && age >= d.cat.at) this.drawCat(d.cat.coat, 104, GROUND, age - d.cat.at < 1, now);
       this.drawDog(d, this.x, GROUND, stage, walking, now);
       if (this.bubble && now < this.bubble.until) this.drawBubble(this.bubble.icon, this.x, stage);
     }
@@ -305,6 +307,44 @@ export class DogScene {
     px(ctx, '#2b211b', x + 2, top + 2, 1, 1);
     px(ctx, '#2b211b', x + 4, top + 2, 1, 1);
     if (p.elder) px(ctx, '#7a5236', x + 8, top + head, 1, p.h - head); // 지팡이
+  }
+
+  private drawCat(coat: string, x: number, ground: number, kitten: boolean, now: number) {
+    const ctx = this.ctx;
+    const C: Record<string, [string, string, string]> = {
+      cheese: ['#f0a84e', '#c97a2a', '#fbe3bf'], black: ['#2e2a2b', '#1a1718', '#4a4446'], gray: ['#9aa0a8', '#6f757d', '#c9ced4'],
+      calico: ['#f6f1e7', '#d98a3d', '#3a3233'], white: ['#f8f6f1', '#d9d4ca', '#ffffff'],
+    };
+    const [main, dark, light] = C[coat] ?? C.cheese;
+    ctx.save();
+    ctx.translate(x, ground);
+    const k = kitten ? 0.75 : 1;
+    ctx.scale(k, k);
+    // 꼬리 (살랑살랑)
+    const sway = Math.round(Math.sin(now / 400) * 2);
+    px(ctx, dark, 5, -6, 2, 5);
+    px(ctx, dark, 6 + sway, -9, 2, 4);
+    // 앉은 몸
+    px(ctx, main, -4, -7, 9, 7);
+    px(ctx, light, -3, -4, 4, 4); // 배
+    if (coat === 'calico') { px(ctx, '#d98a3d', 1, -7, 3, 3); px(ctx, '#3a3233', -4, -6, 2, 2); }
+    // 머리 + 귀
+    px(ctx, main, -6, -13, 7, 6);
+    px(ctx, main, -6, -15, 2, 2);
+    px(ctx, main, -1, -15, 2, 2);
+    px(ctx, dark, -5, -14, 1, 1);
+    px(ctx, dark, 0, -14, 1, 1);
+    if (coat === 'cheese') { px(ctx, dark, -4, -13, 1, 2); px(ctx, dark, -2, -13, 1, 2); }
+    // 눈 (가끔 깜빡)
+    const blink = Math.floor(now / 2600) % 7 === 0;
+    const eye = coat === 'black' ? '#e8d36a' : '#2b211b';
+    px(ctx, eye, -5, -11, 1, blink ? 0.5 : 1);
+    px(ctx, eye, -2, -11, 1, blink ? 0.5 : 1);
+    px(ctx, '#e89aa5', -4, -9, 1, 1); // 코
+    // 앞발
+    px(ctx, light, -4, -1, 2, 1);
+    px(ctx, light, 0, -1, 2, 1);
+    ctx.restore();
   }
 
   private drawDog(d: Dog, cx: number, ground: number, stage: number, walking: boolean, now: number) {
