@@ -729,7 +729,14 @@ import { Image } from 'astro:assets';
 
   // ── 버튼 ──
   $('dl-born').addEventListener('click', start);
-  $('dl-reroll').addEventListener('click', start);
+  // 등록증의 '다시 태어나기': 이름은 그대로 두고 견종·가족·집·성격만 새로 뽑아요.
+  $('dl-reroll').addEventListener('click', () => {
+    const name = dog?.name || lastName;
+    cancelAnimationFrame(raf);
+    dog = born();
+    if (name) dog.name = name;
+    showCert();
+  });
   $('dl-rename').addEventListener('click', () => {
     $('dl-cert').hidden = true;
     $('dl-naming').hidden = false;
