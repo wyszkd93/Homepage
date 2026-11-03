@@ -1,5 +1,5 @@
 ---
-import { toolHref, type Tool } from '../data/tools';
+import { toolHref, isNew, type Tool } from '../data/tools';
 import { url } from '../utils/url';
 
 interface Props {
@@ -11,12 +11,12 @@ const { items } = Astro.props;
 <ul class="tool-cards">
   {items.map((t) => (
     <li>
-      <a class="tool-card" href={url(toolHref(t))} style={`--tool: ${t.color}`}>
+      <a class="tool-card" href={url(toolHref(t))} style={`--tool: ${t.color}`} data-slug={t.slug}>
         <span class="tool-card-top">
           <span class="tool-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" set:html={t.icon} />
           </span>
-          {t.badge && <span class={`tool-badge tool-badge-${t.badge.toLowerCase()}`}>{t.badge}</span>}
+          {isNew(t) ? <span class="tool-badge tool-badge-new" data-new={t.slug}>NEW</span> : t.badge && <span class={`tool-badge tool-badge-${t.badge.toLowerCase()}`}>{t.badge}</span>}
         </span>
         <span class="tool-title">{t.title}</span>
         <span class="tool-desc">{t.description}</span>
@@ -25,3 +25,19 @@ const { items } = Astro.props;
     </li>
   ))}
 </ul>
+
+<script>
+  // 한 번 열어 본 기능·게임은 그 기기에서 NEW를 숨겨요.
+  const KEY = 'seen:tools';
+  let seen: string[] = [];
+  try { seen = JSON.parse(localStorage.getItem(KEY) ?? '[]'); } catch {}
+  for (const b of document.querySelectorAll<HTMLElement>('[data-new]')) if (seen.includes(b.dataset.new!)) b.hidden = true;
+  for (const a of document.querySelectorAll<HTMLAnchorElement>('.tool-card[data-slug]')) {
+    a.addEventListener('click', () => {
+      const slug = a.dataset.slug!;
+      if (seen.includes(slug)) return;
+      seen.push(slug);
+      try { localStorage.setItem(KEY, JSON.stringify(seen)); } catch {}
+    });
+  }
+</script>

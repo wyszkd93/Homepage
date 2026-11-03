@@ -8,7 +8,8 @@ export interface Tool {
   description: string;
   color: string;
   icon: string;
-  badge?: 'NEW' | 'HOT';
+  badge?: 'HOT'; // NEW는 added 날짜로 자동 표시
+  added: string; // 처음 올린 날 (YYYY-MM-DD): 14일 동안 NEW, 한 번 열어 보면 그 기기에선 숨김
 }
 
 export const TOOLS: Tool[] = [
@@ -19,7 +20,7 @@ export const TOOLS: Tool[] = [
     description: '한 줄로 뭉친 SQL을 보기 좋게 정리해요.',
     color: '#3b78c4',
     icon: '<path d="M8 6 3 12l5 6"/><path d="m16 6 5 6-5 6"/><path d="m13.5 4-3 16"/>',
-    badge: 'NEW',
+    added: '2026-10-30',
   },
   {
     kind: 'tool',
@@ -28,7 +29,7 @@ export const TOOLS: Tool[] = [
     description: '크론식을 우리말로 풀고 다음 실행 시각을 알려줘요.',
     color: '#2f8f83',
     icon: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
-    badge: 'NEW',
+    added: '2026-10-30',
   },
   {
     kind: 'tool',
@@ -37,7 +38,7 @@ export const TOOLS: Tool[] = [
     description: '퇴근까지, 주말까지 남은 시간을 세어 줘요.',
     color: '#c0632f',
     icon: '<path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.2a2 2 0 0 0-.6-1.4L12 12l-4.4 4.4a2 2 0 0 0-.6 1.4V22"/><path d="M7 2v4.2a2 2 0 0 0 .6 1.4L12 12l4.4-4.4a2 2 0 0 0 .6-1.4V2"/>',
-    badge: 'NEW',
+    added: '2026-10-30',
   },
   {
     kind: 'game',
@@ -46,7 +47,7 @@ export const TOOLS: Tool[] = [
     description: '날개 달린 도트 모구가 파닥파닥! 기둥 사이를 지나가요.',
     color: '#4e9a36',
     icon: '<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 12h4M8 10v4"/><path d="M15 13h.01M18 11h.01"/>',
-    badge: 'NEW',
+    added: '2026-10-30',
   },
   {
     kind: 'game',
@@ -55,7 +56,7 @@ export const TOOLS: Tool[] = [
     description: '같은 과일을 부딪혀 키워요. 목표는 수박!',
     color: '#d9534f',
     icon: '<path d="M12 20.94c1.5 0 2.75 1.06 4 1.06 3 0 6-8 6-12.22A4.91 4.91 0 0 0 17 5c-2.22 0-4 1.44-5 2-1-.56-2.78-2-5-2a4.9 4.9 0 0 0-5 4.78C2 14 5 22 8 22c1.25 0 2.5-1.06 4-1.06Z"/><path d="M10 2c1 .5 2 2 2 5"/>',
-    badge: 'NEW',
+    added: '2026-10-30',
   },
   {
     kind: 'game',
@@ -64,7 +65,7 @@ export const TOOLS: Tool[] = [
     description: '숫자 타일을 밀어 합쳐요. 천천히 생각해도 괜찮아요.',
     color: '#d99a1e',
     icon: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/>',
-    badge: 'NEW',
+    added: '2026-10-30',
   },
   {
     kind: 'game',
@@ -73,7 +74,7 @@ export const TOOLS: Tool[] = [
     description: '무작위 강아지로 태어나 한평생을 살아 봐요.',
     color: '#c0632f',
     icon: '<circle cx="11" cy="4" r="2"/><circle cx="18" cy="8" r="2"/><circle cx="20" cy="16" r="2"/><path d="M9 10a5 5 0 0 1 5 5v3.5a3.5 3.5 0 0 1-6.84 1.045Q6.52 17.48 4.46 16.84A3.5 3.5 0 0 1 5.5 10Z"/>',
-    badge: 'NEW',
+    added: '2026-11-02',
   },
   {
     kind: 'game',
@@ -82,8 +83,11 @@ export const TOOLS: Tool[] = [
     description: '생년월일로 사주팔자와 오늘의 운세를 재미로 봐요.',
     color: '#8a5cc4',
     icon: '<circle cx="12" cy="12" r="9"/><path d="M12 3a4.5 4.5 0 0 0 0 9 4.5 4.5 0 0 1 0 9"/><circle cx="12" cy="7.5" r=".8"/><circle cx="12" cy="16.5" r=".8"/>',
-    badge: 'NEW',
+    added: '2026-11-02',
   },
 ];
+
+/** 올린 지 14일 안이면 NEW (빌드할 때 기준) */
+export const isNew = (t: Tool, now = new Date()) => now.getTime() - new Date(t.added).getTime() < 14 * 864e5;
 
 export const toolHref = (t: Tool) => `/${t.kind === 'game' ? 'games' : 'tools'}/${t.slug}/`;
