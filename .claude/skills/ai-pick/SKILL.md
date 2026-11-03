@@ -18,7 +18,7 @@ description: 사용자가 링크(GitHub 저장소, AI 뉴스, 블로그, 논문)
 | ZDNet Korea | https://zdnet.co.kr/feed/article_list.xml | ✅ (robots: /Include2/user/, /Contents/ 금지) |
 | PostgreSQL | https://www.postgresql.org/news.rss | ✅ |
 | GitHub 인기 저장소 | github.com/trending (403) | ❌ 대신 위 출처에 소개된 저장소를 `git clone --depth 1`로 읽기 |
-| GeekNews | news.hada.io (403), RSS는 feeds.feedburner.com으로 넘어감(차단) | ❌ feeds.feedburner.com 허용 시 https://news.hada.io/rss/news |
+| GeekNews | https://news.hada.io/rss/news → https://feeds.feedburner.com/geeknews-feed (웹 페이지는 403) | ✅ RSS (Atom) |
 | Oracle 블로그 | blogs.oracle.com (Akamai 403) | ❌ 사이트가 봇 차단 |
 
 ## 순서
