@@ -525,7 +525,7 @@ const POOL: Pool = [
   { min: 8, max: 20, icon: '🧩', text: V('노즈워크 장난감으로 간식 찾기 놀이를 했어요. 아직 코는 최고!', '{누구가} 집 안 곳곳에 숨긴 간식을 다 찾아냈어요.', '이불 속에 숨긴 간식도 코로 금방 찾았어요.'), effect: { happy: 4 }, when: () => Math.random() < 0.5 },
   { min: 8, max: 20, icon: '🌷', text: V('봄볕 드는 마당에서 꽃냄새를 맡으며 한참 앉아 있었어요.', '{계절} 오후, {누구} 옆에 앉아 바람 냄새를 맡았어요.', '햇살 좋은 날 {누구가} 창문을 열어 줬어요. 한참 밖을 바라봤어요.'), effect: { happy: 4 }, when: () => Math.random() < 0.5 },
   { min: 9, max: 20, icon: '👀', text: V('눈이 조금 흐려졌대요. 대신 가족 발소리는 더 잘 알아들어요.', '눈이 흐려져서 {누구가} 집 모서리에 쿠션을 붙여 줬어요.', '앞이 잘 안 보여도 {누구} 목소리만 들리면 꼬리를 흔들어요.'), effect: { bond: 3 }, when: () => Math.random() < 0.5 },
-  { min: 9, max: 20, icon: '🐕‍🦺', text: () => '어릴 적 친구를 산책길에서 다시 만났어요. 둘 다 흰 털이 났어요.', effect: { happy: 5 }, memory: true, key: 'oldfriend', when: (d) => d.friends > 0 && Math.random() < 0.5 },
+  { min: 9, max: 20, icon: '🐕', text: () => '어릴 적 친구를 산책길에서 다시 만났어요. 둘 다 흰 털이 났어요.', effect: { happy: 5 }, memory: true, key: 'oldfriend', when: (d) => d.friends > 0 && Math.random() < 0.5 },
   { min: 9, max: 20, icon: '🛏️', text: V('푹신한 노견 방석을 선물받고 그 위에서만 지내요.', '{누구가} 온열 방석을 깔아 줬어요. 거기가 제일 따뜻한 자리예요.', '{누구} 침대 옆에 내 자리가 새로 생겼어요.'), effect: { happy: 3 }, when: () => Math.random() < 0.5 },
   { min: 9, max: 20, icon: '🎞️', text: V('가족이 어릴 적 사진첩을 꺼내 보며 웃었어요. 나도 옆에서 꼬리를 쳤어요.', '{누구가} 내 아기 때 영상을 틀어 놓고 한참 웃었어요.', '{누구가} 휴대폰 속 내 사진을 넘기며 이때 기억나냐고 물었어요.'), effect: { bond: 5 }, memory: true, key: 'album', when: () => Math.random() < 0.5 },
   { min: 10, max: 20, icon: '🌕', text: () => '보름달이 뜬 밤, 가족과 마당에 나와 소원을 빌었어요.', effect: { bond: 4 }, memory: true, key: 'moon', when: () => Math.random() < 0.4 },

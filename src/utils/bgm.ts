@@ -74,7 +74,9 @@ export class Bgm {
     this.master!.gain.cancelScheduledValues(t);
     this.master!.gain.setValueAtTime(this.master!.gain.value, t);
     this.master!.gain.linearRampToValueAtTime(0, t + fade);
-    window.setTimeout(() => clearInterval(this.timer), fade * 1000 + 50);
+    // 페이드 중에 다시 start()해도 새 타이머는 지우지 않도록 지금 타이머만 멈춥니다.
+    const timer = this.timer;
+    window.setTimeout(() => clearInterval(timer), fade * 1000 + 50);
   }
 
   setMood(m: Mood) {
