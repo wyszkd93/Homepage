@@ -365,7 +365,7 @@ import { Image } from 'astro:assets';
 
   /** '오피스텔의 혼자 사는 직장인 집사' / 가족 이름에 집이 들어 있으면 가족 이름만 ('마당 있는 시골집') */
   function whereOf(d: Dog) {
-    const home = homeOf(d.family.id);
+    const home = homeOf(d);
     return d.family.name.includes(home) ? d.family.name : `${home}의 ${d.family.name}`;
   }
 
@@ -415,7 +415,7 @@ import { Image } from 'astro:assets';
     grid.innerHTML = '';
     for (const [k, v] of [
       ['견종', d.breed.name], ['성별', d.sex], ['털색', coatName(d.breed.id)], ['성격', d.personality.name],
-      ['가족', d.family.name], ['사는 곳', homeOf(d.family.id)], ['견종 평균 수명', `${d.breed.life[0]}~${d.breed.life[1]}년`], ['특징', d.breed.trait],
+      ['가족', d.family.name], ['사는 곳', homeOf(d)], ['견종 평균 수명', `${d.breed.life[0]}~${d.breed.life[1]}년`], ['특징', d.breed.trait],
     ]) {
       const wrap = document.createElement('div');
       const dt = document.createElement('dt');
@@ -502,7 +502,7 @@ import { Image } from 'astro:assets';
     if (dog) {
       if (age > dog.lifespan * 0.6) bgm.setMood('senior');
       scene.frame(now, age, !paused && !waiting);
-      const home = homeOf(dog.family.id);
+      const home = homeOf(dog);
       const extra = dog.household.extra.length ? ` +${dog.household.extra.length}` : '';
       const who = dog.family.name.includes(home) ? dog.family.name : `${home} · ${dog.family.name}`;
       $('dl-scene-cap').textContent = `${who}${extra}${dog.sibling ? ` · 동생 ${dog.sibling.name}` : ''} · ${SEASON_NAME[Math.floor((age % 1) * 4) % 4]}`;

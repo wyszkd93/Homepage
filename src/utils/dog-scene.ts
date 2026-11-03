@@ -1,6 +1,6 @@
 // 견생 한 바퀴의 픽셀 장면: 사는 곳 배경 + 계절 + 가족 + 걸어 다니는 강아지.
 // 240×110 작은 캔버스에 그리고 CSS로 확대합니다(image-rendering: pixelated).
-import type { Dog } from './dog-life';
+import type { Dog, Place } from './dog-life';
 
 export const SW = 240;
 export const SH = 110;
@@ -28,24 +28,26 @@ const COATS: Record<string, Coat> = {
 // 가족 구성 → 픽셀 사람들, 사는 곳 → 배경
 type Person = { hair: string; shirt: string; pants: string; h: number; elder?: boolean };
 const SKIN = '#f1c9a5';
-const FAMILY_SCENE: Record<string, { place: 'city' | 'house' | 'farm'; home: string; people: Person[] }> = {
-  single: { place: 'city', home: '오피스텔', people: [{ hair: '#3b2a20', shirt: '#4f7cc4', pants: '#2f3442', h: 16 }] },
-  couple: { place: 'city', home: '아파트', people: [{ hair: '#2b211b', shirt: '#7a9e7e', pants: '#3a3f4b', h: 16 }, { hair: '#5a3a26', shirt: '#e08a8a', pants: '#4a4f63', h: 15 }] },
+const FAMILY_SCENE: Record<string, { people: Person[] }> = {
+  single: { people: [{ hair: '#3b2a20', shirt: '#4f7cc4', pants: '#2f3442', h: 16 }] },
+  couple: { people: [{ hair: '#2b211b', shirt: '#7a9e7e', pants: '#3a3f4b', h: 16 }, { hair: '#5a3a26', shirt: '#e08a8a', pants: '#4a4f63', h: 15 }] },
   kids: {
-    place: 'city', home: '아파트',
     people: [
       { hair: '#2b211b', shirt: '#4f7cc4', pants: '#2f3442', h: 16 }, { hair: '#4a2f22', shirt: '#d9a24b', pants: '#4a4f63', h: 15 },
       { hair: '#2b211b', shirt: '#e06666', pants: '#3b5ba5', h: 10 }, { hair: '#4a2f22', shirt: '#8e7cc3', pants: '#c27ba0', h: 9 },
     ],
   },
-  grand: { place: 'house', home: '주택', people: [{ hair: '#d9d9d9', shirt: '#8a6f5a', pants: '#4b4b4b', h: 15, elder: true }, { hair: '#e6e6e6', shirt: '#b56576', pants: '#5a5a6a', h: 14, elder: true }] },
-  student: { place: 'city', home: '원룸', people: [{ hair: '#1f1f1f', shirt: '#f2c14e', pants: '#3a4a6b', h: 16 }] },
+  grand: { people: [{ hair: '#d9d9d9', shirt: '#8a6f5a', pants: '#4b4b4b', h: 15, elder: true }, { hair: '#e6e6e6', shirt: '#b56576', pants: '#5a5a6a', h: 14, elder: true }] },
+  student: { people: [{ hair: '#1f1f1f', shirt: '#f2c14e', pants: '#3a4a6b', h: 16 }] },
   farm: {
-    place: 'farm', home: '마당 있는 시골집',
     people: [{ hair: '#3b2a20', shirt: '#6a994e', pants: '#3a3f4b', h: 16 }, { hair: '#5a3a26', shirt: '#e9c46a', pants: '#4a4f63', h: 15 }, { hair: '#dcdcdc', shirt: '#9c6644', pants: '#4b4b4b', h: 14, elder: true }],
   },
+  shop: { people: [{ hair: '#3b2a20', shirt: '#f4f1ea', pants: '#6b4a32', h: 16 }, { hair: '#5a3a26', shirt: '#e8b04b', pants: '#4a4f63', h: 15 }] },
+  mom: { people: [{ hair: '#4a2f22', shirt: '#9b72cf', pants: '#3a3f4b', h: 15 }, { hair: '#2b211b', shirt: '#f28482', pants: '#4a6fa5', h: 11 }] },
+  share: { people: [{ hair: '#2b211b', shirt: '#43aa8b', pants: '#2f3442', h: 16 }, { hair: '#1f1f1f', shirt: '#577590', pants: '#3a3f4b', h: 16 }, { hair: '#7a4a2a', shirt: '#f9844a', pants: '#4a4f63', h: 15 }] },
+  artist: { people: [{ hair: '#1f1f1f', shirt: '#e07a5f', pants: '#3d405b', h: 16 }] },
 };
-export const homeOf = (familyId: string) => FAMILY_SCENE[familyId]?.home ?? '집';
+export const homeOf = (d: Dog) => d.home?.name ?? '집';
 export const coatName = (breedId: string) =>
   ({ maltese: '하양', poodle: '갈색', pomeranian: '오렌지', mix: '크림 갈색', shihtzu: '하양·갈색', chihuahua: '황갈색', bichon: '하양', jindo: '황구', corgi: '레드·하양', shiba: '적갈색', yorkie: '블루·탄', dachshund: '초콜릿', golden: '골드', labrador: '옐로' })[breedId] ?? '갈색';
 
@@ -99,7 +101,7 @@ export class DogScene {
     const d = this.dog;
     const ctx = this.ctx;
     const season = (Math.floor(((age % 1) + 1) * 4) % 4) as Season; // 1년 = 봄→여름→가을→겨울
-    const place = d ? FAMILY_SCENE[d.family.id]?.place ?? 'city' : 'city';
+    const place: Place = d?.home?.place ?? 'city';
 
     // 하늘
     const [s1, s2] = SKY[season];
@@ -124,7 +126,10 @@ export class DogScene {
     const [g1, g2] = GRASS[season];
     px(ctx, g1, 0, GROUND, SW, SH - GROUND);
     for (let i = 0; i < SW; i += 6) px(ctx, g2, i + ((i / 6) % 2) * 2, GROUND + 3 + ((i / 6) % 3) * 3, 2, 1);
-    if (place === 'city') {
+    if (place === 'sea') {
+      px(ctx, '#ead7a8', 0, GROUND, SW, SH - GROUND); // 모래사장
+      for (let i = 0; i < SW; i += 9) px(ctx, '#d9c08a', i + ((i / 9) % 2) * 3, GROUND + 4 + ((i / 9) % 3) * 3, 2, 1);
+    } else if (place === 'city') {
       px(ctx, '#b9b4ad', 0, GROUND + 6, SW, 8); // 산책로
       for (let i = 0; i < SW; i += 14) px(ctx, '#d6d1ca', i, GROUND + 9, 7, 1);
     } else {
@@ -206,7 +211,7 @@ export class DogScene {
     }
   }
 
-  private drawPlace(place: 'city' | 'house' | 'farm', season: Season) {
+  private drawPlace(place: Place, season: Season) {
     const ctx = this.ctx;
     if (place === 'city') {
       const blds = [[6, 34, 26, '#c9d3dc'], [36, 46, 20, '#b7c3cf'], [60, 26, 30, '#d3dbe2'], [96, 40, 22, '#bfcad4'], [196, 30, 28, '#c4cfd9'], [226, 44, 14, '#b3bfcb']] as const;
@@ -218,6 +223,37 @@ export class DogScene {
       px(ctx, '#6b6b6b', 130, GROUND - 24, 1, 24);
       px(ctx, '#ffe08a', 128, GROUND - 26, 5, 2);
       this.drawTree(160, season);
+    } else if (place === 'sea') {
+      // 바다 + 작은 집 + 등대
+      px(ctx, season === 3 ? '#9fb8c9' : '#6fb3d9', 0, GROUND - 22, SW, 22);
+      for (let x = 0; x < SW; x += 10) px(ctx, '#e6f4fb', x + ((this.last / 300) % 10), GROUND - 16 + ((x / 10) % 3) * 5, 4, 1);
+      px(ctx, '#f2e6d0', 18, GROUND - 20, 30, 20);
+      px(ctx, '#3d6fa5', 14, GROUND - 24, 38, 4);
+      px(ctx, '#8a5a3b', 30, GROUND - 10, 6, 10);
+      px(ctx, '#a7cdf4', 21, GROUND - 16, 5, 4);
+      px(ctx, '#f4f1ea', 214, GROUND - 40, 8, 40); // 등대
+      px(ctx, '#d9534f', 214, GROUND - 32, 8, 4);
+      px(ctx, '#d9534f', 214, GROUND - 20, 8, 4);
+      px(ctx, '#ffe08a', 215, GROUND - 44, 6, 4);
+      px(ctx, '#8a5a3b', 150, GROUND - 18, 14, 3); // 고깃배
+      px(ctx, '#6b4428', 152, GROUND - 15, 10, 1);
+      px(ctx, '#f4f1ea', 156, GROUND - 27, 1, 9);
+      px(ctx, '#f4f1ea', 157, GROUND - 26, 4, 5);
+    } else if (place === 'hanok') {
+      // 기와지붕 한옥 + 돌담
+      px(ctx, '#efe3cf', 18, GROUND - 22, 56, 22);
+      ctx.fillStyle = '#4a4f5a';
+      ctx.beginPath();
+      ctx.moveTo(8, GROUND - 22);
+      ctx.quadraticCurveTo(46, GROUND - 30, 84, GROUND - 22);
+      ctx.lineTo(74, GROUND - 34);
+      ctx.quadraticCurveTo(46, GROUND - 38, 18, GROUND - 34);
+      ctx.closePath();
+      ctx.fill();
+      for (let x = 22; x < 72; x += 10) px(ctx, '#8a5a3b', x, GROUND - 22, 1, 22); // 기둥
+      px(ctx, '#c9a26a', 18, GROUND - 6, 56, 2); // 툇마루
+      for (let x = 92; x < SW; x += 7) px(ctx, '#a39e94', x, GROUND - 7 + ((x / 7) % 2), 6, 7 - ((x / 7) % 2)); // 돌담
+      this.drawTree(200, season);
     } else if (place === 'house') {
       px(ctx, '#f2e6d0', 20, GROUND - 26, 44, 26); // 집
       ctx.fillStyle = '#b5523b';

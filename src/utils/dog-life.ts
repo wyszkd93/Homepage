@@ -44,8 +44,49 @@ export const FAMILIES = [
   { id: 'kids', name: '아이 둘 있는 시끌벅적한 집', walk: 1.8 },
   { id: 'grand', name: '할머니 할아버지 댁', walk: 1.4 },
   { id: 'student', name: '대학생 자취방', walk: 1.1 },
-  { id: 'farm', name: '마당 있는 시골집', walk: 2.2 },
+  { id: 'farm', name: '시골 삼대 가족', walk: 2.2 },
+  { id: 'shop', name: '동네 빵집 사장님 부부', walk: 1.5 },
+  { id: 'mom', name: '엄마와 딸 둘이 사는 집', walk: 1.4 },
+  { id: 'share', name: '친구 셋이 사는 셰어하우스', walk: 1.6 },
+  { id: 'artist', name: '그림 그리는 작가 집사', walk: 1.3 },
 ] as const;
+
+// ── 사는 집: 가족마다 여러 집 중 하나로 태어나요 ──
+export type Place = 'city' | 'house' | 'farm' | 'sea' | 'hanok';
+export interface Home { id: string; name: string; place: Place; spots: string[] }
+export const HOMES: Record<string, Home> = {
+  apt: { id: 'apt', name: '아파트', place: 'city', spots: ['아파트 산책로', '단지 놀이터', '한강 공원', '호수 공원', '상가 앞 광장'] },
+  officetel: { id: 'officetel', name: '오피스텔', place: 'city', spots: ['카페 거리', '빌딩 사이 공원', '강아지 운동장', '천변 산책로'] },
+  villa: { id: 'villa', name: '빌라 3층', place: 'city', spots: ['동네 골목', '작은 어린이공원', '시장 길', '뒷산 둘레길'] },
+  oneroom: { id: 'oneroom', name: '원룸', place: 'city', spots: ['대학가 골목', '캠퍼스 잔디밭', '편의점 앞 공터', '천변 산책로'] },
+  rooftop: { id: 'rooftop', name: '옥탑방', place: 'city', spots: ['옥상 텃밭', '동네 계단길', '언덕 위 공원', '골목 놀이터'] },
+  house: { id: 'house', name: '마당 있는 주택', place: 'house', spots: ['우리 집 마당', '동네 골목', '뒷산 오솔길', '개천 산책로'] },
+  alley: { id: 'alley', name: '골목 안 단독주택', place: 'house', spots: ['골목 담벼락 길', '동네 공원', '시장 길', '약수터 가는 길'] },
+  hanok: { id: 'hanok', name: '한옥', place: 'hanok', spots: ['한옥 마당', '돌담길', '마을 정자', '고궁 옆 산책길'] },
+  seaside: { id: 'seaside', name: '바닷가 마을 집', place: 'sea', spots: ['모래사장', '방파제', '항구 앞 길', '해안 산책로', '갯벌 앞'] },
+  farmhouse: { id: 'farmhouse', name: '마당 있는 시골집', place: 'farm', spots: ['마당', '개울가', '논두렁', '마을 정자', '뒷산'] },
+  orchard: { id: 'orchard', name: '과수원 집', place: 'farm', spots: ['사과나무 사이', '과수원 길', '개울가', '원두막 앞'] },
+  mountain: { id: 'mountain', name: '산자락 전원주택', place: 'farm', spots: ['숲길', '계곡', '산 입구', '잔디 마당', '들꽃 길'] },
+  shopfront: { id: 'shopfront', name: '빵집 딸린 집', place: 'house', spots: ['가게 앞 골목', '시장 길', '동네 공원', '버스 정류장 앞'] },
+  atelier: { id: 'atelier', name: '작업실 딸린 주택', place: 'house', spots: ['작업실 마당', '미술관 앞 공원', '골목 갤러리 길', '강변 산책로'] },
+  // 이사 선택으로 바뀌는 집
+  parkapt: { id: 'parkapt', name: '공원 앞 아파트', place: 'city', spots: ['공원 잔디밭', '공원 둘레길', '호수 공원', '강아지 운동장'] },
+  nearwork: { id: 'nearwork', name: '회사 근처 오피스텔', place: 'city', spots: ['빌딩 사이 공원', '카페 거리', '점심 산책길', '천변 산책로'] },
+};
+const FAMILY_HOMES: Record<string, string[]> = {
+  single: ['officetel', 'oneroom', 'villa', 'apt', 'rooftop'],
+  couple: ['apt', 'villa', 'officetel', 'house', 'seaside'],
+  kids: ['apt', 'villa', 'house', 'alley'],
+  grand: ['house', 'hanok', 'alley', 'seaside'],
+  student: ['oneroom', 'rooftop', 'villa'],
+  farm: ['farmhouse', 'orchard', 'mountain', 'seaside'],
+  shop: ['shopfront', 'villa', 'alley'],
+  mom: ['apt', 'villa', 'officetel', 'alley'],
+  share: ['house', 'villa', 'rooftop'],
+  artist: ['atelier', 'rooftop', 'hanok', 'seaside'],
+};
+export const homeIs = (d: Dog, ...ids: string[]) => ids.includes(d.home.id);
+export const placeIs = (d: Dog, ...ps: Place[]) => ps.includes(d.home.place);
 
 export type Personality = (typeof PERSONALITIES)[number];
 export type Family = (typeof FAMILIES)[number];
@@ -70,6 +111,7 @@ export interface Dog {
   name: string;
   personality: Personality;
   family: Family;
+  home: Home; // 사는 집 (이사하면 바뀌어요)
   sex: '수컷' | '암컷';
   lifespan: number; // 이번 생의 수명(년, 소수)
   stats: Stats;
@@ -120,6 +162,7 @@ export function born(): Dog {
     name: pick(NAMES),
     personality,
     family,
+    home: HOMES[pick(FAMILY_HOMES[family.id] ?? ['apt'])],
     sex: Math.random() < 0.5 ? '수컷' : '암컷',
     lifespan,
     stats: { health: 80, happy: 60, bond: 25 },
@@ -195,6 +238,22 @@ const CHOICE_BANDS: ReturnType<typeof C>[][] = [
       { label: '억지로 꺼내지 않고 기다리기', effect: { bond: 6 }, text: '한참 뒤에 슬그머니 나와서 손님 냄새를 맡았어요.' },
       { label: '손님에게 간식을 부탁하기', effect: { happy: 4, bond: 2 }, text: '간식 주는 손님은 좋은 사람이래요.' },
     ], (d) => d.personality.id === 'shy' || d.personality.id === 'calm'),
+    C('bakery', 0.7, '가게에 데려가도 될까요?', [
+      { label: '가게 마스코트로 데려가기', effect: { happy: 5, bond: 3 }, text: '빵 굽는 냄새 속에서 손님마다 인사를 받았어요.' },
+      { label: '2층 집에서 쉬게 하기', effect: { health: 2, bond: 2 }, text: '계단 위에서 가게 종소리를 들으며 기다려요.' },
+    ], (d) => d.family.id === 'shop'),
+    C('room', 0.6, '친구 셋 중 누구 방에서 잘까요?', [
+      { label: '돌아가며 하루씩', effect: { bond: 5 }, text: '요일마다 다른 방, 다른 이불 냄새를 맡아요.' },
+      { label: '거실에 내 자리 만들기', effect: { happy: 4, bond: 2 }, text: '거실 한가운데 방석이 모두의 쉼터가 됐어요.' },
+    ], (d) => d.family.id === 'share'),
+    C('canvas', 0.8, '작업실에 들어오고 싶어 해요.', [
+      { label: '작업실 문 열어 두기', effect: { bond: 6, happy: 2 }, text: '발바닥에 물감을 묻히고 캔버스에 도장을 찍었어요.' },
+      { label: '작업실 밖에 방석 두기', effect: { health: 2, bond: 3 }, text: '문턱에 턱을 괴고 그림 그리는 걸 지켜봐요.' },
+    ], (d) => d.family.id === 'artist'),
+    C('beach', 0.9, '처음으로 바닷가에 데려가 볼까요?', [
+      { label: '파도 가까이 가 보기', effect: { happy: 6, health: 1 }, text: '파도가 밀려오자 깜짝 놀라 뒷걸음질 쳤어요.' },
+      { label: '모래사장만 걷기', effect: { happy: 4, bond: 2 }, text: '모래에 찍힌 내 발자국을 한참 냄새 맡았어요.' },
+    ], (d) => d.home.place === 'sea'),
   ],
   [
     C('weekend', 2.5, '주말에는 무엇을 할까요?', [
@@ -254,6 +313,22 @@ const CHOICE_BANDS: ReturnType<typeof C>[][] = [
     ], (d) => d.personality.id === 'rascal' || d.personality.id === 'curious' || d.personality.id === 'sweet'),
   ],
   [
+    C('elevator', 4.8, '엘리베이터에서 이웃이 강아지를 무서워해요.', [
+      { label: '안고 타기', effect: { bond: 4 }, text: '이웃이 이제는 먼저 인사해 줘요.' },
+      { label: '계단으로 다니기', effect: { health: 4, walk: 0.1 }, text: '계단 덕분에 다리가 튼튼해졌어요.' },
+    ], (d) => homeIs(d, 'apt', 'officetel', 'villa')),
+    C('garden', 5, '마당에 강아지 놀이터를 만들어 줄까요?', [
+      { label: '모래 놀이터 만들기', effect: { happy: 6 }, text: '모래를 파다가 오래된 장난감을 발굴했어요.' },
+      { label: '그늘막과 물그릇만', effect: { health: 3, happy: 2 }, text: '여름 오후는 그늘막 아래가 명당이에요.' },
+    ], (d) => placeIs(d, 'house', 'hanok', 'farm')),
+    C('fishing', 5.2, '동네 어르신이 배에 태워 주신대요.', [
+      { label: '구명조끼 입고 타 보기', effect: { happy: 7, bond: 2 }, text: '뱃머리에 앉아 갈매기와 눈싸움을 했어요.' },
+      { label: '방파제에서 기다리기', effect: { bond: 3 }, text: '배가 돌아오자 꼬리로 바닥을 쓸며 반겼어요.' },
+    ], (d) => d.home.place === 'sea'),
+    C('momday', 4.7, '엄마가 야근하는 날이 많아졌어요.', [
+      { label: '딸이 산책 담당 하기', effect: { bond: 5, walk: 0.1 }, text: '딸의 하굣길이 곧 내 산책길이 됐어요.' },
+      { label: '엄마 회사 근처 반려견 유치원', effect: { happy: 4 }, text: '퇴근길에 엄마와 같이 집에 와요.' },
+    ], (d) => d.family.id === 'mom'),
     C('diet', 5, '체중이 조금 늘었대요. 간식을 어떻게 할까요?', [
       { label: '다이어트 시작', effect: { health: 8, life: 0.7, happy: -4, treat: -1 }, text: '간식은 줄고 산책은 늘었어요. 몸이 가벼워졌어요.' },
       { label: '그래도 간식은 행복이야', effect: { happy: 6, health: -6, life: -0.5, treat: 1 }, text: '오늘도 간식 앞에서 꼬리가 프로펠러처럼 돌아가요.' },
@@ -326,6 +401,18 @@ const CHOICE_BANDS: ReturnType<typeof C>[][] = [
       { label: '매일 저녁 마사지', effect: { health: 4, bond: 6 }, text: '마사지 시간만 되면 먼저 와서 누워요.' },
       { label: '따뜻한 찜질 매트', effect: { health: 4, happy: 3 }, text: '찜질 매트 위가 최애 자리가 됐어요.' },
     ]),
+    C('market2', 7.4, '빵집 손님들이 노견이 된 나를 보러 와요.', [
+      { label: '가게 앞 방석에서 인사하기', effect: { happy: 5, bond: 2 }, text: '단골손님들이 "오늘도 출근했네" 하며 쓰다듬어 줘요.' },
+      { label: '조용한 집에서 쉬기', effect: { health: 3 }, text: '사장님이 쉬는 시간마다 올라와서 안아 줘요.' },
+    ], (d) => d.family.id === 'shop'),
+    C('ondol', 7.6, '추운 겨울이 왔어요. 어디서 지낼까요?', [
+      { label: '뜨끈한 아랫목', effect: { health: 4, happy: 3 }, text: '아랫목에 배를 붙이고 노곤노곤 졸았어요.' },
+      { label: '햇볕 드는 툇마루', effect: { happy: 4, bond: 2 }, text: '툇마루 볕 아래에서 할머니 무릎을 베고 누웠어요.' },
+    ], (d) => placeIs(d, 'hanok', 'farm')),
+    C('stairs2', 7.9, '3층 계단이 버거워 보여요.', [
+      { label: '매일 안고 오르내리기', effect: { bond: 7 }, text: '계단참마다 쉬면서 같이 숨을 골라요.' },
+      { label: '1층 집으로 이사하기', effect: { health: 4, happy: 2 }, text: '현관문을 나서면 바로 풀밭이에요.' },
+    ], (d) => homeIs(d, 'villa', 'rooftop')),
     C('hearing', 7.8, '부르는 소리에 반응이 느려졌어요.', [
       { label: '손짓 신호 새로 가르치기', effect: { bond: 6 }, text: '손을 흔들면 귀 대신 눈으로 알아들어요.' },
       { label: '진동 목걸이 써 보기', effect: { health: 2, happy: 2 }, text: '목걸이가 부르르 떨리면 가족을 찾아 고개를 돌려요.' },
@@ -370,6 +457,14 @@ const CHOICE_BANDS: ReturnType<typeof C>[][] = [
       { label: '그림 작가에게 초상화 맡기기', effect: { bond: 5 }, text: '액자 속 내가 거실 한가운데 걸렸어요.' },
       { label: '발도장 찍어 액자 만들기', effect: { bond: 6, happy: 2 }, text: '발바닥 도장이 가족 방에 걸렸어요.' },
     ]),
+    C('portrait2', 10.7, '집사가 나를 그린 그림으로 전시를 열고 싶대요.', [
+      { label: '전시회에 같이 가기', effect: { happy: 6, bond: 4 }, text: '그림 속 나와 진짜 나를 번갈아 보며 다들 웃었어요.' },
+      { label: '집 거실에만 걸어 두기', effect: { bond: 5 }, text: '거실 벽이 온통 내 그림으로 가득해요.' },
+    ], (d) => d.family.id === 'artist'),
+    C('housewarming', 11, '셰어하우스 친구 한 명이 이사를 간대요.', [
+      { label: '새 집에 놀러 가기', effect: { happy: 5, bond: 3 }, text: '새 집 냄새를 다 맡고 나서야 소파에 누웠어요.' },
+      { label: '송별회 하기', effect: { bond: 5 }, text: '친구 무릎에서 마지막 저녁을 같이 먹었어요.' },
+    ], (d) => d.family.id === 'share'),
     C('seaagain', 10.9, '어릴 때 갔던 바다에 다시 가 볼까요?', [
       { label: '그 바다에 다시 가기', effect: { happy: 7, bond: 5 }, text: '파도 소리를 들으며 모래 위에 한참 누워 있었어요.' },
       { label: '가까운 호숫가로', effect: { happy: 4, health: 1 }, text: '잔잔한 물결을 보며 꾸벅꾸벅 졸았어요.' },
@@ -405,6 +500,8 @@ const CHOICE_FLAGS: Record<string, string[]> = {
   snow: ['', ''], clothes: ['', '', ''], trick: ['', '', ''], rain: ['', '', 'swimmer'], exam: ['', ''], market: ['', ''], rival: ['', ''],
   remote: ['', ''], holiday: ['traveler', '', ''], donor: ['donor', ''], festival: ['', '', ''], hens: ['', ''], drawer: ['fit', 'chubby'],
   hearing: ['', ''], seniorfood: ['', '', ''], puppyguest: ['', ''], route: ['', '', ''], insurance: ['checked', ''],
+  bakery: ['shopdog', ''], room: ['', ''], canvas: ['painter', ''], beach: ['', ''], elevator: ['', ''], garden: ['', ''], fishing: ['boat', ''], momday: ['', ''],
+  market2: ['', ''], ondol: ['', ''], stairs2: ['', ''], portrait2: ['', ''], housewarming: ['', ''],
   seaagain: ['', ''], diary: ['', '', ''], oldpal: ['', ''], appetite: ['', '', ''], holidaygather: ['', ''],
 };
 /** 가족의 선택을 반영합니다: 효과 + 흔적 + (동생 입양이면) 동생 강아지 */
@@ -414,6 +511,7 @@ export function choose(d: Dog, c: Choice, k: number) {
   const flag = CHOICE_FLAGS[c.id]?.[k];
   if (flag && !d.flags.includes(flag)) d.flags.push(flag);
   if (flag === 'sibling') adoptSibling(d, c.age);
+  if (c.id === 'move') d.home = HOMES[k === 0 ? 'parkapt' : 'nearwork'];
 }
 
 /** 강아지 동생을 들여요: 장면에 동생이 함께 나오고, 동생과 이어지는 사건이 열립니다. */
@@ -445,6 +543,7 @@ const wa = (w: string) => w + (hasBatchim(w) ? '과' : '와');
 const MEMBERS: Record<string, string[]> = {
   single: ['집사'], student: ['집사'], couple: ['엄마', '아빠'], kids: ['엄마', '아빠', '큰아이', '막내'],
   grand: ['할머니', '할아버지'], farm: ['엄마', '아빠', '할머니'],
+  shop: ['사장님', '사모님'], mom: ['엄마', '딸'], share: ['첫째 언니', '둘째 형', '막내 언니'], artist: ['집사'],
 };
 const EXTRA_NAME = { adult: '새 가족', child: '손주', baby: '아기' } as const;
 export function whoOf(d: Dog) {
@@ -456,7 +555,7 @@ const PLACES: Record<string, string[]> = {
   house: ['동네 골목', '뒷산 오솔길', '시장 길', '동네 공원', '개천 산책로'],
   farm: ['마당', '개울가', '논두렁', '과수원', '뒷산', '마을 정자'],
 };
-const placeKind = (d: Dog) => (d.family.id === 'farm' ? 'farm' : d.family.id === 'grand' ? 'house' : 'city');
+const spotOf = (d: Dog) => pick(Math.random() < 0.7 ? d.home.spots : PLACES[d.home.place === 'farm' ? 'farm' : d.home.place === 'city' ? 'city' : 'house']);
 const SEASON_WORD = [['봄바람 부는', '벚꽃 날리는', '꽃 피는'], ['한여름', '매미 우는', '소나기 그친'], ['단풍 든', '선선한', '낙엽 쌓인'], ['눈 쌓인', '찬바람 부는', '하얀 입김 나는']];
 const seasonOf = (age: number) => Math.floor((age % 1) * 4) % 4;
 /** {이름} {이름이} {누구} {누구가} {누구와} {장소} {계절} 를 채워 넣어요 */
@@ -465,7 +564,7 @@ const fill = (t: string, d: Dog, age: number) => {
   return t
     .replaceAll('{이름이}', nameGa(d.name)).replaceAll('{이름}', d.name)
     .replaceAll('{누구가}', ga(who)).replaceAll('{누구와}', wa(who)).replaceAll('{누구를}', who + (hasBatchim(who) ? '을' : '를')).replaceAll('{누구}', who)
-    .replaceAll('{장소}', pick(PLACES[placeKind(d)])).replaceAll('{계절}', pick(SEASON_WORD[seasonOf(age)]));
+    .replaceAll('{장소}', spotOf(d)).replaceAll('{계절}', pick(SEASON_WORD[seasonOf(age)]));
 };
 const V = (...lines: string[]) => (d: Dog, age = 0) => fill(pick(lines), d, age);
 
@@ -660,7 +759,7 @@ const POOL: Pool = [
   { min: 2, max: 9, icon: '👶', text: () => '사람 아기가 태어났어요. 아기 침대 옆을 지키는 경비원이 됐어요.', effect: { bond: 6 }, memory: true, key: 'baby', once: 'baby', when: (d) => (d.family.id === 'couple' || d.flags.includes('once:wed')) && Math.random() < 0.6, apply: (d) => d.household.extra.push('baby') },
   { min: 5, max: 12, icon: '🎒', text: () => '큰아이가 대학에 가서 집을 떠났어요. 주말에 돌아오면 제일 먼저 달려가요.', effect: { happy: -2, bond: 3 }, memory: true, key: 'leave', once: 'family', when: (d) => d.family.id === 'kids' && Math.random() < 0.6, apply: (d) => { d.household.away = 1; } },
   { min: 2, max: 10, icon: '👧', text: () => '손주가 여름방학 내내 놀러 와서 매일 같이 뛰어놀았어요.', effect: { happy: 6 }, memory: true, key: 'grandkid', once: 'family', when: (d) => d.family.id === 'grand' && Math.random() < 0.6, apply: (d) => d.household.extra.push('child') },
-  { min: 2, max: 10, icon: '👵', text: () => '시골집에 이웃 할머니가 자주 놀러 와서 누룽지를 챙겨 줘요.', effect: { happy: 4 }, friend: true, once: 'family', when: (d) => d.family.id === 'farm' && Math.random() < 0.6, apply: (d) => d.household.extra.push('adult') },
+  { min: 2, max: 10, icon: '👵', text: () => '이웃 할머니가 자주 놀러 와서 누룽지를 챙겨 줘요.', effect: { happy: 4 }, friend: true, once: 'family', when: (d) => d.family.id === 'farm' && Math.random() < 0.6, apply: (d) => d.household.extra.push('adult') },
   // ── 아주 드문 순간 ✨ ──
   { min: 2, max: 12, icon: '📺', text: () => 'TV 동물 프로그램에 출연했어요! 방송 다음 날 동네 스타가 됐어요.', effect: { happy: 8 }, memory: true, key: 'tv', rare: true, when: () => Math.random() < 0.03 },
   { min: 2, max: 12, icon: '🦸', text: () => '길 잃은 아이 옆을 지키며 짖어서 엄마를 찾게 도왔어요.', effect: { bond: 8, happy: 5 }, memory: true, key: 'hero', rare: true, when: () => Math.random() < 0.025 },
@@ -690,7 +789,7 @@ const POOL: Pool = [
   { min: 1, max: 10, icon: '🫣', text: () => '청소기 소리에 숨었다가, 꺼지자마자 청소기에게 짖었어요.', effect: { happy: 1 }, when: (d) => d.personality.id === 'shy' || Math.random() < 0.3 },
   { min: 1, max: 10, icon: '🧭', text: () => '산책길에 처음 가 보는 골목을 발견했어요. 오늘은 탐험의 날.', effect: { happy: 5 }, when: (d) => d.personality.id === 'curious' },
   { min: 1, max: 10, icon: '💞', text: () => '가족이 울던 날, 말없이 옆에 앉아 꼬리를 기대 줬어요.', effect: { bond: 8 }, memory: true, key: 'comfort', when: (d) => d.personality.id === 'calm' || d.personality.id === 'sweet' },
-  { min: 2, max: 10, icon: '💼', text: () => '집사가 재택근무를 시작했어요. 화상회의에 깜짝 출연!', effect: { bond: 5, happy: 3 }, memory: true, key: 'wfh', when: (d) => d.family.id === 'single' || d.family.id === 'couple' },
+  { min: 2, max: 10, icon: '💼', text: V('{누구가} 재택근무를 시작했어요. 화상회의에 깜짝 출연!'), effect: { bond: 5, happy: 3 }, memory: true, key: 'wfh', when: (d) => d.family.id === 'single' || d.family.id === 'couple' },
   { min: 2, max: 10, icon: '🏕️', text: () => '마당에 텐트를 치고 별을 보며 잤어요.', effect: { happy: 5, bond: 4 }, when: (d) => d.family.id === 'farm' },
   { min: 2, max: 10, icon: '🌽', text: () => '옥수수 수확 날, 밭고랑 사이를 신나게 달렸어요.', effect: { happy: 5 }, when: (d) => d.family.id === 'farm' },
   { min: 2, max: 10, icon: '📺', text: () => '할아버지랑 TV 동물 프로그램을 같이 봤어요. 화면 속 강아지에게 짖었어요.', effect: { bond: 4 }, when: (d) => d.family.id === 'grand' },
@@ -708,12 +807,12 @@ const POOL: Pool = [
   { min: 7, max: 20, icon: '🧣', text: V('겨울이면 니트 옷을 입어야 산책을 나가요.', '털이 얇아져서 패딩 조끼를 새로 샀어요.'), effect: { health: 1 }, when: () => Math.random() < 0.5 },
   { min: 8, max: 20, icon: '🍲', text: V('가족이 노견용 수제 영양식을 만들어 줬어요.', '{누구가} 닭죽을 끓여 줬어요. 그릇까지 핥았어요.', '{누구가} 단호박 찐 걸 으깨 줬어요. 노란 수염이 됐어요.'), effect: { health: 4, bond: 3 }, memory: true, key: 'homefood', when: () => Math.random() < 0.5 },
   { min: 8, max: 20, icon: '🧩', text: V('노즈워크 장난감으로 간식 찾기 놀이를 했어요. 아직 코는 최고!', '{누구가} 집 안 곳곳에 숨긴 간식을 다 찾아냈어요.', '이불 속에 숨긴 간식도 코로 금방 찾았어요.'), effect: { happy: 4 }, when: () => Math.random() < 0.5 },
-  { min: 8, max: 20, icon: '🌷', text: V('봄볕 드는 마당에서 꽃냄새를 맡으며 한참 앉아 있었어요.', '{계절} 오후, {누구} 옆에 앉아 바람 냄새를 맡았어요.', '햇살 좋은 날 {누구가} 창문을 열어 줬어요. 한참 밖을 바라봤어요.'), effect: { happy: 4 }, when: () => Math.random() < 0.5 },
+  { min: 8, max: 20, icon: '🌷', text: V('봄볕 드는 {장소}에서 꽃냄새를 맡으며 한참 앉아 있었어요.', '{계절} 오후, {누구} 옆에 앉아 바람 냄새를 맡았어요.', '햇살 좋은 날 {누구가} 창문을 열어 줬어요. 한참 밖을 바라봤어요.'), effect: { happy: 4 }, when: () => Math.random() < 0.5 },
   { min: 9, max: 20, icon: '👀', text: V('눈이 조금 흐려졌대요. 대신 가족 발소리는 더 잘 알아들어요.', '눈이 흐려져서 {누구가} 집 모서리에 쿠션을 붙여 줬어요.', '앞이 잘 안 보여도 {누구} 목소리만 들리면 꼬리를 흔들어요.'), effect: { bond: 3 }, when: () => Math.random() < 0.5 },
   { min: 9, max: 20, icon: '🐕', text: () => '어릴 적 친구를 산책길에서 다시 만났어요. 둘 다 흰 털이 났어요.', effect: { happy: 5 }, memory: true, key: 'oldfriend', when: (d) => d.friends > 0 && Math.random() < 0.5 },
   { min: 9, max: 20, icon: '🛏️', text: V('푹신한 노견 방석을 선물받고 그 위에서만 지내요.', '{누구가} 온열 방석을 깔아 줬어요. 거기가 제일 따뜻한 자리예요.', '{누구} 침대 옆에 내 자리가 새로 생겼어요.'), effect: { happy: 3 }, when: () => Math.random() < 0.5 },
   { min: 9, max: 20, icon: '🎞️', text: V('가족이 어릴 적 사진첩을 꺼내 보며 웃었어요. 나도 옆에서 꼬리를 쳤어요.', '{누구가} 내 아기 때 영상을 틀어 놓고 한참 웃었어요.', '{누구가} 휴대폰 속 내 사진을 넘기며 이때 기억나냐고 물었어요.'), effect: { bond: 5 }, memory: true, key: 'album', when: () => Math.random() < 0.5 },
-  { min: 10, max: 20, icon: '🌕', text: () => '보름달이 뜬 밤, 가족과 마당에 나와 소원을 빌었어요.', effect: { bond: 4 }, memory: true, key: 'moon', when: () => Math.random() < 0.4 },
+  { min: 10, max: 20, icon: '🌕', text: () => '보름달이 뜬 밤, 가족과 밖에 나와 소원을 빌었어요.', effect: { bond: 4 }, memory: true, key: 'moon', when: () => Math.random() < 0.4 },
   { min: 10, max: 20, icon: '📷', text: V('가족이 함께 사진관에서 가족사진을 찍었어요.', '{누구가} 만든 가족 앨범 첫 장에 내 사진이 들어갔어요.', '{계절} {장소}에서 온 가족이 기념사진을 찍었어요.'), effect: { bond: 6 , when: () => Math.random() < 0.5 }, memory: true, key: 'photo' },
 ];
 
@@ -751,7 +850,55 @@ const LATE: Pool = [
   { min: 6, max: 20, icon: '💼', text: () => '집사가 퇴근하자마자 "오늘 괜찮았어?" 하고 제일 먼저 나를 찾아요.', effect: { bond: 5 }, when: (d) => d.family.id === 'single' || d.family.id === 'student' },
 ].map((p) => ({ ...p, late: true }));
 
-const ALL: Pool = [...POOL, ...LATE];
+
+// 사는 집·새 가족과 이어지는 일들
+const PLACE_POOL: Pool = [
+  // 아파트·오피스텔·빌라
+  { min: 1, max: 12, icon: '🛗', text: V('엘리베이터 문이 열리자 옆집 강아지와 딱 마주쳤어요. 둘 다 얼음.', '엘리베이터 거울에 비친 나를 보고 짖었어요.', '경비 아저씨가 엘리베이터 앞에서 간식을 하나 주셨어요.'), effect: { happy: 3 }, when: (d) => homeIs(d, 'apt', 'officetel', 'parkapt', 'nearwork') },
+  { min: 1, max: 12, icon: '🔔', text: V('택배 기사님 발소리를 3층 아래에서부터 알아챘어요.', '아랫집 아이가 "멍멍아 안녕!" 하고 창문 너머로 손을 흔들었어요.', '층간소음 걱정에 {누구가} 거실에 폭신한 매트를 깔았어요.'), effect: { bond: 2 }, when: (d) => homeIs(d, 'apt', 'villa', 'officetel') },
+  { min: 1, max: 10, icon: '🏢', text: V('단지 안 강아지 모임에 처음 나갔어요. 친구가 다섯이나 생겼어요.', '아파트 산책로 벤치마다 내 단골 냄새 자리가 생겼어요.'), effect: { happy: 4 }, friend: true, when: (d) => homeIs(d, 'apt', 'parkapt') },
+  // 원룸·옥탑방
+  { min: 1, max: 10, icon: '🏙️', text: V('옥상에서 {누구와} 도시 야경을 봤어요. 바람이 시원했어요.', '옥상 텃밭 상추를 몰래 뜯어 먹다 들켰어요.', '옥탑 평상 위에서 별을 세다 잠들었어요.'), effect: { happy: 4, bond: 3 }, when: (d) => homeIs(d, 'rooftop') },
+  { min: 1, max: 8, icon: '🛏️', text: V('좁은 원룸이지만 침대 반쪽은 확실히 내 자리예요.', '{누구가} 라면 끓이는 냄새에 침대 위에서 고개를 들었어요.', '책상 밑 작은 방석이 나만의 아지트예요.'), effect: { bond: 3 }, when: (d) => homeIs(d, 'oneroom') },
+  // 주택·골목
+  { min: 1, max: 12, icon: '🚪', text: V('대문 틈으로 지나가는 사람마다 냄새로 인사했어요.', '골목 할머니들이 대문 앞에 앉은 나를 "우리 동네 문지기"라고 불러요.', '담장 위 고양이와 오늘도 대치 중이에요.'), effect: { happy: 3 }, when: (d) => homeIs(d, 'house', 'alley', 'shopfront', 'atelier') },
+  { min: 1, max: 10, icon: '🌱', text: V('마당 텃밭에서 {누구가} 딴 방울토마토를 하나 얻어먹었어요.', '마당 잔디에 배를 깔고 낮잠을 잤어요.', '마당 구석에 몰래 판 구덩이가 들켰어요.'), effect: { happy: 4 }, when: (d) => homeIs(d, 'house', 'atelier') },
+  // 한옥
+  { min: 1, max: 14, icon: '🏯', text: V('대청마루에 배를 대고 누우면 여름에도 시원해요.', '처마 끝에서 떨어지는 빗방울을 한참 구경했어요.', '돌담길 산책 중에 관광객들이 사진을 찍어 갔어요.'), effect: { happy: 4, bond: 2 }, when: (d) => homeIs(d, 'hanok') },
+  { min: 2, max: 14, icon: '🪵', text: V('툇마루에 앉아 {누구와} 마당에 내리는 눈을 봤어요.', '{누구가} 장독대 옆에 내 방석을 깔아 줬어요.'), effect: { bond: 4 }, when: (d) => homeIs(d, 'hanok') },
+  // 바닷가
+  { min: 1, max: 12, icon: '🦀', text: V('모래사장에서 게를 쫓다가 집게에 코를 물렸어요.', '썰물 때 갯벌에서 조개 냄새를 실컷 맡았어요.', '방파제 낚시꾼 아저씨들이 멸치를 하나씩 던져 줘요.'), effect: { happy: 5 }, when: (d) => d.home.place === 'sea' },
+  { min: 1, max: 12, icon: '🌊', text: V('태풍 오는 밤, {누구} 품에 꼭 안겨 파도 소리를 들었어요.', '아침마다 해변을 한 바퀴 도는 게 우리 집 산책 코스예요.', '바닷바람에 털이 소금기로 뻣뻣해졌어요. {누구가} 빗질을 해 줬어요.'), effect: { bond: 3, happy: 2 }, when: (d) => d.home.place === 'sea' },
+  { min: 2, max: 12, icon: '⛵', text: () => '배를 탔던 동네 어르신이 항구에서 나를 보면 꼭 이름을 불러 주세요.', effect: { happy: 4 }, need: 'boat' },
+  // 과수원·산자락
+  { min: 1, max: 12, icon: '🍎', text: V('떨어진 사과를 하나 물고 와서 {누구} 발밑에 놓았어요.', '사과 따는 날, 바구니 옆을 지키는 게 내 일이에요.', '과수원 원두막 그늘이 여름 낮잠 명당이에요.'), effect: { happy: 4 }, when: (d) => homeIs(d, 'orchard') },
+  { min: 1, max: 12, icon: '🌲', text: V('숲길에서 도토리 줍는 다람쥐를 한참 지켜봤어요.', '계곡물에 발을 담그고 {누구} 옆에 앉아 있었어요.', '산새 소리에 귀를 쫑긋 세우고 아침을 맞았어요.'), effect: { happy: 4, health: 1 }, when: (d) => homeIs(d, 'mountain') },
+  // 빵집 사장님 부부
+  { min: 1, max: 14, icon: '🥐', text: V('새벽 빵 굽는 냄새에 제일 먼저 일어나요.', '단골손님 꼬마가 크루아상 대신 나를 보러 왔대요.', '{누구가} 남은 식빵 테두리를 잘게 잘라 줬어요.'), effect: { happy: 4 }, when: (d) => d.family.id === 'shop' },
+  { min: 2, max: 14, icon: '🔔', text: V('가게 종이 딸랑 울리면 "어서 오세요" 대신 꼬리를 흔들어요.', '가게 SNS에 내 사진이 올라가자 손님이 두 배가 됐대요.'), effect: { happy: 3, bond: 2 }, memory: true, key: 'shopdog', need: 'shopdog' },
+  // 엄마와 딸
+  { min: 1, max: 14, icon: '🎒', text: V('딸이 학교에서 돌아오면 현관까지 마중 나가요.', '엄마가 늦는 날엔 딸 옆에 붙어 숙제를 지켜봐요.', '{누구가} 학교 발표 숙제로 내 이야기를 썼대요.'), effect: { bond: 4 }, when: (d) => d.family.id === 'mom' },
+  { min: 5, max: 16, icon: '🎓', text: () => '딸이 졸업했어요. 졸업 사진 한가운데에 내가 앉아 있어요.', effect: { happy: 5, bond: 4 }, memory: true, key: 'daughtergrad', when: (d) => d.family.id === 'mom', once: 'family' },
+  // 셰어하우스
+  { min: 1, max: 12, icon: '🍕', text: V('셋이 야식을 시키는 날엔 내 몫의 닭가슴살도 꼭 있어요.', '거실에서 셋이 게임하는 동안 소파 한가운데를 차지했어요.', '셋 중 누가 산책시킬지 가위바위보를 했어요. 결국 셋이 다 나왔어요.'), effect: { happy: 4, bond: 2 }, when: (d) => d.family.id === 'share' },
+  // 작가 집사
+  { min: 1, max: 14, icon: '🎨', text: V('{누구} 스케치북에 오늘도 내 얼굴이 그려졌어요.', '물감 통을 엎질러서 발바닥이 무지개색이 됐어요.', '모델처럼 가만히 앉아 있었더니 간식을 두 개 받았어요.'), effect: { bond: 4 }, when: (d) => d.family.id === 'artist' },
+  { min: 3, max: 14, icon: '🖼️', text: () => '내 발도장이 찍힌 그림이 작은 전시회에 걸렸어요.', effect: { happy: 5 }, memory: true, key: 'painted', need: 'painter' },
+  // 이사
+  { min: 5, max: 12, icon: '🌳', text: () => '이사 온 공원 앞 아파트, 창문만 열면 산책 친구들이 보여요.', effect: { happy: 4 }, when: (d) => homeIs(d, 'parkapt') },
+  { min: 5, max: 12, icon: '🏬', text: V('회사 근처로 이사 온 뒤로 점심마다 {누구가} 잠깐씩 들러요.'), effect: { bond: 4 }, when: (d) => homeIs(d, 'nearwork') },
+];
+const LATE_PLACE: Pool = [
+  { min: 6, max: 20, icon: '🛗', text: () => '엘리베이터에서 만나는 이웃마다 "많이 컸네, 아니 많이 늙었네" 하며 웃어요.', effect: { happy: 3 }, when: (d) => homeIs(d, 'apt', 'officetel', 'parkapt') },
+  { min: 6, max: 20, icon: '🏯', text: () => '대청마루 햇볕 자리를 따라 하루에 세 번 자리를 옮겨요.', effect: { happy: 3 }, when: (d) => homeIs(d, 'hanok') },
+  { min: 6, max: 20, icon: '🌅', text: V('방파제 끝에 앉아 {누구와} 고깃배가 돌아오는 걸 기다렸어요.'), effect: { bond: 4 }, when: (d) => d.home.place === 'sea' },
+  { min: 6, max: 20, icon: '🍎', text: () => '사과꽃 날리는 과수원 길을 아주 천천히 걸었어요.', effect: { happy: 4 }, when: (d) => homeIs(d, 'orchard') },
+  { min: 6, max: 20, icon: '🥖', text: () => '가게 앞 방석이 내 지정석이에요. 단골손님들이 출석 체크하듯 쓰다듬어 줘요.', effect: { happy: 4, bond: 2 }, when: (d) => d.family.id === 'shop' },
+  { min: 6, max: 20, icon: '🖌️', text: () => '집사가 늙은 내 모습을 그리다가 붓을 내려놓고 한참 안아 줬어요.', effect: { bond: 6 }, when: (d) => d.family.id === 'artist' },
+  { min: 6, max: 20, icon: '👩‍👧', text: () => '다 큰 딸이 엄마 대신 나를 업고 병원에 다녀왔어요.', effect: { bond: 5 }, when: (d) => d.family.id === 'mom' },
+  { min: 6, max: 20, icon: '🏠', text: () => '셰어하우스를 떠난 친구가 주말마다 나를 보러 와요.', effect: { happy: 4 }, when: (d) => d.family.id === 'share' },
+].map((p) => ({ ...p, late: true }));
+const ALL: Pool = [...POOL, ...LATE, ...PLACE_POOL, ...LATE_PLACE];
 export function eventsForYear(d: Dog, year: number, used: Set<number>): LifeEvent[] {
   const count = year === 0 ? 3 : 1 + Math.floor(Math.random() * 2) + (Math.random() < 0.3 ? 1 : 0);
   const out: LifeEvent[] = [];
@@ -855,6 +1002,10 @@ const OPEN_BY_FAMILY: Record<string, string[]> = {
   kids: ['꼬마들이 자라는 걸 옆에서 다 봤어. 내가 다 키운 거나 마찬가지야.', '시끌벅적한 우리 집이 세상에서 제일 재밌는 곳이었어.', '아이들 숙제할 때 발밑에서 자던 시간, 나도 같이 공부한 거야.'],
   grand: ['할머니 할아버지 무릎이 세상에서 제일 따뜻한 자리였어.', '느린 걸음으로 같이 걷던 동네 한 바퀴가 나는 제일 좋았어.', '마루에 나란히 앉아 해 지는 걸 보던 오후들, 다 기억해.'],
   student: ['좁은 방이었지만, 너랑 있어서 하나도 좁지 않았어.', '라면 끓이던 냄새 속에서 같이 밤새던 날들이 그리울 거야.', '시험 기간에 네 무릎 위가 내 자리였던 거 알지?'],
+  shop: ['빵 굽는 새벽 냄새로 하루를 시작하던 우리 집, 정말 좋았어.', '손님들이 다 가고 셋이 나눠 먹던 빵 부스러기, 최고였어.', '가게 종소리가 울릴 때마다 꼬리가 먼저 반응했어.'],
+  mom: ['엄마랑 딸, 그리고 나. 우리 셋이면 충분했어.', '둘이 나를 사이에 두고 웃던 밤들이 제일 행복했어.', '딸이 자라는 걸 옆에서 다 봤어. 엄마만큼 나도 뿌듯해.'],
+  share: ['집사가 셋이라 사랑도 세 배였어.', '거실에 모여 야식 먹던 밤, 내 몫도 꼭 챙겨 줘서 고마웠어.', '서로 다른 셋을 이어 준 게 나였다는 거, 알지?'],
+  artist: ['네 그림 속에 내가 있어서, 나는 영원히 거기 살아 있을 거야.', '물감 냄새 나는 작업실이 내 놀이터였어.', '붓 소리를 자장가 삼아 자던 오후들, 다 기억해.'],
   farm: ['마당을 달리던 날들, 바람 냄새까지 다 기억할게.', '흙냄새, 풀냄새, 그리고 네 손 냄새. 그게 내 세상 전부였어.', '마당 끝까지 달려가도 돌아보면 늘 네가 있었어.'],
 };
 const BY_MEMORY: Record<string, string[]> = {
@@ -903,6 +1054,9 @@ const BY_MEMORY: Record<string, string[]> = {
   sibshare: ['동생한테 밥 양보한 거, 다음엔 걔가 너한테 양보할 거야.'],
   earlycatch: ['검진 덕분에 아픈 걸 일찍 찾았잖아. 네가 날 지켜 준 거야.'],
   newfamily: ['새 가족이 생긴 날, 나도 가족이 하나 더 생겼어.'],
+  shopdog: ['가게 SNS 속 나, 단골손님들한테 고마웠다고 전해 줘.'],
+  daughtergrad: ['졸업 사진 한가운데 앉혀 줘서 고마워. 우리 딸, 다 컸다.'],
+  painted: ['전시회에 걸린 내 발도장, 그게 내 이름이야.'],
   leave: ['주말마다 돌아오는 발소리, 나는 멀리서도 다 알아들었어.'],
   grandkid: ['손주랑 뛰어놀던 여름방학, 그해 여름이 제일 짧았어.'],
   tv: ['TV에 나왔던 거, 강아지별 친구들한테 자랑할 거야.'],
@@ -982,6 +1136,15 @@ const BY_PICK: Record<string, string[]> = {
   oldpal: ['오랜 친구한테 내가 먼저 간다고, 천천히 오라고 전해 줘.', ''],
   appetite: ['네 손바닥 위에서 먹던 밥이 제일 맛있었어.', '고구마 토핑, 마지막까지 내 최애였어.', ''],
   holidaygather: ['명절마다 한가운데 자리 내줘서 고마워. 다들 따뜻했어.', ''],
+  bakery: ['빵 냄새 나는 가게 마스코트, 내 평생 직업이었어.', ''],
+  room: ['요일마다 바뀌던 이불 냄새, 셋 다 좋았어.', '거실 한가운데 내 방석, 이제 모두의 자리로 써 줘.'],
+  canvas: ['캔버스에 찍은 내 발도장, 그게 내 첫 작품이야.', ''],
+  beach: ['처음 본 파도, 무서웠지만 네가 있어서 괜찮았어.', ''],
+  fishing: ['뱃머리에서 본 바다, 강아지별에서도 보일까?', '방파제에서 기다리던 시간도 좋았어.'],
+  momday: ['딸이랑 걷던 하굣길, 우리 셋의 비밀 산책로였어.', ''],
+  ondol: ['아랫목의 따뜻함, 강아지별엔 없을 것 같아.', '툇마루 볕, 그 자리에 가끔 나 대신 앉아 줘.'],
+  stairs2: ['계단참마다 같이 숨 고르던 거, 그게 제일 좋았어.', ''],
+  portrait2: ['그림 속의 나, 오래오래 걸어 둬.', '거실 가득한 내 그림들, 보면서 웃어 줘.'],
 };
 const CLOSINGS = [
   '먼저 강아지별에 가서 기다릴게. 천천히, 아주 천천히 와. 사랑해.',
