@@ -127,6 +127,7 @@ export interface Dog {
   sibling: Breed | null; // 함께 사는 강아지 동생
   siblingAt: number; // 동생이 온 나이 (장면에서 동생을 아기→어른으로 그리기)
   rare: number; // 희귀한 일을 겪은 횟수
+  joy: { sum: number; t: number; base: number }; // 평생 행복 점수 누적값, base: 이 강아지의 평소 기분
 }
 
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
@@ -178,7 +179,11 @@ export function born(): Dog {
     sibling: null,
     siblingAt: 0,
     rare: 0,
+    joy: { sum: 0, t: 0, base: 0 },
   };
+  // 평소 기분: 성격·가족에 따라, 그리고 타고난 운으로 조금씩 달라요
+  const PBASE: Record<string, number> = { sweet: 6, foodie: 4, rascal: 3, curious: 2, sleepy: 2, calm: 0, shy: -5 };
+  d.joy.base = 48 + (PBASE[personality.id] ?? 0) * 1.5 + (family.walk - 1.5) * 8 + (Math.random() - 0.5) * 34;
   d.choices = pickChoices(d);
   return d;
 }
@@ -508,6 +513,7 @@ const CHOICE_FLAGS: Record<string, string[]> = {
 export function choose(d: Dog, c: Choice, k: number) {
   const o = c.options[k];
   applyEffect(d, o.effect);
+  d.joy.base += ((o.effect.happy ?? 0) + (o.effect.bond ?? 0) * 0.5) * 0.6;
   const flag = CHOICE_FLAGS[c.id]?.[k];
   if (flag && !d.flags.includes(flag)) d.flags.push(flag);
   if (flag === 'sibling') adoptSibling(d, c.age);
@@ -939,14 +945,25 @@ export function eventsForYear(d: Dog, year: number, used: Set<number>): LifeEven
   return out.sort((a, b) => a.age - b.age);
 }
 
+const gain = (v: number, now: number) => (v > 0 ? v * Math.max(0.12, 1 - now / 105) : v);
+
 export function applyEffect(d: Dog, e: Partial<Stats> & { life?: number; walk?: number; treat?: number } = {}) {
   if (e.health) d.stats.health = clamp(d.stats.health + e.health);
-  if (e.happy) d.stats.happy = clamp(d.stats.happy + e.happy);
-  if (e.bond) d.stats.bond = clamp(d.stats.bond + e.bond);
+  // 좋은 일은 이미 행복할수록 덜 올라가고(포화), 나쁜 일은 그대로 깎여요
+  if (e.happy) d.stats.happy = clamp(d.stats.happy + gain(e.happy, d.stats.happy));
+  if (e.bond) d.stats.bond = clamp(d.stats.bond + gain(e.bond, d.stats.bond));
   if (e.life) d.lifespan += e.life;
   if (e.walk) d.walkRate = Math.max(0.5, d.walkRate + e.walk);
   if (e.treat) d.treatRate = Math.max(0.5, d.treatRate + e.treat);
 }
+
+export const HAPPY_PULL = 0.3;
+/** 평생 행복 점수: 살아온 동안의 행복(60%)과 유대(40%)를 시간에 따라 평균 낸 값 */
+export const lifeScore = (d: Dog) => {
+  const avg = d.joy.t ? d.joy.sum / d.joy.t : (d.stats.happy + d.stats.bond) / 2;
+  // 평균은 좁게 모이니 0~100 점수로 넓혀요 (보통의 한평생 ≈ 70점)
+  return Math.max(0, Math.min(100, Math.round(70 + (avg - 59) * 2.3)));
+};
 
 /** 시간이 dt년 흐를 때: 산책·간식 누적, 나이에 따른 건강 변화 */
 export function tick(d: Dog, age: number, dt: number) {
@@ -954,8 +971,11 @@ export function tick(d: Dog, age: number, dt: number) {
   d.treats += d.treatRate * 365 * dt;
   const senior = age > d.lifespan * 0.65;
   d.stats.health = clamp(d.stats.health + (senior ? -6 : 0.5) * dt);
-  d.stats.bond = clamp(d.stats.bond + 1.2 * dt);
-  d.stats.happy = clamp(d.stats.happy - 3.5 * dt);
+  d.stats.bond = clamp(d.stats.bond + gain(1.2, d.stats.bond) * dt);
+  // 행복은 아무 일 없으면 천천히 평소 기분(joy.base)으로 돌아가고, 노견이 되면 몸이 힘들어 조금 더 내려가요
+  d.stats.happy = clamp(d.stats.happy + ((d.joy.base - d.stats.happy) * HAPPY_PULL - (senior ? 2 : 0)) * dt);
+  d.joy.sum += (0.6 * d.stats.happy + 0.4 * d.stats.bond) * dt;
+  d.joy.t += dt;
   // 건강이 아주 나쁘면 수명이 조금씩 줄어요
   if (d.stats.health < 25) d.lifespan -= 0.15 * dt;
 }
@@ -987,7 +1007,7 @@ export function titlesOf(d: Dog, memories: number): string[] {
     [d.stats.health >= 60 && d.lifespan > (d.breed.life[0] + d.breed.life[1]) / 2, '💪 건강 지킴이'],
     // 흔한 칭호는 뒤에: 다른 칭호가 적을 때만 보여요
     [memories >= 13, '📔 추억 부자'],
-    [d.stats.bond >= 99, '💞 가족 바라기'],
+    [d.stats.bond >= 80, '💞 가족 바라기'],
   ];
   const out = t.filter(([ok]) => ok).map(([, s]) => s);
   return (out.length ? out : ['🏡 우리 집 막내']).slice(0, 3);

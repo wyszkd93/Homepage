@@ -161,7 +161,7 @@ import { Image } from 'astro:assets';
 
 <script>
   import {
-    born, eventsForYear, applyEffect, tick, stageOf, ageText, nameGa, lastWords, choose, titlesOf, BREEDS, NAMES, FAMILIES, PERSONALITIES,
+    born, eventsForYear, applyEffect, tick, lifeScore, stageOf, ageText, nameGa, lastWords, choose, titlesOf, BREEDS, NAMES, FAMILIES, PERSONALITIES,
     type Dog, type LifeEvent,
   } from '../../utils/dog-life';
   import { Bgm } from '../../utils/bgm';
@@ -622,7 +622,7 @@ import { Image } from 'astro:assets';
     letter = lastWords(d, memLog, picks);
     log('🌈', `${nameGa(d.name)} 가족 곁에서 편안히 잠들었어요.`, age, 'is-memory');
     log('💌', `“${letter.join(' ')}”`, age, 'is-memory');
-    const score = Math.round((d.stats.happy + d.stats.bond) / 2);
+    const score = lifeScore(d);
     const sum: Summary = {
       b: d.breed.name, n: d.name, y: Math.round(age * 100) / 100, w: Math.round(d.walks), t: Math.round(d.treats),
       f: d.friends, s: score, fam: d.family.name, p: d.personality.name, e: d.breed.emoji, m: d.memories.slice(-3),
