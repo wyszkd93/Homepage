@@ -182,9 +182,12 @@ export class DogScene {
       }
       const walking = speed > 0 && this.pause <= 0;
       // 동생 강아지는 조금 뒤에서 따라 걸어요
-      if (d.sibling) {
+      // (마지막 장면에서 지난 시절을 다시 보여 줄 때는 동생이 오기 전엔 안 그려요)
+      if (d.sibling && age >= (d.siblingAt ?? 0)) {
         const sx = this.x - this.dir * 22;
-        this.drawDog({ ...d, breed: d.sibling }, sx, GROUND, Math.max(1, stage - 1), walking, now + 70);
+        // 온 지 1년 안 된 동생은 아기 강아지 크기로 그려요
+        const sibStage = age - (d.siblingAt ?? 0) < 1 ? 0 : 1;
+        this.drawDog({ ...d, breed: d.sibling }, sx, GROUND, sibStage, walking, now + 70);
       }
       this.drawDog(d, this.x, GROUND, stage, walking, now);
       if (this.bubble && now < this.bubble.until) this.drawBubble(this.bubble.icon, this.x, stage);

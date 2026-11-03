@@ -62,7 +62,7 @@ export interface Choice {
 export interface LifeEvent {
   age: number; month: number; icon: string; text: string; effect?: Partial<Stats>; memory?: boolean; key?: string;
   rare?: boolean; // 아주 드물게 일어나는 일
-  apply?: (d: Dog) => void; // 가족 구성 변화 같은 추가 효과
+  apply?: (d: Dog, age: number) => void; // 가족 구성 변화 같은 추가 효과
 }
 
 export interface Dog {
@@ -83,6 +83,7 @@ export interface Dog {
   flags: string[]; // 선택이 남긴 흔적 → 나중에 이어지는 사건
   household: { extra: ('adult' | 'child' | 'baby')[]; away: number }; // 가족 구성 변화 (장면에 반영)
   sibling: Breed | null; // 함께 사는 강아지 동생
+  siblingAt: number; // 동생이 온 나이 (장면에서 동생을 아기→어른으로 그리기)
   rare: number; // 희귀한 일을 겪은 횟수
 }
 
@@ -132,6 +133,7 @@ export function born(): Dog {
     flags: [],
     household: { extra: [], away: 0 },
     sibling: null,
+    siblingAt: 0,
     rare: 0,
   };
   d.choices = pickChoices(d);
@@ -411,10 +413,16 @@ export function choose(d: Dog, c: Choice, k: number) {
   applyEffect(d, o.effect);
   const flag = CHOICE_FLAGS[c.id]?.[k];
   if (flag && !d.flags.includes(flag)) d.flags.push(flag);
-  if (flag === 'sibling') {
-    d.sibling = pickBreed();
-    d.friends++;
-  }
+  if (flag === 'sibling') adoptSibling(d, c.age);
+}
+
+/** 강아지 동생을 들여요: 장면에 동생이 함께 나오고, 동생과 이어지는 사건이 열립니다. */
+export function adoptSibling(d: Dog, age: number) {
+  if (d.sibling) return;
+  d.sibling = pickBreed();
+  d.siblingAt = age;
+  d.friends++;
+  if (!d.flags.includes('sibling')) d.flags.push('sibling');
 }
 
 /** 선택 후보 전체 (테스트·참고용) */
@@ -586,7 +594,7 @@ type Pool = {
   when?: (d: Dog) => boolean;
   need?: string; // 이 흔적(선택)이 있을 때만
   rare?: boolean;
-  apply?: (d: Dog) => void;
+  apply?: (d: Dog, age: number) => void;
   once?: string; // 같은 묶음 안에서는 한 번만 (가족 변화 등)
   late?: boolean; // 노견 시기(수명의 62% 이후)에만
 }[];
@@ -627,7 +635,7 @@ const POOL: Pool = [
   { min: 1, max: 10, icon: '🧺', text: V('{장소} 피크닉, 돗자리 한가운데를 차지했어요.', '{누구가} 싸 온 도시락 냄새에 피크닉 내내 앉아 있었어요.'), effect: { happy: 5, bond: 3 }, memory: true, key: 'picnic', when: (d) => d.family.id !== 'farm' },
   { min: 1, max: 12, icon: '🍂', text: V('낙엽 더미에 뛰어들어 온몸에 나뭇잎을 붙이고 왔어요.', '{누구가} 모아 둔 낙엽을 다 흩뜨려 놨어요.', '{장소}에서 도토리를 주워 와 {누구}한테 자랑했어요.'), effect: { happy: 4 }, memory: true, key: 'leaves' },
   { min: 3, max: 12, icon: '🚗', text: V('창문 열린 차 안에서 귀를 휘날리며 드라이브했어요.', '{누구와} 바닷가 드라이브를 갔어요. 창밖 냄새가 다 짭짤했어요.', '휴게소에서 {누구가} 사 준 소시지를 나눠 먹었어요.'), effect: { happy: 5 }, memory: true, key: 'drive' },
-  { min: 5, max: 14, icon: '🐶', text: () => '새로 온 아기 강아지에게 산책 길을 가르쳐 줬어요.', effect: { happy: 3, bond: 2 }, friend: true, memory: true, key: 'teacher', when: (d) => d.personality.id === 'calm' || Math.random() < 0.3 },
+  { min: 5, max: 14, icon: '🐶', text: V('아기 강아지가 동생으로 들어왔어요. 산책 길을 하나하나 가르쳐 줬어요.', '{누구가} 보호소에서 아기 강아지를 데려왔어요. 첫날부터 졸졸 따라다녀요.', '꼬물꼬물 아기 동생이 생겼어요. 내 방석 반쪽을 내줬어요.'), effect: { happy: 3, bond: 2 }, memory: true, key: 'teacher', when: (d) => !d.sibling && (d.personality.id === 'calm' || d.personality.id === 'sweet' || Math.random() < 0.3), apply: (d, age) => adoptSibling(d, age) },
   // ── 선택이 이어지는 사건 ──
   { min: 1, max: 4, icon: '🎓', text: () => '강아지 유치원 졸업식에서 "모범견상"을 받았어요.', effect: { happy: 5, bond: 3 }, memory: true, key: 'kgrad', need: 'kinder' },
   { min: 1, max: 8, icon: '🛌', text: () => '오늘도 이불 속 제일 따뜻한 자리를 먼저 차지했어요.', effect: { bond: 3 }, need: 'bedbuddy' },

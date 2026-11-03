@@ -531,7 +531,7 @@ import { Image } from 'astro:assets';
     while (queue.length && queue[0].age <= next && queue[0].age < dog.lifespan) {
       const e = queue.shift()!;
       applyEffect(dog, e.effect);
-      e.apply?.(dog);
+      e.apply?.(dog, e.age);
       if (e.rare) dog.rare++;
       log(e.icon, e.rare ? `✨ ${e.text}` : e.text, e.age, e.rare ? 'is-memory is-rare' : e.memory ? 'is-memory' : '');
       scene.say(e.icon, now);
