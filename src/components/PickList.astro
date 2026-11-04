@@ -1,0 +1,68 @@
+---
+// AI 픽 목록 한 페이지 + 페이지 이동 (1쪽은 /picks/, 2쪽부터 /picks/page/N/)
+import type { CollectionEntry } from 'astro:content';
+import PickCard from './PickCard.astro';
+import PickKind from './PickKind.astro';
+import { url, formatDate } from '../utils/url';
+
+interface Props {
+  picks: CollectionEntry<'picks'>[];
+  page: number;
+  pages: number;
+  total: number;
+}
+const { picks, page, pages, total } = Astro.props;
+const href = (n: number) => url(n === 1 ? '/picks/' : `/picks/page/${n}/`);
+// 페이지 번호: 처음·끝과 현재 앞뒤 2개, 사이는 …
+const nums: (number | '…')[] = [];
+for (let n = 1; n <= pages; n++) {
+  if (n === 1 || n === pages || Math.abs(n - page) <= 2) nums.push(n);
+  else if (nums[nums.length - 1] !== '…') nums.push('…');
+}
+---
+
+<ul class="pk-list">
+    {picks.map((p) => (
+      <li class="pk-item">
+        <a class="pk-title" href={url(`/picks/${p.id}/`)}><PickKind kind={p.data.kind} />{p.data.title}</a>
+        <p class="pk-meta">
+          {p.data.tags.map((t) => <span class="pk-tag">#{t}</span>)}
+          <time datetime={p.data.date.toISOString()}>{formatDate(p.data.date)}</time>
+        </p>
+        <p class="pk-comment">💬 {p.data.comment}</p>
+        <PickCard pick={p} compact />
+      </li>
+    ))}
+  </ul>
+{total === 0 && <p>아직 올린 픽이 없어요.</p>}
+{pages > 1 && (
+  <nav class="pk-pager" aria-label="AI 픽 페이지">
+    {page > 1 ? <a class="pk-pg pk-pg-nav" href={href(page - 1)} rel="prev">← 이전</a> : <span class="pk-pg pk-pg-nav is-off">← 이전</span>}
+    <ol class="pk-pg-nums">
+      {nums.map((n) => (
+        <li>
+          {n === '…' ? <span class="pk-pg-gap">…</span> : n === page ? <span class="pk-pg is-cur" aria-current="page">{n}</span> : <a class="pk-pg" href={href(n)}>{n}</a>}
+        </li>
+      ))}
+    </ol>
+    {page < pages ? <a class="pk-pg pk-pg-nav" href={href(page + 1)} rel="next">다음 →</a> : <span class="pk-pg pk-pg-nav is-off">다음 →</span>}
+  </nav>
+)}
+
+<style>
+  .pk-list { list-style: none; margin: 0 auto; padding: 0; max-width: 840px; display: grid; gap: 28px; }
+  .pk-item { padding-bottom: 28px; border-bottom: 1px solid var(--hairline); }
+  .pk-title { display: block; font-size: 1.3rem; font-weight: 800; letter-spacing: -0.02em; color: var(--ink); margin-bottom: 6px; }
+  .pk-meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 10px; font-size: 0.85rem; color: var(--text-muted); }
+  .pk-tag { color: var(--link); }
+  .pk-title :global(.pick-kind) { margin-right: 8px; vertical-align: 0.2em; }
+  .pk-comment { margin: 0 0 14px; color: var(--ink-muted); font-style: italic; line-height: 1.7; }
+  .pk-pager { max-width: 840px; margin: 28px auto 0; display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .pk-pg-nums { list-style: none; margin: 0; padding: 0; display: flex; gap: 4px; }
+  .pk-pg { display: inline-flex; align-items: center; justify-content: center; min-width: 36px; height: 36px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--hairline); background: var(--surface-1); color: var(--ink); font-size: 0.9rem; font-weight: 600; }
+  a.pk-pg:hover { text-decoration: none; border-color: var(--accent); color: var(--accent); }
+  .pk-pg.is-cur { background: var(--accent); border-color: var(--accent); color: #fff; }
+  :global(:root[data-theme='dark']) .pk-pg.is-cur { color: #181412; }
+  .pk-pg.is-off { opacity: 0.4; }
+  .pk-pg-gap { display: inline-flex; align-items: center; height: 36px; padding: 0 4px; color: var(--text-muted); }
+</style>
