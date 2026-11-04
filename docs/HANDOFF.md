@@ -5,6 +5,8 @@
 - 사이트: https://wyszkd93.github.io/Homepage/
 - 저장소: `wyszkd93/Homepage` (main 브랜치에 push되면 GitHub Actions가 자동 배포)
 - 백업 시점 커밋: `cc4cc38` (2026-11-04 main) — 이 시점으로 되돌릴 때 기준 (이전 백업 `c985751`, 2026-10-29)
+  - 태그: `backup-2026-11-04` → `cc4cc38`, `backup-2026-10-29` → `c985751` (GitHub에 올라감)
+  - 태그 push는 클라우드 세션에서 403으로 막힘 → 새 백업 태그는 PC Git Bash에서 `git tag -a backup-<날짜> <커밋> -m "..."` 후 `git push origin backup-<날짜>`
 - 작업 규칙: 저장소 루트 `CLAUDE.md` (데이터는 필요한 것만 호출, 출력은 극도로 간결)
 - 구조 그림: `docs/architecture.html` (사이트에는 안 올라감)
 
