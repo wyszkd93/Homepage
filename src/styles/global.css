@@ -163,12 +163,9 @@ a.cta-btn:hover { text-decoration: none; color: var(--accent); border-color: var
 .hero-links li:first-child a.cta-btn:hover { filter: brightness(1.08); }
 
 .post-head-meta {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px;
   margin-top: 10px; color: var(--text-muted); font-size: 0.9rem;
 }
-.post-head-tags { margin-top: 8px; }
-/* '· 수정', '· 조회'는 앞 항목에 바짝 붙여요 */
-.post-head-meta .meta-dot { margin-left: -6px; }
 
 /* 바닥글 */
 .site-footer { border-top: 1px solid var(--hairline); color: var(--text-muted); }
