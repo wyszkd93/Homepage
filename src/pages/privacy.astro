@@ -5,7 +5,7 @@ import { PROFILE } from '../consts';
 const email = PROFILE.links.find((l) => l.url.startsWith('mailto:'))?.url.replace('mailto:', '') ?? '';
 ---
 
-<Base title="개인정보 처리방침" description="mogu 사이트의 개인정보 처리방침" heading="개인정보 처리방침" tagline="시행일 2026년 10월 30일" narrow>
+<Base title="개인정보 처리방침" description="mogu 사이트의 개인정보 처리방침" heading="개인정보 처리방침" tagline="시행일 2026년 11월 4일 (이전: 2026년 10월 30일)" narrow>
   <div class="prose">
     <p>
       이 사이트(이하 ‘사이트’)는 대부분의 기능을 로그인 없이 브라우저 안에서만 제공합니다. 다만
@@ -50,19 +50,31 @@ const email = PROFILE.links.find((l) => l.url.startsWith('mailto:'))?.url.replac
     <h2>4. 브라우저에만 저장되는 정보</h2>
     <p>
       게임 최고 점수, 진행 중인 2048 판, 소리·화면 설정, 도구 설정 등은 이용자 브라우저의 저장소(localStorage)에만 저장되며 서버로 보내지 않습니다.
-      브라우저의 사이트 데이터를 지우면 함께 삭제됩니다. 이 사이트는 별도의 방문 분석·광고 도구를 사용하지 않습니다.
+      브라우저의 사이트 데이터를 지우면 함께 삭제됩니다.
     </p>
 
-    <h2>5. 이용자의 권리</h2>
+    <h2>5. 방문 통계</h2>
+    <p>
+      어떤 글과 기능이 많이 쓰이는지 알기 위해 <a href="https://www.goatcounter.com/">GoatCounter</a>로 방문 통계를 냅니다.
+      쿠키를 쓰지 않고, 이름·이메일 같은 개인을 알아볼 수 있는 정보는 받지 않습니다.
+    </p>
+    <ul>
+      <li>보내는 정보: 방문한 페이지 주소, 들어온 경로(이전 페이지 주소), 브라우저·운영체제 종류, 화면 크기, 언어</li>
+      <li>IP 주소는 국가를 추정하고 같은 방문을 한 번만 세는 데에만 잠깐 쓰이며, 통계에 저장되지 않습니다.</li>
+      <li>광고 차단 프로그램 등으로 통계 수집을 막아도 사이트 이용에는 아무 지장이 없습니다.</li>
+      <li>자세한 내용은 <a href="https://www.goatcounter.com/help/privacy">GoatCounter 개인정보 안내</a>를 참고해 주세요.</li>
+    </ul>
+
+    <h2>6. 이용자의 권리</h2>
     <p>
       이용자는 언제든지 자신의 개인정보 열람·정정·삭제·처리 정지를 요청할 수 있습니다. 랭킹 닉네임 변경과 기록 삭제는 게임 페이지에서 직접 할 수 있고,
       그 밖의 요청은 아래 문의처로 연락해 주세요.
     </p>
 
-    <h2>6. 문의처</h2>
+    <h2>7. 문의처</h2>
     <p>운영자: {PROFILE.name}{email && <> · 이메일: <a href={`mailto:${email}`}>{email}</a></>}</p>
 
-    <h2>7. 변경</h2>
+    <h2>8. 변경</h2>
     <p>이 방침이 바뀌면 이 페이지에 시행일과 함께 알립니다.</p>
   </div>
 </Base>
