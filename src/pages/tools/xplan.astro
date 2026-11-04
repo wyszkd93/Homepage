@@ -50,6 +50,11 @@ Predicate Information (identified by operation id):
       <span><i class="xp-bar-l"></i> 단계 자체 비용 (자식 비용 제외)</span>
       <span><i class="xp-star">*</i> 조건이 걸린 단계</span>
     </div>
+    <div class="xp-tools">
+      <button id="xp-open" class="tool-btn" type="button">모두 펼치기</button>
+      <button id="xp-close" class="tool-btn" type="button">모두 접기</button>
+      <span id="xp-fold-note" class="tool-hint"></span>
+    </div>
     <ol id="xp-tree" class="xp-tree"></ol>
     <div id="xp-notes"></div>
   </div>
@@ -116,6 +121,12 @@ Predicate Information (identified by operation id):
     // 트리
     const tree = $('xp-tree');
     tree.innerHTML = '';
+    // 비용 큰 단계까지 가는 길(조상들)은 펼쳐 둬요
+    const BIG = 500;
+    const big = plan.nodes.length > BIG;
+    const hot = new Set<PlanNode>();
+    for (const t of top) for (let p = t.parent; p; p = p.parent) hot.add(p);
+    $('xp-fold-note').textContent = big ? `단계가 ${plan.nodes.length}개라 비용이 큰 경로만 펼쳐 두었어요. ▸를 누르거나 '모두 펼치기'로 나머지를 볼 수 있어요.` : '';
     const draw = (n: PlanNode, box: HTMLElement) => {
       const li = el('li', 'xp-node');
       const row = el('div', 'xp-row' + (top.includes(n) ? ' is-hot' : '') + (n.warnings.length ? ' is-warn' : ''));
@@ -150,6 +161,11 @@ Predicate Information (identified by operation id):
         const ol = el('ol', 'xp-kids');
         n.children.forEach((c) => draw(c, ol));
         li.append(ol);
+        // 단계가 많으면 비용이 큰 경로만 펼쳐 두고 나머지는 접어요
+        if (big && !hot.has(n)) {
+          ol.hidden = true;
+          toggle.textContent = '▸';
+        }
         toggle.addEventListener('click', () => {
           const closed = ol.hidden = !ol.hidden;
           toggle.textContent = closed ? '▸' : '▾';
@@ -171,6 +187,12 @@ Predicate Information (identified by operation id):
   }
 
   $('xp-run').addEventListener('click', run);
+  const foldAll = (closed: boolean) => {
+    for (const ol of document.querySelectorAll<HTMLElement>('#xp-tree .xp-kids')) ol.hidden = closed;
+    for (const t of document.querySelectorAll<HTMLElement>('#xp-tree .xp-toggle')) if (t.textContent) t.textContent = closed ? '▸' : '▾';
+  };
+  $('xp-open').addEventListener('click', () => foldAll(false));
+  $('xp-close').addEventListener('click', () => foldAll(true));
   $('xp-pred').addEventListener('change', run);
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); run(); }
@@ -197,6 +219,8 @@ Predicate Information (identified by operation id):
   .xp-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.78rem; color: var(--text-muted); margin: 4px 0 12px; }
   .xp-bar-l { display: inline-block; width: 18px; height: 6px; border-radius: 3px; background: var(--accent); vertical-align: middle; }
   .xp-star { font-style: normal; font-weight: 800; color: var(--accent); }
+  .xp-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 10px; }
+  .xp-tools .tool-hint { margin: 0; }
   .xp-tree, .xp-kids { list-style: none; margin: 0; padding: 0; }
   .xp-kids { margin-left: 14px; padding-left: 12px; border-left: 1px dashed var(--hairline); }
   .xp-kids[hidden] { display: none; }
