@@ -34,3 +34,6 @@ export const PROFILE = {
 // 카카오톡 공유 버튼용 JavaScript 키 (developers.kakao.com → 내 애플리케이션 → 앱 키).
 // 공개되어도 되는 키이며, 카카오 콘솔에 등록한 사이트 도메인에서만 동작합니다. 비워 두면 버튼을 숨깁니다.
 export const KAKAO_JS_KEY = '861c0c6c42125169dc0084dfd80065ff';
+
+/** AI 픽 목록 한 페이지에 보여 줄 개수 */
+export const PICKS_PER_PAGE = 5;
