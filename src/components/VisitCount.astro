@@ -3,7 +3,7 @@
 // - total: 사이트 누적 방문 (푸터)
 // - page: 지금 페이지 조회수 (블로그 글)
 // GoatCounter 설정에서 'Allow adding visitor counts on your website'가 켜져 있어야 숫자를 받아올 수 있어요.
-// 받아오지 못하면(설정 꺼짐·차단·오류) 아무것도 보이지 않아요.
+// 받아오지 못하거나(설정 꺼짐·차단·오류) 아직 0이면 아무것도 보이지 않아요.
 interface Props {
   kind: 'total' | 'page';
   class?: string;
@@ -45,7 +45,7 @@ const { kind, class: cls = '' } = Astro.props;
     for (const [k, p] of Object.entries(want)) {
       const n = await p;
       const b = el.querySelector<HTMLElement>(`[data-v="${k}"]`);
-      if (n == null) continue;
+      if (n == null || n === 0) continue; // 아직 0이면 '조회 0'처럼 보이지 않게 숨겨요
       if (b) b.textContent = fmt(n);
       shown = true;
     }
