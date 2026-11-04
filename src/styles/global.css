@@ -163,9 +163,12 @@ a.cta-btn:hover { text-decoration: none; color: var(--accent); border-color: var
 .hero-links li:first-child a.cta-btn:hover { filter: brightness(1.08); }
 
 .post-head-meta {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px;
   margin-top: 10px; color: var(--text-muted); font-size: 0.9rem;
 }
+.post-head-tags { margin-top: 8px; }
+/* '· 수정', '· 조회'는 앞 항목에 바짝 붙여요 */
+.post-head-meta .meta-dot { margin-left: -6px; }
 
 /* 바닥글 */
 .site-footer { border-top: 1px solid var(--hairline); color: var(--text-muted); }
@@ -236,6 +239,8 @@ a.cta-btn:hover { text-decoration: none; color: var(--accent); border-color: var
 .prose { font-size: 1.03rem; }
 .prose > * + * { margin-top: 1.1em; }
 .prose p { margin-block: 0; }
+/* 문단 사이를 조금 더 띄워 긴 글도 숨 쉴 틈이 있게 */
+.prose > p + p { margin-top: 1.4em; }
 .prose h2, .prose h3, .prose h4 { letter-spacing: -0.02em; line-height: 1.4; }
 .prose h2 { font-size: 1.3rem; margin-top: 2.2em; padding-bottom: 6px; border-bottom: 1px solid var(--hairline); }
 .prose h3 { font-size: 1.12rem; margin-top: 1.8em; }

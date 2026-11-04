@@ -60,4 +60,6 @@ const { kind, class: cls = '' } = Astro.props;
   .visit-count[hidden] { display: none; }
   .visit-count { color: var(--text-muted); font-size: 0.82rem; }
   .visit-count b { font-weight: 700; color: inherit; font-variant-numeric: tabular-nums; }
+  /* 블로그 글 조회수는 날짜와 같은 무게로 (강조 없이) */
+  .visit-page, .visit-page b { font-size: inherit; font-weight: inherit; }
 </style>
