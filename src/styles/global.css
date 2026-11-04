@@ -486,6 +486,8 @@ a.cat:hover { text-decoration: none; filter: brightness(0.95); }
 .prose :is(h2, h3, h4) { scroll-margin-top: 72px; }
 .prose th, .prose td { min-width: 7em; }
 .prose td code { white-space: nowrap; }
+/* ○·✕처럼 가운데 맞춤 칸은 좁게 */
+.prose :is(th, td)[align="center"] { min-width: 3em; width: 3em; }
 
 /* 이메일 선택 창 */
 .email-dialog {
@@ -593,4 +595,13 @@ a.cat:hover { text-decoration: none; filter: brightness(0.95); }
   .prose table:has(thead th:nth-child(2):last-child) td { border: 0; padding: 0; min-width: 0; }
   .prose table:has(thead th:nth-child(2):last-child) td:first-child { margin-bottom: 4px; font-weight: 600; }
   .prose table:has(thead th:nth-child(2):last-child) td code { white-space: normal; overflow-wrap: anywhere; }
+}
+
+/* ○·✕ 칸이 있는 비교표는 폰에서도 한 화면에 들어오게 촘촘히 */
+@media (max-width: 560px) {
+  .prose table:has([align="center"]) { font-size: 0.82rem; }
+  .prose table:has([align="center"]) :is(th, td) { min-width: 0; padding: 7px 5px; }
+  .prose table:has([align="center"]) :is(th, td)[align="center"] { width: 2.2em; }
+  .prose table:has([align="center"]) td:first-child { width: 38%; }
+  .prose table:has([align="center"]) td { overflow-wrap: anywhere; }
 }
