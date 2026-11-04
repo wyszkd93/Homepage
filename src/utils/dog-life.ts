@@ -193,7 +193,7 @@ export function born(): Dog {
   return d;
 }
 
-// 나이대별 선택 후보. 한 생에서는 나이대마다 하나씩, 모두 5번 고르게 됩니다.
+// 나이대별 선택 후보. 한 생에서는 나이대마다 두 개씩, 최대 10번 고르게 됩니다(늦은 나이대는 수명에 따라 빠짐).
 type Opt = Choice['options'][number];
 const C = (id: string, age: number, q: string, options: Opt[], when?: (d: Dog) => boolean) => ({ id, age, q, options, when });
 const CHOICE_BANDS: ReturnType<typeof C>[][] = [
@@ -545,12 +545,25 @@ export function adoptSibling(d: Dog, age: number) {
 /** 선택 후보 전체 (테스트·참고용) */
 export const CHOICES: Choice[] = CHOICE_BANDS.flat();
 
+// 나이대마다 2번씩 묻는 시기(년). 앞 칸·뒤 칸에 하나씩 두어 너무 붙어 나오지 않게 해요.
+const CHOICE_SLOTS: [number, number][] = [[0.4, 1.8], [2.0, 3.4], [4.3, 5.7], [6.9, 8.3], [10.3, 11.7]];
+const PER_BAND = 2;
+// 비슷한 질문(stairs·stairs2, portrait·portrait2)은 한 생에 하나만
+const familyOf = (id: string) => id.replace(/\d+$/, '');
+
 function pickChoices(d: Dog): Choice[] {
-  return CHOICE_BANDS.map((band) => {
-    const ok = band.filter((c) => !c.when || c.when(d));
-    const c = pick(ok);
-    // 같은 나이대 안에서 시기를 조금씩 흔들어요
-    return { id: c.id, age: Math.max(0.4, c.age + (Math.random() - 0.5) * 0.8), q: c.q, options: c.options };
+  return CHOICE_BANDS.flatMap((band, b) => {
+    let ok = band.filter((c) => !c.when || c.when(d));
+    const got: typeof ok = [];
+    while (got.length < PER_BAND && ok.length) {
+      const c = pick(ok);
+      got.push(c);
+      ok = ok.filter((x) => familyOf(x.id) !== familyOf(c.id));
+    }
+    const [from, to] = CHOICE_SLOTS[b];
+    const step = (to - from) / got.length;
+    // 칸 안에서 시기를 조금씩 흔들어요
+    return got.map((c, i) => ({ id: c.id, age: from + step * (i + 0.5) + (Math.random() - 0.5) * step * 0.3, q: c.q, options: c.options }));
   });
 }
 
