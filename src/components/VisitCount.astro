@@ -11,9 +11,9 @@ interface Props {
 const { kind, class: cls = '' } = Astro.props;
 ---
 
-<span class={`visit-count visit-${kind} ${kind === 'page' ? 'meta-dot' : ''} ${cls}`} data-visit={kind} hidden>
+<span class={`visit-count visit-${kind} ${cls}`} data-visit={kind} hidden>
   {kind === 'total' && <>누적 방문 <b data-v="total">0</b></>}
-  {kind === 'page' && <>· 조회 <b data-v="page">0</b></>}
+  {kind === 'page' && <>👀 조회 <b data-v="page">0</b></>}
 </span>
 
 <script>
