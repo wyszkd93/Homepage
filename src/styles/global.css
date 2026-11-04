@@ -144,7 +144,8 @@ main.narrow > * { max-width: var(--read); }
 .hero-art.hero-art-sm { width: 150px; border-radius: 20px; border: 0; }
 .page-head-inner.has-aside:has(.hero-art-sm) { padding-block: 24px 22px; }
 .page-head .tagline { margin: 0; color: var(--text-muted); font-size: 1.05rem; line-height: 1.6; max-width: 40em; }
-.page-head .tagline .tl-sep { opacity: 0.45; padding: 0 0.15em; }
+/* ' · '로 나뉜 부분은 가운뎃점 없이 줄을 바꿔 보여 줘요 */
+.page-head .tagline .tl-part { display: block; }
 .page-head .tagline { word-break: keep-all; font-family: 'IBM Plex Sans KR', 'Pretendard Variable', Pretendard, system-ui, sans-serif; }
 @media (max-width: 560px) {
   .page-head .tagline { font-size: 10px; line-height: 1.6; }
