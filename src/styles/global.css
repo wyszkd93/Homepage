@@ -587,3 +587,13 @@ a.cat:hover { text-decoration: none; filter: brightness(0.95); }
 :root[data-theme='dark'] .sx-c { color: #8b949e; }
 
 .footer-visits { margin: 4px 0 0; }
+
+/* 이름·설명 2칸 표는 폰에서 위아래로 쌓아 읽기 쉽게 (이름 → 설명) */
+@media (max-width: 560px) {
+  .prose table:has(thead th:nth-child(2):last-child) thead { display: none; }
+  .prose table:has(thead th:nth-child(2):last-child) :is(tbody, tr, td) { display: block; }
+  .prose table:has(thead th:nth-child(2):last-child) tr { padding: 10px 0; border-bottom: 1px solid var(--gridline); }
+  .prose table:has(thead th:nth-child(2):last-child) td { border: 0; padding: 0; min-width: 0; }
+  .prose table:has(thead th:nth-child(2):last-child) td:first-child { margin-bottom: 4px; font-weight: 600; }
+  .prose table:has(thead th:nth-child(2):last-child) td code { white-space: normal; overflow-wrap: anywhere; }
+}
