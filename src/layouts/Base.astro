@@ -109,7 +109,7 @@ const jsonLd = article
             {tagline && (
               <p class="tagline">
                 {tagline.split(' · ').map((part, i) => (
-                  <>{i > 0 && <span class="tl-sep"> · </span>}<span class="tl-part">{part}</span></>
+                  <span class="tl-part">{part}</span>
                 ))}
               </p>
             )}
