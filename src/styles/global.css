@@ -580,3 +580,6 @@ a.cat:hover { text-decoration: none; filter: brightness(0.95); }
 :root[data-theme='dark'] .sx-s { color: #a5d6ff; }
 :root[data-theme='dark'] .sx-n, :root[data-theme='dark'] .sx-b { color: #79c0ff; }
 :root[data-theme='dark'] .sx-c { color: #8b949e; }
+
+.hero-visits { margin: 12px 0 0; }
+.footer-visits { margin: 4px 0 0; }

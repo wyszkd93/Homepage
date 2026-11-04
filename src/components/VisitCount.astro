@@ -1,0 +1,73 @@
+---
+// GoatCounter 방문 수를 화면에 보여 줘요.
+// - total: 사이트 누적 방문 (푸터)
+// - home: 오늘 · 누적 (홈 소개 아래)
+// - page: 지금 페이지 조회수 (블로그 글)
+// GoatCounter 설정에서 'Allow adding visitor counts on your website'가 켜져 있어야 숫자를 받아올 수 있어요.
+// 받아오지 못하면(설정 꺼짐·차단·오류) 아무것도 보이지 않아요.
+interface Props {
+  kind: 'total' | 'home' | 'page';
+  class?: string;
+}
+const { kind, class: cls = '' } = Astro.props;
+---
+
+<span class={`visit-count visit-${kind} ${cls}`} data-visit={kind} hidden>
+  {kind === 'total' && <>누적 방문 <b data-v="total">0</b></>}
+  {kind === 'home' && <><span data-part="today">오늘 <b data-v="today">0</b> · </span>누적 <b data-v="total">0</b></>}
+  {kind === 'page' && <>👀 조회 <b data-v="page">0</b></>}
+</span>
+
+<script>
+  import { GOATCOUNTER } from '../consts';
+
+  // 같은 숫자를 여러 곳에서 써도 한 번만 받아와요
+  const cache = new Map<string, Promise<number | null>>();
+  function get(path: string, start?: string): Promise<number | null> {
+    const q = start ? `?start=${start}` : '';
+    const u = `${GOATCOUNTER}/counter/${encodeURIComponent(path)}.json${q}`;
+    if (!cache.has(u)) {
+      cache.set(
+        u,
+        fetch(u)
+          .then((r) => (r.status === 404 ? { count: '0' } : r.ok ? r.json() : null))
+          .then((j) => (j ? Number(String(j.count).replace(/[^\d]/g, '')) || 0 : null))
+          .catch(() => null),
+      );
+    }
+    return cache.get(u)!;
+  }
+  // 한국 시간 기준 오늘 날짜 (YYYY-MM-DD)
+  const today = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
+  const fmt = (n: number) => n.toLocaleString('ko-KR');
+
+  async function fill(el: HTMLElement) {
+    const kind = el.dataset.visit;
+    const want: Record<string, Promise<number | null>> = {};
+    if (kind === 'total' || kind === 'home') want.total = get('TOTAL');
+    if (kind === 'home') want.today = get('TOTAL', today);
+    if (kind === 'page') want.page = get(location.pathname);
+    let shown = false;
+    for (const [k, p] of Object.entries(want)) {
+      const n = await p;
+      const b = el.querySelector<HTMLElement>(`[data-v="${k}"]`);
+      if (n == null) {
+        // 오늘 숫자만 못 받으면 '오늘' 부분만 숨겨요
+        if (k === 'today') el.querySelector('[data-part="today"]')?.remove();
+        continue;
+      }
+      if (b) b.textContent = fmt(n);
+      shown = true;
+    }
+    if (shown) el.hidden = false;
+  }
+  if (!/^(localhost|127\.)/.test(location.hostname) || new URLSearchParams(location.search).has('visits')) {
+    document.querySelectorAll<HTMLElement>('[data-visit]').forEach((el) => void fill(el));
+  }
+</script>
+
+<style>
+  .visit-count[hidden] { display: none; }
+  .visit-count { color: var(--text-muted); font-size: 0.82rem; }
+  .visit-count b { font-weight: 700; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+</style>

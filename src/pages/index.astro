@@ -8,6 +8,7 @@ import { getPosts } from '../utils/posts';
 import { url } from '../utils/url';
 import { Image } from 'astro:assets';
 import mogu from '../assets/mogu.webp';
+import VisitCount from '../components/VisitCount.astro';
 
 const recent = (await getPosts()).slice(0, 6);
 ---
@@ -17,6 +18,7 @@ const recent = (await getPosts()).slice(0, 6);
     {PROFILE.links.map((l) => <li><a class="cta-btn" href={l.url}>{l.label}</a></li>)}
     <li class="hero-more"><a href={url('/about/')}>소개 더 보기 →</a></li>
   </ul>
+  <p class="hero-visits" slot="hero"><VisitCount kind="home" /></p>
   <Image
     slot="aside"
     class="hero-art"

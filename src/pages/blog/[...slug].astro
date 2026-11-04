@@ -30,6 +30,7 @@ interface Props {
 const { post, siblings, newer, older } = Astro.props;
 const { Content } = await render(post);
 const { title, description, date, updated, tags } = post.data;
+import VisitCount from '../../components/VisitCount.astro';
 ---
 
 <Base
@@ -43,6 +44,7 @@ const { title, description, date, updated, tags } = post.data;
     <PlatformLabel platform={post.platform} topic={post.topic} />
     <time datetime={date.toISOString()}>{formatDate(date)}</time>
     {updated && <span>· 수정 {formatDate(updated)}</span>}
+    <VisitCount kind="page" />
     <TagList tags={tags} />
   </div>
 

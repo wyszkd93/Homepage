@@ -37,3 +37,6 @@ export const KAKAO_JS_KEY = '861c0c6c42125169dc0084dfd80065ff';
 
 /** AI 픽 목록 한 페이지에 보여 줄 개수 */
 export const PICKS_PER_PAGE = 5;
+
+/** GoatCounter 방문 통계 주소 */
+export const GOATCOUNTER = 'https://mogu-dba.goatcounter.com';
