@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mogu 홈페이지 구조</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* 레이아웃: 왼쪽 → 오른쪽(폰에선 위 → 아래)으로 흐르는 4단 파이프라인 + 아래 브라우저 런타임 띠 */
+:root {
+  --bg: #fbf7f1; --card: #ffffff; --ink: #2b2420; --muted: #7a6f67; --line: #e6dccf;
+  --accent: #c0632f; --accent-soft: #fff1e4; --teal: #2f7d6b; --teal-soft: #e8f3ef;
+  --slate: #3b4a5c; --slate-soft: #edf0f4;
+  --f-body: 'IBM Plex Sans KR', 'Pretendard', system-ui, sans-serif;
+  --f-mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #1b1714; --card: #241e1a; --ink: #f1ebe4; --muted: #a69a90; --line: #3a312b;
+  --accent: #e0864f; --accent-soft: #3a261a; --teal: #5fb59d; --teal-soft: #1d2f2a;
+  --slate: #9fb1c6; --slate-soft: #232a33; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #1b1714; --card: #241e1a; --ink: #f1ebe4; --muted: #a69a90; --line: #3a312b;
+  --accent: #e0864f; --accent-soft: #3a261a; --teal: #5fb59d; --teal-soft: #1d2f2a;
+  --slate: #9fb1c6; --slate-soft: #232a33; color-scheme: dark }
+
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-block: 32px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 28px; }
+h1 { margin: 0; font-size: 1.6rem; text-wrap: balance; }
+.lede { margin: 4px 0 0; color: var(--muted); }
+code, .mono { font-family: var(--f-mono); font-size: 0.85em; }
+
+.flow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; align-items: stretch; }
+.stage { position: relative; display: grid; align-content: start; gap: 10px; padding: 0 18px; min-width: 0; }
+.stage + .stage::before { content: "→"; position: absolute; left: -9px; top: 6px; color: var(--accent); font-weight: 700; }
+.label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.stage h2 { margin: 0; font-size: 1.05rem; }
+.box { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; min-width: 0; }
+.box b { display: block; font-size: 0.92rem; }
+.box span { display: block; color: var(--muted); font-size: 0.82rem; overflow-wrap: anywhere; }
+.box.key { border-color: var(--accent); background: var(--accent-soft); }
+
+.runtime { border: 1px dashed var(--line); border-radius: 14px; padding: 18px; display: grid; gap: 14px; }
+.runtime-head { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline; }
+.runtime-head h2 { margin: 0; font-size: 1.05rem; }
+.runtime-head p { margin: 0; color: var(--muted); font-size: 0.88rem; }
+.svc { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.svc .box { border-left: 4px solid var(--c); }
+.svc .box i { font-style: normal; display: inline-block; margin-top: 6px; padding: 1px 8px; border-radius: 99px; font-size: 0.75rem; background: var(--cs); color: var(--c); }
+.c-teal { --c: var(--teal); --cs: var(--teal-soft); }
+.c-slate { --c: var(--slate); --cs: var(--slate-soft); }
+.c-accent { --c: var(--accent); --cs: var(--accent-soft); }
+.local { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { border: 1px solid var(--line); background: var(--card); border-radius: 99px; padding: 3px 10px; font-size: 0.8rem; }
+
+.notes { margin: 0; padding-left: 1.1em; color: var(--muted); font-size: 0.88rem; display: grid; gap: 4px; }
+
+@media (max-width: 820px) {
+  .flow { grid-template-columns: minmax(0, 1fr); gap: 22px; }
+  .stage { padding: 0; }
+  .stage + .stage::before { content: "↓"; left: auto; right: 4px; top: -20px; }
+  .svc { grid-template-columns: minmax(0, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>mogu 홈페이지 구조</h1>
+    <p class="lede">wyszkd93.github.io/Homepage · 서버 없는 정적 사이트, 동적 기능은 브라우저에서 외부 서비스 직접 호출</p>
+  </header>
+
+  <section class="flow" aria-label="작성에서 호스팅까지">
+    <div class="stage">
+      <div class="label">1 · 작성</div>
+      <h2>콘텐츠·페이지</h2>
+      <div class="box"><b>블로그 글</b><span>src/content/blog/*.md</span></div>
+      <div class="box"><b>티스토리 가져오기</b><span>scripts/import-tistory.mjs → 글·그림·첨부</span></div>
+      <div class="box"><b>AI 픽</b><span>src/content/picks/*.md · 매일 07:47 자동 추가</span></div>
+      <div class="box"><b>페이지</b><span>tools · games · snippets · about · privacy</span></div>
+    </div>
+    <div class="stage">
+      <div class="label">2 · 빌드</div>
+      <h2>npm run build</h2>
+      <div class="box key"><b>Astro 7</b><span>content collections → 정적 HTML</span></div>
+      <div class="box"><b>Pagefind</b><span>검색 색인 (pagefind --site dist)</span></div>
+      <div class="box"><b>sitemap · RSS</b><span>@astrojs/sitemap · rss.xml</span></div>
+      <div class="box"><b>rehype-base-path</b><span>/Homepage/ 하위 경로 링크 보정</span></div>
+    </div>
+    <div class="stage">
+      <div class="label">3 · 배포</div>
+      <h2>GitHub Actions</h2>
+      <div class="box"><b>작업 브랜치 → PR</b><span>CI build 검사</span></div>
+      <div class="box key"><b>main 머지</b><span>.github/workflows/deploy.yml</span></div>
+      <div class="box"><b>withastro/action</b><span>빌드 → deploy-pages</span></div>
+    </div>
+    <div class="stage">
+      <div class="label">4 · 호스팅</div>
+      <h2>GitHub Pages</h2>
+      <div class="box key"><b>정적 파일 제공</b><span>wyszkd93.github.io/Homepage/</span></div>
+      <div class="box"><b>이미지·첨부</b><span>public/images · public/files</span></div>
+    </div>
+  </section>
+
+  <section class="runtime" aria-label="방문자 브라우저">
+    <div class="runtime-head">
+      <h2>방문자 브라우저</h2>
+      <p>페이지를 받은 뒤 필요한 서비스만 직접 호출</p>
+    </div>
+    <div class="svc">
+      <div class="box c-teal"><b>Firebase Auth + Firestore</b><span>게임 순위표 leaderboards/{game}/scores</span><span class="mono">src/lib/firebase.ts · Leaderboard.astro</span><i>2048 · 과일 합치기 · 플레이모구</i></div>
+      <div class="box c-slate"><b>Kakao JS SDK</b><span>로그인 · 공유</span><span class="mono">src/lib/kakao.ts · KakaoShare.astro</span><i>순위표 로그인 · 결과 공유</i></div>
+      <div class="box c-accent"><b>GoatCounter</b><span>방문 집계(count.js) · 공개 카운터 JSON</span><span class="mono">VisitCount.astro</span><i>푸터 오늘 / 누적 방문</i></div>
+    </div>
+    <div class="local" aria-label="브라우저 안에서만 계산하는 기능">
+      <span class="chip">SQL 포매터</span><span class="chip">크론식</span><span class="chip">tnsnames.ora</span><span class="chip">실행계획 보기</span><span class="chip">정규식 테스터</span><span class="chip">견생 한 바퀴 · 사주</span><span class="chip">Pagefind 검색</span>
+    </div>
+  </section>
+
+  <ul class="notes">
+    <li>칩 표시 기능은 외부 전송 없이 브라우저 안에서만 계산.</li>
+    <li>저장되는 데이터는 Firestore 게임 점수뿐. 견생 한 바퀴·사주는 매번 처음부터.</li>
+  </ul>
+</div>
+</body>
+</html>
