@@ -1,0 +1,207 @@
+---
+import Base from '../../layouts/Base.astro';
+---
+
+<Base
+  title="tnsnames.ora 만들기"
+  description="호스트·포트·서비스명을 넣으면 Oracle tnsnames.ora 항목과 EZConnect·JDBC 접속 문자열을 만들어 주는 도구"
+  heading="tnsnames.ora 만들기"
+  tagline="접속 정보만 넣으면 tnsnames 항목·EZConnect·JDBC URL을 한 번에 · 입력값은 브라우저 밖으로 나가지 않아요."
+>
+  <div class="tool-panel tn-form">
+    <div class="tn-grid">
+      <label>별칭 (TNS 이름)
+        <input id="tn-alias" class="tool-input tool-mono" value="ORCL" spellcheck="false" autocomplete="off" />
+      </label>
+      <label>프로토콜
+        <select id="tn-proto" class="tool-select">
+          <option value="TCP">TCP</option>
+          <option value="TCPS">TCPS (SSL/TLS)</option>
+        </select>
+      </label>
+      <label class="tn-wide">호스트 <span class="tn-sub">(여러 대면 쉼표로: RAC·Data Guard)</span>
+        <input id="tn-host" class="tool-input tool-mono" value="db01.example.com" spellcheck="false" autocomplete="off" />
+      </label>
+      <label>포트
+        <input id="tn-port" class="tool-input tool-mono" value="1521" inputmode="numeric" autocomplete="off" />
+      </label>
+      <label>연결 방식
+        <select id="tn-kind" class="tool-select">
+          <option value="SERVICE_NAME">SERVICE_NAME (권장)</option>
+          <option value="SID">SID</option>
+        </select>
+      </label>
+      <label class="tn-wide">서비스명 / SID
+        <input id="tn-svc" class="tool-input tool-mono" value="orclpdb1" spellcheck="false" autocomplete="off" />
+      </label>
+      <label>서버 모드
+        <select id="tn-server" class="tool-select">
+          <option value="">지정 안 함</option>
+          <option value="DEDICATED">DEDICATED</option>
+          <option value="SHARED">SHARED</option>
+          <option value="POOLED">POOLED (DRCP)</option>
+        </select>
+      </label>
+      <label>연결 제한 시간(초)
+        <input id="tn-timeout" class="tool-input tool-mono" value="" placeholder="예) 10" inputmode="numeric" autocomplete="off" />
+      </label>
+      <label>재시도 횟수
+        <input id="tn-retry" class="tool-input tool-mono" value="" placeholder="예) 3" inputmode="numeric" autocomplete="off" />
+      </label>
+    </div>
+    <div id="tn-multi" class="tool-row tn-multi" hidden>
+      <label class="tn-check"><input id="tn-failover" type="checkbox" checked /> FAILOVER (한 대가 죽으면 다음 호스트로)</label>
+      <label class="tn-check"><input id="tn-lb" type="checkbox" /> LOAD_BALANCE (호스트를 번갈아 접속)</label>
+    </div>
+    <p id="tn-msg" class="tool-msg"></p>
+  </div>
+
+  <div class="tool-panel">
+    <div class="tn-head"><h2>tnsnames.ora 항목</h2><button class="tool-btn tn-copy" data-target="tn-out" type="button">복사</button></div>
+    <pre id="tn-out" class="tool-out tool-mono"></pre>
+    <p class="tool-hint">보통 <code>$ORACLE_HOME/network/admin/tnsnames.ora</code>(또는 <code>TNS_ADMIN</code> 폴더)에 붙여 넣으면 돼요.</p>
+  </div>
+
+  <div class="tool-panel">
+    <h2>다른 접속 문자열</h2>
+    <dl class="tn-list">
+      <dt>EZConnect</dt>
+      <dd><code id="tn-ez" class="tool-mono"></code><button class="tool-btn tn-copy" data-target="tn-ez" type="button">복사</button></dd>
+      <dt>SQL*Plus</dt>
+      <dd><code id="tn-sqlplus" class="tool-mono"></code><button class="tool-btn tn-copy" data-target="tn-sqlplus" type="button">복사</button></dd>
+      <dt>JDBC (Thin)</dt>
+      <dd><code id="tn-jdbc" class="tool-mono"></code><button class="tool-btn tn-copy" data-target="tn-jdbc" type="button">복사</button></dd>
+      <dt>tnsping</dt>
+      <dd><code id="tn-ping" class="tool-mono"></code><button class="tool-btn tn-copy" data-target="tn-ping" type="button">복사</button></dd>
+    </dl>
+    <p id="tn-note" class="tool-hint"></p>
+  </div>
+</Base>
+
+<script>
+  const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+  const ids = ['tn-alias', 'tn-proto', 'tn-host', 'tn-port', 'tn-kind', 'tn-svc', 'tn-server', 'tn-timeout', 'tn-retry', 'tn-failover', 'tn-lb'] as const;
+  const val = (id: string) => ($(id) as HTMLInputElement).value.trim();
+  const checked = (id: string) => ($(id) as HTMLInputElement).checked;
+  const msg = $('tn-msg');
+
+  // 값 검사: 이름·호스트·서비스명에 괄호나 공백, = 이 들어가면 tnsnames 문법이 깨져요
+  const BAD = /[()=\s"']/;
+
+  function render() {
+    const alias = val('tn-alias').toUpperCase();
+    const proto = val('tn-proto');
+    const hosts = val('tn-host').split(',').map((h) => h.trim()).filter(Boolean);
+    const port = val('tn-port');
+    const kind = val('tn-kind');
+    const svc = val('tn-svc');
+    const server = val('tn-server');
+    const timeout = val('tn-timeout');
+    const retry = val('tn-retry');
+    const multi = hosts.length > 1;
+    $('tn-multi').hidden = !multi;
+
+    const errs: string[] = [];
+    if (!alias || BAD.test(alias)) errs.push('별칭에는 공백·괄호·= 없이 영문·숫자·_ . 를 써 주세요.');
+    if (!hosts.length || hosts.some((h) => BAD.test(h))) errs.push('호스트를 확인해 주세요 (여러 대면 쉼표로 구분).');
+    if (!/^\d{1,5}$/.test(port) || +port < 1 || +port > 65535) errs.push('포트는 1~65535 숫자예요.');
+    if (!svc || BAD.test(svc)) errs.push('서비스명/SID를 확인해 주세요.');
+    if (timeout && !/^\d+$/.test(timeout)) errs.push('연결 제한 시간은 초 단위 숫자예요.');
+    if (retry && !/^\d+$/.test(retry)) errs.push('재시도 횟수는 숫자예요.');
+    msg.textContent = errs.join(' ');
+    msg.classList.toggle('is-error', errs.length > 0);
+    if (errs.length) {
+      for (const id of ['tn-out', 'tn-ez', 'tn-sqlplus', 'tn-jdbc', 'tn-ping']) $(id).textContent = '';
+      $('tn-note').textContent = '';
+      return;
+    }
+
+    const I = (n: number) => '  '.repeat(n);
+    const lines: string[] = [`${alias} =`, `${I(1)}(DESCRIPTION =`];
+    if (timeout) lines.push(`${I(2)}(CONNECT_TIMEOUT = ${timeout})`);
+    if (retry) lines.push(`${I(2)}(RETRY_COUNT = ${retry})`);
+    const addr = (h: string) => `(ADDRESS = (PROTOCOL = ${proto})(HOST = ${h})(PORT = ${port}))`;
+    if (multi) {
+      lines.push(`${I(2)}(ADDRESS_LIST =`);
+      lines.push(`${I(3)}(FAILOVER = ${checked('tn-failover') ? 'ON' : 'OFF'})`);
+      lines.push(`${I(3)}(LOAD_BALANCE = ${checked('tn-lb') ? 'ON' : 'OFF'})`);
+      for (const h of hosts) lines.push(`${I(3)}${addr(h)}`);
+      lines.push(`${I(2)})`);
+    } else {
+      lines.push(`${I(2)}${addr(hosts[0])}`);
+    }
+    lines.push(`${I(2)}(CONNECT_DATA =`);
+    if (server) lines.push(`${I(3)}(SERVER = ${server})`);
+    lines.push(`${I(3)}(${kind} = ${svc})`);
+    lines.push(`${I(2)})`);
+    lines.push(`${I(1)})`);
+    $('tn-out').textContent = lines.join('\n');
+
+    // 한 줄짜리 DESCRIPTION (JDBC·EZConnect 대신 쓸 때)
+    const oneLine = lines.slice(1).map((l) => l.trim()).join('').replace(/\s*=\s*/g, '=');
+
+    // EZConnect: 서비스명 방식·호스트 한 대일 때가 기본. 여러 대면 19c 이상 문법(host1,host2:port)을 보여 줘요
+    const ezHost = multi ? hosts.join(',') : hosts[0];
+    const ezProto = proto === 'TCPS' ? 'tcps://' : '';
+    const ezServer = server ? `:${server.toLowerCase()}` : '';
+    const ez = kind === 'SERVICE_NAME' ? `${ezProto}${ezHost}:${port}/${svc}${ezServer}` : '';
+    $('tn-ez').textContent = ez || '(SID 방식은 EZConnect로 쓸 수 없어요. 서비스명을 쓰거나 아래 JDBC의 DESCRIPTION 형식을 쓰세요.)';
+    $('tn-sqlplus').textContent = `sqlplus 사용자명@${ez && !multi ? (ezProto ? ez : `//${ez}`) : alias}`;
+    $('tn-jdbc').textContent =
+      !multi && proto === 'TCP'
+        ? kind === 'SERVICE_NAME'
+          ? `jdbc:oracle:thin:@//${hosts[0]}:${port}/${svc}`
+          : `jdbc:oracle:thin:@${hosts[0]}:${port}:${svc}`
+        : `jdbc:oracle:thin:@${oneLine}`;
+    $('tn-ping').textContent = `tnsping ${alias}`;
+
+    const notes: string[] = [];
+    if (kind === 'SID') notes.push('SID 방식은 예전 방식이에요. 멀티테넌트(PDB)에서는 SERVICE_NAME을 쓰는 게 맞아요.');
+    if (multi) notes.push('호스트가 여러 대면 EZConnect의 쉼표 문법은 19c 이상 클라이언트에서만 돼요. 막히면 tnsnames 별칭으로 접속하세요.');
+    if (proto === 'TCPS') notes.push('TCPS는 클라이언트 쪽 지갑(wallet)과 sqlnet.ora 설정이 함께 필요해요. 포트도 보통 2484 등 SSL용 포트예요.');
+    if (server === 'POOLED') notes.push('POOLED는 DB에서 DRCP 풀이 켜져 있어야 해요 (DBMS_CONNECTION_POOL.START_POOL).');
+    $('tn-note').textContent = notes.join(' ');
+  }
+
+  for (const id of ids) {
+    $(id).addEventListener('input', render);
+    $(id).addEventListener('change', render);
+  }
+  for (const b of document.querySelectorAll<HTMLButtonElement>('.tn-copy')) {
+    b.addEventListener('click', async () => {
+      const t = $(b.dataset.target!).textContent ?? '';
+      if (!t) return;
+      try {
+        await navigator.clipboard.writeText(t);
+        const old = b.textContent;
+        b.textContent = '복사됨';
+        setTimeout(() => (b.textContent = old), 1200);
+      } catch {
+        msg.textContent = '복사하지 못했어요. 직접 선택해 복사해 주세요.';
+      }
+    });
+  }
+  render();
+</script>
+
+<style>
+  .tn-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 14px; }
+  .tn-grid label { display: grid; gap: 5px; font-size: 0.86rem; color: var(--ink-muted); }
+  .tn-grid .tn-wide { grid-column: span 2; }
+  .tn-grid .tool-input, .tn-grid .tool-select { width: 100%; min-width: 0; box-sizing: border-box; }
+  .tn-sub { color: var(--text-muted); font-size: 0.78rem; }
+  .tn-multi { margin: 14px 0 0; }
+  .tn-multi[hidden] { display: none; }
+  .tn-check { display: inline-flex; align-items: center; gap: 6px; font-size: 0.88rem; }
+  .tn-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .tn-head h2 { margin: 0; }
+  .tn-list { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 10px 14px; margin: 0; align-items: center; }
+  .tn-list dt { font-size: 0.86rem; font-weight: 700; color: var(--ink-muted); }
+  .tn-list dd { margin: 0; display: flex; gap: 8px; align-items: center; min-width: 0; }
+  .tn-list code { flex: 1; min-width: 0; overflow-x: auto; white-space: nowrap; padding: 6px 10px; border-radius: 8px; background: var(--surface-2); font-size: 0.85rem; }
+  @media (max-width: 640px) {
+    .tn-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    .tn-list { grid-template-columns: minmax(0, 1fr); }
+    .tn-list dt { margin-top: 4px; }
+  }
+</style>
