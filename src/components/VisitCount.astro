@@ -22,9 +22,11 @@
   // 한국 시간 기준 오늘 날짜 (YYYY-MM-DD)
   const today = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
   const fmt = (n: number) => n.toLocaleString('ko-KR');
+  const SINCE = '2026-10-01'; // 방문 기록 시작(2026-11) 이전
 
   async function fill(el: HTMLElement) {
-    const [total, now] = await Promise.all([get(), get(today)]);
+    // start 없이 부르면 GoatCounter 서버 캐시에 남은 옛 값(0)이 와서, 기록 시작 전 날짜를 붙여 누적을 받음
+    const [total, now] = await Promise.all([get(SINCE), get(today)]);
     if (total == null || total === 0) return;
     el.querySelector<HTMLElement>('[data-v="total"]')!.textContent = fmt(total);
     if (now == null) el.querySelector('[data-part="today"]')?.remove();
