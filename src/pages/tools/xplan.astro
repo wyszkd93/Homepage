@@ -1,0 +1,246 @@
+---
+import Base from '../../layouts/Base.astro';
+
+const SAMPLE = `Plan hash value: 2390785324
+
+-----------------------------------------------------------------------------------------------
+| Id  | Operation                      | Name         | Rows  | Bytes | Cost (%CPU)| Time     |
+-----------------------------------------------------------------------------------------------
+|   0 | SELECT STATEMENT               |              |    20 |  1480 |  4826   (2)| 00:00:01 |
+|*  1 |  COUNT STOPKEY                 |              |       |       |            |          |
+|   2 |   VIEW                         |              |  1200 | 88800 |  4826   (2)| 00:00:01 |
+|*  3 |    SORT ORDER BY STOPKEY       |              |  1200 | 61200 |  4826   (2)| 00:00:01 |
+|   4 |     HASH GROUP BY              |              |  1200 | 61200 |  4826   (2)| 00:00:01 |
+|*  5 |      HASH JOIN                 |              |   480K|    23M|  4790   (1)| 00:00:01 |
+|   6 |       TABLE ACCESS FULL        | CUSTOMERS    | 55500 |  1083K|   406   (1)| 00:00:01 |
+|*  7 |       TABLE ACCESS FULL        | SALES        |   480K|    14M|  4381   (1)| 00:00:01 |
+-----------------------------------------------------------------------------------------------
+
+Predicate Information (identified by operation id):
+---------------------------------------------------
+
+   1 - filter(ROWNUM<=20)
+   3 - filter(ROWNUM<=20)
+   5 - access("S"."CUST_ID"="C"."CUST_ID")
+   7 - filter("S"."TIME_ID">=TO_DATE(' 2026-10-01 00:00:00', 'syyyy-mm-dd hh24:mi:ss'))`;
+---
+
+<Base
+  title="실행계획 보기 좋게"
+  description="Oracle DBMS_XPLAN 실행계획을 붙여 넣으면 트리·실행 순서·비용 막대로 보여 주고 주의할 단계를 짚어 주는 도구"
+  heading="실행계획 보기 좋게"
+  tagline="DBMS_XPLAN 출력을 붙여 넣으면 트리·실행 순서·비용으로 정리해요 · 붙여 넣은 내용은 브라우저 밖으로 나가지 않아요."
+>
+  <div class="tool-panel">
+    <label for="xp-in" class="visually-hidden">실행계획</label>
+    <textarea id="xp-in" class="tool-textarea tool-mono xp-in" spellcheck="false" placeholder="SELECT * FROM TABLE(DBMS_XPLAN.DISPLAY_CURSOR(NULL, NULL, 'ALLSTATS LAST')); 결과를 붙여 넣으세요.">{SAMPLE}</textarea>
+    <div class="tool-row" style="margin: 12px 0 0">
+      <button id="xp-run" class="tool-btn tool-btn-primary" type="button">보기 좋게</button>
+      <button id="xp-clear" class="tool-btn" type="button">비우기</button>
+      <label class="xp-check"><input id="xp-pred" type="checkbox" checked /> 조건(Predicate) 같이 보기</label>
+    </div>
+    <p class="tool-hint">표 형식 출력이면 돼요: <code>EXPLAIN PLAN</code> 뒤 <code>DBMS_XPLAN.DISPLAY</code>, 실제 실행 통계는 <code>DISPLAY_CURSOR(…, 'ALLSTATS LAST')</code>.</p>
+    <p id="xp-msg" class="tool-msg"></p>
+  </div>
+
+  <div class="tool-panel" id="xp-result" hidden>
+    <div class="xp-sum" id="xp-sum"></div>
+    <div class="xp-legend">
+      <span><b class="xp-ord">①</b> 실행 순서 (안쪽·위쪽 단계부터 먼저 실행)</span>
+      <span><i class="xp-bar-l"></i> 단계 자체 비용 (자식 비용 제외)</span>
+      <span><i class="xp-star">*</i> 조건이 걸린 단계</span>
+    </div>
+    <div class="xp-tools">
+      <button id="xp-open" class="tool-btn" type="button">모두 펼치기</button>
+      <button id="xp-close" class="tool-btn" type="button">모두 접기</button>
+      <span id="xp-fold-note" class="tool-hint"></span>
+    </div>
+    <ol id="xp-tree" class="xp-tree"></ol>
+    <div id="xp-notes"></div>
+  </div>
+</Base>
+
+<script>
+  import { parsePlan, fmt, type PlanNode } from '../../utils/xplan';
+
+  const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+  const input = $<HTMLTextAreaElement>('xp-in');
+  const msg = $('xp-msg');
+  const el = (tag: string, cls?: string, text?: string) => {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  };
+  const circled = (n: number) => (n <= 20 ? String.fromCharCode(0x2460 + n - 1) : `(${n})`);
+
+  function run() {
+    msg.textContent = '';
+    msg.classList.remove('is-error');
+    const src = input.value.trim();
+    $('xp-result').hidden = true;
+    if (!src) { msg.textContent = '실행계획을 붙여 넣어 주세요.'; return; }
+    let plan;
+    try {
+      plan = parsePlan(src);
+    } catch (e) {
+      msg.textContent = (e as Error).message;
+      msg.classList.add('is-error');
+      return;
+    }
+    const showPred = ($('xp-pred') as HTMLInputElement).checked;
+    const maxSelf = Math.max(1, ...plan.nodes.map((n) => n.selfCost ?? 0));
+    const top = [...plan.nodes].filter((n) => (n.selfCost ?? 0) > 0).sort((a, b) => (b.selfCost ?? 0) - (a.selfCost ?? 0)).slice(0, 3);
+    const extra = plan.headers.filter((h) => /^(E-Rows|Rows|A-Rows|Starts|Buffers|Reads|A-Time|Time|Bytes|Pstart|Pstop)$/i.test(h));
+
+    // 요약
+    const sum = $('xp-sum');
+    sum.innerHTML = '';
+    const total = plan.roots[0]?.cost;
+    const items: [string, string][] = [['단계', `${plan.nodes.length}개`]];
+    if (total != null) items.push(['전체 비용', fmt(total)]);
+    if (plan.hash) items.push(['Plan hash', plan.hash]);
+    if (plan.sqlId) items.push(['SQL_ID', plan.sqlId]);
+    const warnCount = plan.nodes.filter((n) => n.warnings.length).length;
+    items.push(['살펴볼 단계', warnCount ? `${warnCount}곳` : '없음']);
+    for (const [k, v] of items) {
+      const d = el('div', 'xp-sum-item');
+      d.append(el('span', 'xp-sum-k', k), el('strong', 'xp-sum-v', v));
+      sum.append(d);
+    }
+    if (top.length) {
+      const p = el('p', 'xp-top');
+      p.append(el('span', '', '비용이 큰 단계: '));
+      top.forEach((n, i) => {
+        if (i) p.append(', ');
+        p.append(el('b', '', `Id ${n.id} ${n.op}${n.name ? ` (${n.name})` : ''}`));
+      });
+      sum.append(p);
+    }
+
+    // 트리
+    const tree = $('xp-tree');
+    tree.innerHTML = '';
+    // 비용 큰 단계까지 가는 길(조상들)은 펼쳐 둬요
+    const BIG = 500;
+    const big = plan.nodes.length > BIG;
+    const hot = new Set<PlanNode>();
+    for (const t of top) for (let p = t.parent; p; p = p.parent) hot.add(p);
+    $('xp-fold-note').textContent = big ? `단계가 ${plan.nodes.length}개라 비용이 큰 경로만 펼쳐 두었어요. ▸를 누르거나 '모두 펼치기'로 나머지를 볼 수 있어요.` : '';
+    const draw = (n: PlanNode, box: HTMLElement) => {
+      const li = el('li', 'xp-node');
+      const row = el('div', 'xp-row' + (top.includes(n) ? ' is-hot' : '') + (n.warnings.length ? ' is-warn' : ''));
+      const toggle = el('button', 'xp-toggle', n.children.length ? '▾' : '');
+      toggle.setAttribute('type', 'button');
+      if (n.children.length) toggle.setAttribute('aria-label', '하위 단계 접기/펴기');
+      else toggle.setAttribute('aria-hidden', 'true');
+      const ord = el('b', 'xp-ord', circled(n.order));
+      ord.title = `${n.order}번째로 실행`;
+      const main = el('div', 'xp-main');
+      const title = el('div', 'xp-title');
+      title.append(el('span', 'xp-id', `${n.pred ? '*' : ''}${n.id}`), el('span', 'xp-op', n.op));
+      if (n.name) title.append(el('span', 'xp-name', n.name));
+      main.append(title);
+      const meta = el('div', 'xp-meta');
+      for (const h of extra) if (n.cols[h]) meta.append(el('span', '', `${h} ${n.cols[h]}`));
+      if (n.cost != null) meta.append(el('span', '', `Cost ${fmt(n.cost)}`));
+      if (meta.childNodes.length) main.append(meta);
+      if (n.selfCost != null) {
+        const bar = el('div', 'xp-bar');
+        const fill = el('i');
+        fill.style.width = `${Math.max(2, ((n.selfCost ?? 0) / maxSelf) * 100)}%`;
+        bar.append(fill);
+        bar.title = `이 단계 자체 비용 ${fmt(n.selfCost)}`;
+        main.append(bar);
+      }
+      for (const w of n.warnings) main.append(el('p', 'xp-warn', `⚠️ ${w}`));
+      if (showPred) for (const p of n.predicates) main.append(el('p', 'xp-pred tool-mono', p));
+      row.append(toggle, ord, main);
+      li.append(row);
+      if (n.children.length) {
+        const ol = el('ol', 'xp-kids');
+        n.children.forEach((c) => draw(c, ol));
+        li.append(ol);
+        // 단계가 많으면 비용이 큰 경로만 펼쳐 두고 나머지는 접어요
+        if (big && !hot.has(n)) {
+          ol.hidden = true;
+          toggle.textContent = '▸';
+        }
+        toggle.addEventListener('click', () => {
+          const closed = ol.hidden = !ol.hidden;
+          toggle.textContent = closed ? '▸' : '▾';
+        });
+      }
+      box.append(li);
+    };
+    plan.roots.forEach((r) => draw(r, tree));
+
+    const notes = $('xp-notes');
+    notes.innerHTML = '';
+    if (plan.notes.length) {
+      notes.append(el('h3', 'xp-note-h', 'Note'));
+      const ul = el('ul', 'xp-note-list');
+      plan.notes.forEach((t) => ul.append(el('li', '', t)));
+      notes.append(ul);
+    }
+    $('xp-result').hidden = false;
+  }
+
+  $('xp-run').addEventListener('click', run);
+  const foldAll = (closed: boolean) => {
+    for (const ol of document.querySelectorAll<HTMLElement>('#xp-tree .xp-kids')) ol.hidden = closed;
+    for (const t of document.querySelectorAll<HTMLElement>('#xp-tree .xp-toggle')) if (t.textContent) t.textContent = closed ? '▸' : '▾';
+  };
+  $('xp-open').addEventListener('click', () => foldAll(false));
+  $('xp-close').addEventListener('click', () => foldAll(true));
+  $('xp-pred').addEventListener('change', run);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); run(); }
+  });
+  $('xp-clear').addEventListener('click', () => {
+    input.value = '';
+    $('xp-result').hidden = true;
+    msg.textContent = '';
+    input.focus();
+  });
+  run();
+</script>
+
+<style is:global>
+  /* 스크립트가 만드는 요소에도 적용되도록 전역 스타일 (클래스 이름 앞에 xp-/rx-를 붙여 겹치지 않게) */
+  .xp-in { min-height: 220px; font-size: 0.8rem; white-space: pre; overflow-x: auto; }
+  .xp-check { display: inline-flex; align-items: center; gap: 6px; font-size: 0.88rem; }
+  #xp-result[hidden] { display: none; }
+  .xp-sum { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
+  .xp-sum-item { padding: 8px 12px; border-radius: 10px; background: var(--surface-2); display: grid; gap: 2px; }
+  .xp-sum-k { font-size: 0.75rem; color: var(--text-muted); }
+  .xp-sum-v { font-size: 0.95rem; }
+  .xp-top { flex-basis: 100%; margin: 2px 0 0; font-size: 0.88rem; color: var(--ink-muted); }
+  .xp-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.78rem; color: var(--text-muted); margin: 4px 0 12px; }
+  .xp-bar-l { display: inline-block; width: 18px; height: 6px; border-radius: 3px; background: var(--accent); vertical-align: middle; }
+  .xp-star { font-style: normal; font-weight: 800; color: var(--accent); }
+  .xp-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 10px; }
+  .xp-tools .tool-hint { margin: 0; }
+  .xp-tree, .xp-kids { list-style: none; margin: 0; padding: 0; }
+  .xp-kids { margin-left: 14px; padding-left: 12px; border-left: 1px dashed var(--hairline); }
+  .xp-kids[hidden] { display: none; }
+  .xp-row { display: grid; grid-template-columns: 18px 26px minmax(0, 1fr); gap: 6px; align-items: start; padding: 7px 8px; border-radius: 10px; }
+  .xp-row.is-hot { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+  .xp-toggle { border: 0; background: none; padding: 0; color: var(--text-muted); cursor: pointer; font-size: 0.9rem; line-height: 1.5; }
+  .xp-ord { font-weight: 700; color: var(--accent); font-size: 1rem; line-height: 1.35; text-align: center; }
+  .xp-title { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; }
+  .xp-id { font: 600 0.78rem/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--text-muted); }
+  .xp-op { font-weight: 700; font-size: 0.92rem; }
+  .xp-name { font: 600 0.85rem/1.3 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--link); }
+  .xp-meta { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; }
+  .xp-bar { height: 5px; border-radius: 3px; background: var(--surface-2); margin-top: 5px; max-width: 320px; overflow: hidden; }
+  .xp-bar i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+  .xp-warn { margin: 4px 0 0; font-size: 0.8rem; color: #b5542b; }
+  :root[data-theme='dark'] .xp-warn { color: #f0a36f; }
+  .xp-pred { margin: 4px 0 0; font-size: 0.76rem; color: var(--ink-muted); background: var(--surface-2); border-radius: 6px; padding: 3px 7px; overflow-wrap: anywhere; }
+  .xp-note-h { font-size: 0.9rem; margin: 14px 0 4px; }
+  .xp-note-list { margin: 0; padding-left: 1.2em; font-size: 0.85rem; color: var(--ink-muted); }
+  @media (max-width: 640px) {
+    .xp-kids { margin-left: 6px; padding-left: 8px; }
+  }
+</style>
