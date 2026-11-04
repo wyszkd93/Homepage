@@ -1,6 +1,7 @@
 ---
 import { PROFILE } from '../consts';
 import { url } from '../utils/url';
+import VisitCount from './VisitCount.astro';
 const year = new Date().getFullYear();
 ---
 
@@ -10,5 +11,6 @@ const year = new Date().getFullYear();
       {PROFILE.links.map((l) => <a href={l.url}>{l.label}</a>)}
     </p>
     <p>© {year} {PROFILE.name} · <a href={url('/privacy/')}>개인정보 처리방침</a></p>
+    <p class="footer-visits"><VisitCount kind="total" /></p>
   </div>
 </footer>

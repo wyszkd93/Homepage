@@ -88,6 +88,9 @@ const jsonLd = article
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400&display=swap" />
     <slot name="head" />
+    <!-- 방문 통계 (GoatCounter: 쿠키 없음, 개인 식별 정보 저장 안 함). 공유 링크의 ?s=... 같은 쿼리는 빼고 페이지 주소만 셉니다. -->
+    <script is:inline>window.goatcounter = { path: function () { return location.pathname; } };</script>
+    <script is:inline data-goatcounter="https://mogu-dba.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
     <script is:inline>
       // 깜빡임 없이 저장된 테마를 먼저 적용
       (() => {
