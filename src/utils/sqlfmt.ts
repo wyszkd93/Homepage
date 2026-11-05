@@ -39,7 +39,7 @@ const FUNCTIONS = new Set(
 const CLAUSES = [
   'select', 'from', 'where', 'group by', 'having', 'order by', 'union all', 'union', 'intersect', 'minus', 'except',
   'left outer join', 'right outer join', 'full outer join', 'left join', 'right join', 'full join', 'inner join',
-  'cross join', 'natural join', 'join', 'insert into', 'values', 'update', 'set', 'delete from', 'delete', 'merge into',
+  'cross join', 'natural join', 'join', 'insert into', 'insert', 'values', 'update', 'set', 'delete from', 'delete', 'merge into',
   'using', 'connect by', 'start with', 'fetch', 'offset', 'limit', 'returning', 'for update', 'with',
 ];
 // 이 절 안의 and/or는 줄을 바꾼다
@@ -108,6 +108,8 @@ interface Ctx {
 }
 
 const WRAP = 100;
+// INSERT 뒤에 힌트가 끼면(INSERT /*+ APPEND */ INTO) 'insert' 하나로 절이 잡힌다
+const isInsertClause = (c: string) => c === 'insert into' || c === 'insert';
 
 export function formatCompact(sql: string, kcase: Case, tab = 4, align = false): string {
   const toks = tokenize(sql).filter((t) => t.type !== 'ws');
@@ -118,6 +120,7 @@ export function formatCompact(sql: string, kcase: Case, tab = 4, align = false):
   const stack: Ctx[] = [root];
   let prev: Token | null = null;
   let prevWord = ''; // 직전 토큰이 단어면 소문자형
+  let insertStmt = false; // INSERT ... SELECT: 바깥 SELECT 항목을 컬럼 목록처럼 한 줄에 하나씩
 
   const top = () => stack[stack.length - 1];
   const newline = (indent: number) => {
@@ -171,7 +174,7 @@ export function formatCompact(sql: string, kcase: Case, tab = 4, align = false):
       const cm = matchClause(i);
       // WITH는 문장 맨 앞에서만, USING은 MERGE 안에서만 절로 본다
       const valid =
-        cm && !(cm[0] === 'with' && ctx.clause !== '') && !(cm[0] === 'using' && ctx.clause !== 'merge into') && ctx.caseDepth === 0;
+        cm && !(cm[0] === 'with' && ctx.clause !== '' && !isInsertClause(ctx.clause)) && !(cm[0] === 'using' && ctx.clause !== 'merge into') && ctx.caseDepth === 0;
       if (cm && valid) {
         const [name, len] = cm;
         if (!ctx.fresh) {
@@ -186,6 +189,7 @@ export function formatCompact(sql: string, kcase: Case, tab = 4, align = false):
         line += words;
         if (align) line += ' '.repeat(Math.max(1, 7 - words.length));
         ctx.clause = name;
+        if (ctx === root && isInsertClause(name)) insertStmt = true;
         ctx.clauseCol = line.length;
         ctx.between = false;
         i += len - 1;
@@ -223,8 +227,8 @@ export function formatCompact(sql: string, kcase: Case, tab = 4, align = false):
         const isSub = !!next && next.type === 'word' && ['select', 'with'].includes(next.text.toLowerCase());
         const space = !!prev && prev.type !== 'open' && prev.type !== 'dot';
         // 함수 호출은 붙이고(nvl(...)), 키워드·INSERT 대상 테이블 뒤는 띄운다
-        const call = prev?.type === 'word' && !KEYWORDS.has(prevWord) && ctx.clause !== 'insert into';
-        const listParen = !isSub && ctx.sub && (ctx.clause === 'insert into' || ctx.clause === 'values');
+        const call = prev?.type === 'word' && !KEYWORDS.has(prevWord) && !isInsertClause(ctx.clause);
+        const listParen = !isSub && ctx.sub && (isInsertClause(ctx.clause) || ctx.clause === 'values');
         if (!listParen) put('(', space && !call);
         if (listParen) {
           // INSERT INTO t / ( / 컬럼 / ) / VALUES / ( / 값 / )
@@ -254,6 +258,7 @@ export function formatCompact(sql: string, kcase: Case, tab = 4, align = false):
       case 'comma': {
         line += ',';
         if (ctx.list) newline(ctx.base + tab);
+        else if (insertStmt && ctx === root && ctx.clause === 'select') newline(align ? ctx.clauseCol : ctx.base + tab);
         else if (ctx.sub && ((align && LIST_CLAUSES.has(ctx.clause)) || line.length > WRAP)) newline(ctx.clauseCol);
         else line += ' ';
         prev = t;
@@ -265,6 +270,7 @@ export function formatCompact(sql: string, kcase: Case, tab = 4, align = false):
         lines.push('');
         stack.length = 1;
         root.clause = '';
+        insertStmt = false;
         prev = null;
         break;
       }
