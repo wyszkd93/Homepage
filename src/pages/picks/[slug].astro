@@ -4,7 +4,6 @@ import Base from '../../layouts/Base.astro';
 import PickCard from '../../components/PickCard.astro';
 import PickKind from '../../components/PickKind.astro';
 import { url, formatDate } from '../../utils/url';
-import { topicOf } from '../../utils/picks';
 
 export async function getStaticPaths() {
   const picks = await getCollection('picks');
@@ -19,7 +18,7 @@ const label = d.card.owner && d.card.name ? `@${d.card.owner}/${d.card.name}` : 
 
 <Base title={d.title} description={d.comment} narrow>
   <article class="pd">
-    <a class="pd-back" href={url(topicOf(d.topic).base)}>← {topicOf(d.topic).label} 목록으로</a>
+    <a class="pd-back" href={url('/picks/')}>← 목록으로</a>
     <h1 class="pd-title"><PickKind kind={d.kind} />{d.title}</h1>
     <p class="pd-src">{label}</p>
     <p class="pd-tags">
