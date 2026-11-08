@@ -1,0 +1,22 @@
+---
+// DB 픽 2쪽부터: /picks/db/page/2/ ...
+import Base from '../../../../layouts/Base.astro';
+import PickList from '../../../../components/PickList.astro';
+import { PICKS_PER_PAGE } from '../../../../consts';
+import { picksOf, topicOf } from '../../../../utils/picks';
+
+export async function getStaticPaths() {
+  const all = await picksOf('db');
+  const pages = Math.ceil(all.length / PICKS_PER_PAGE);
+  return Array.from({ length: Math.max(0, pages - 1) }, (_, i) => {
+    const page = i + 2;
+    return { params: { page: String(page) }, props: { picks: all.slice((page - 1) * PICKS_PER_PAGE, page * PICKS_PER_PAGE), page, pages, total: all.length } };
+  });
+}
+const { picks, page, pages, total } = Astro.props;
+const t = topicOf('db');
+---
+
+<Base title={`${t.label} ${page}쪽`} description={t.desc} heading="픽" tagline="모구가 골라 읽고 한국어로 정리한 AI와 DB 도구, 소식">
+  <PickList topic="db" picks={picks} page={page} pages={pages} total={total} />
+</Base>

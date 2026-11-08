@@ -1,0 +1,14 @@
+---
+import Base from '../../../layouts/Base.astro';
+import PickList from '../../../components/PickList.astro';
+import { PICKS_PER_PAGE } from '../../../consts';
+import { picksOf, topicOf } from '../../../utils/picks';
+
+const t = topicOf('db');
+const all = await picksOf('db');
+const pages = Math.max(1, Math.ceil(all.length / PICKS_PER_PAGE));
+---
+
+<Base title={t.label} description={t.desc} heading="픽" tagline="모구가 골라 읽고 한국어로 정리한 AI와 DB 도구, 소식">
+  <PickList topic="db" picks={all.slice(0, PICKS_PER_PAGE)} page={1} pages={pages} total={all.length} />
+</Base>
