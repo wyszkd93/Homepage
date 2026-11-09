@@ -26,6 +26,7 @@ const picks = defineCollection({
     title: z.string(), // 한국어 제목
     url: z.string().url(), // 원문 주소
     kind: z.enum(['github', 'news', 'blog', 'paper', 'video']).default('github'),
+    topic: z.enum(['ai', 'db']).default('ai'), // 피드 탭: AI, DB
     date: z.coerce.date(), // 올린 날
     tags: z.array(z.string()).default([]),
     comment: z.string(), // 💬 한마디

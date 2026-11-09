@@ -1,12 +1,12 @@
 ---
-// AI 픽 2쪽부터: /picks/page/2/ ...
-import { getCollection } from 'astro:content';
+// AI 피드 2쪽부터: /picks/page/2/ ...
 import Base from '../../../layouts/Base.astro';
 import PickList from '../../../components/PickList.astro';
 import { PICKS_PER_PAGE } from '../../../consts';
+import { picksOf, topicOf } from '../../../utils/picks';
 
 export async function getStaticPaths() {
-  const all = (await getCollection('picks')).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+  const all = await picksOf('ai');
   const pages = Math.ceil(all.length / PICKS_PER_PAGE);
   return Array.from({ length: Math.max(0, pages - 1) }, (_, i) => {
     const page = i + 2;
@@ -14,8 +14,9 @@ export async function getStaticPaths() {
   });
 }
 const { picks, page, pages, total } = Astro.props;
+const t = topicOf('ai');
 ---
 
-<Base title={`AI 픽 ${page}쪽`} description="모구가 골라 읽고 정리한 AI 도구·소식" heading="AI 픽" tagline="모구가 골라 읽고 한국어로 정리한 AI 도구와 소식">
-  <PickList picks={picks} page={page} pages={pages} total={total} />
+<Base title={`${t.name} ${page}쪽`} description={t.desc} heading="피드" tagline="모구가 골라 읽고 한국어로 정리한 AI와 DB 도구, 소식">
+  <PickList topic="ai" picks={picks} page={page} pages={pages} total={total} />
 </Base>
