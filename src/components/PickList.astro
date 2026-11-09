@@ -1,18 +1,21 @@
 ---
-// AI 픽 목록 한 페이지 + 페이지 이동 (1쪽은 /picks/, 2쪽부터 /picks/page/N/)
+// 피드 목록 한 페이지 + 페이지 이동 (1쪽은 /picks/, 2쪽부터 /picks/page/N/)
 import type { CollectionEntry } from 'astro:content';
 import PickCard from './PickCard.astro';
 import PickKind from './PickKind.astro';
 import { url, formatDate } from '../utils/url';
+import { PICK_TOPICS, topicOf, type PickTopic } from '../utils/picks';
 
 interface Props {
   picks: CollectionEntry<'picks'>[];
   page: number;
   pages: number;
   total: number;
+  topic: PickTopic;
 }
-const { picks, page, pages, total } = Astro.props;
-const href = (n: number) => url(n === 1 ? '/picks/' : `/picks/page/${n}/`);
+const { picks, page, pages, total, topic } = Astro.props;
+const base = topicOf(topic).base;
+const href = (n: number) => url(n === 1 ? base : `${base}page/${n}/`);
 // 페이지 번호: 처음·끝과 현재 앞뒤 2개, 사이는 …
 const nums: (number | '…')[] = [];
 for (let n = 1; n <= pages; n++) {
@@ -21,6 +24,9 @@ for (let n = 1; n <= pages; n++) {
 }
 ---
 
+<nav class="pk-tabs" aria-label="피드 종류">
+  {PICK_TOPICS.map((t) => (t.id === topic ? <span class="pk-tab is-cur" aria-current="page">{t.label}</span> : <a class="pk-tab" href={url(t.base)}>{t.label}</a>))}
+</nav>
 <ul class="pk-list">
     {picks.map((p) => (
       <li class="pk-item">
@@ -34,9 +40,9 @@ for (let n = 1; n <= pages; n++) {
       </li>
     ))}
   </ul>
-{total === 0 && <p>아직 올린 픽이 없어요.</p>}
+{total === 0 && <p>아직 올린 글이 없어요.</p>}
 {pages > 1 && (
-  <nav class="pk-pager" aria-label="AI 픽 페이지">
+  <nav class="pk-pager" aria-label="피드 페이지">
     {page > 1 ? <a class="pk-pg pk-pg-nav" href={href(page - 1)} rel="prev">← 이전</a> : <span class="pk-pg pk-pg-nav is-off">← 이전</span>}
     <ol class="pk-pg-nums">
       {nums.map((n) => (
@@ -50,6 +56,10 @@ for (let n = 1; n <= pages; n++) {
 )}
 
 <style>
+  .pk-tabs { max-width: 840px; margin: 0 auto 24px; display: flex; gap: 6px; border-bottom: 1px solid var(--hairline); }
+  .pk-tab { padding: 8px 16px; margin-bottom: -1px; border-bottom: 2px solid transparent; color: var(--text-muted); font-weight: 700; }
+  a.pk-tab:hover { text-decoration: none; color: var(--ink); }
+  .pk-tab.is-cur { color: var(--accent); border-bottom-color: var(--accent); }
   .pk-list { list-style: none; margin: 0 auto; padding: 0; max-width: 840px; display: grid; gap: 28px; }
   .pk-item { padding-bottom: 28px; border-bottom: 1px solid var(--hairline); }
   .pk-title { display: block; font-size: 1.3rem; font-weight: 800; letter-spacing: -0.02em; color: var(--ink); margin-bottom: 6px; }
