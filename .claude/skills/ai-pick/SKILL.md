@@ -21,6 +21,20 @@ description: 사용자가 링크(GitHub 저장소, AI 뉴스, 블로그, 논문)
 | GeekNews | https://news.hada.io/rss/news → https://feeds.feedburner.com/geeknews-feed (웹 페이지는 403) | ✅ RSS (Atom) |
 | Oracle 블로그 | blogs.oracle.com (Akamai 403) | ❌ 사이트가 봇 차단 |
 
+## DB 탭 (2026-11-09 추가)
+피드는 AI 탭과 DB 탭 두 개예요. frontmatter `topic: ai | db`로 나누고, 빠뜨리면 ai예요.
+- **DB 탭에 올릴 것**: AI와 상관없어도 DBA 실무에 바로 쓸 만한 DB 도구·확장·운영 소식 (마스킹, 모니터링, 백업, 마이그레이션, 성능 도구, 새 버전의 운영 영향 등). 홍보성 유료 제품 소개는 제외
+- **DB 출처**
+  | 출처 | 읽을 주소 | 상태 |
+  |---|---|---|
+  | PostgreSQL 뉴스 | https://www.postgresql.org/news.rss (AI가 아니어도 됨) | ✅ |
+  | GitHub | 검색 API `topic:<주제>+created:>YYYY-MM-DD+stars:>=100` (주제: database, postgresql, mysql, oracle-database, sql, dba / 최근 14일) | ✅ API |
+  | GeekNews, AI 타임스 | DB 관련 글만 (원문을 읽을 수 있을 때) | ✅ |
+  | Planet PostgreSQL, MySQL, MariaDB, Percona, DuckDB 블로그 | 이 세션 네트워크에서 막힘 (2026-11-09 확인) | ❌ |
+- **개수**: AI 1~3개와 별도로 DB 0~2개. 볼 만한 게 없으면 0개
+- **GitHub 기준**: DB 도구는 별이 적은 경우가 많아, 공식 뉴스(PostgreSQL 뉴스 등)에 소개된 저장소는 별 수와 관계없이 후보. 그 밖에는 별 100개 이상, LICENSE 필수
+- 요약 3단 구성과 저작권 규칙은 AI 탭과 같아요. 예시: `src/content/picks/brume.md`
+
 ## 순서
 1. **저작권 확인 먼저**
    - 원문 본문을 복사해 붙이지 않는다. `original`에는 원문이 스스로 공개한 **한 줄 설명**(GitHub 저장소 설명, og:description)만 그대로 넣는다.
