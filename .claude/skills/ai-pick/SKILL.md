@@ -30,8 +30,14 @@ description: 사용자가 링크(GitHub 저장소, AI 뉴스, 블로그, 논문)
   | PostgreSQL 뉴스 | https://www.postgresql.org/news.rss (AI가 아니어도 됨) | ✅ |
   | GitHub | 검색 API `topic:<주제>+created:>YYYY-MM-DD+stars:>=100` (주제: database, postgresql, mysql, oracle-database, sql, dba / 최근 14일) | ✅ API |
   | GeekNews, AI 타임스 | DB 관련 글만 (원문을 읽을 수 있을 때) | ✅ |
-  | Planet PostgreSQL, MySQL, MariaDB, Percona, DuckDB 블로그 | 이 세션 네트워크에서 막힘 (2026-11-09 확인) | ❌ |
+  | Planet MySQL | https://planet.mysql.com/rss20.xml (MySQL 블로그 모음) | ✅ 2026-11-10 환경 'Homepage'에서 허용 |
+  | Percona 블로그 | https://www.percona.com/blog/feed/ (MySQL, PostgreSQL, MongoDB 운영) | ✅ |
+  | MariaDB | https://mariadb.org/feed/ | ✅ |
+  | ORACLE-BASE (Tim Hall) | https://oracle-base.com/blog/feed/ (Oracle 새 기능, 운영 팁) | ✅ |
+  | Oracle 공식 블로그 | blogs.oracle.com (사이트 방화벽 403) | ❌ |
+  | Planet PostgreSQL, DuckDB 블로그 | 네트워크에서 막힘 | ❌ |
 - **개수**: AI 1~3개와 별도로 DB 0~2개. 볼 만한 게 없으면 0개
+- **고르게**: PostgreSQL에만 몰리지 않게 Oracle, MySQL·MariaDB 소식을 먼저 살펴보고, 같은 DB가 며칠 연속이면 다른 DB를 우선
 - **GitHub 기준**: DB 도구는 별이 적은 경우가 많아, 공식 뉴스(PostgreSQL 뉴스 등)에 소개된 저장소는 별 수와 관계없이 후보. 그 밖에는 별 100개 이상, LICENSE 필수
 - 요약 3단 구성과 저작권 규칙은 AI 탭과 같아요. 예시: `src/content/picks/brume.md`
 
