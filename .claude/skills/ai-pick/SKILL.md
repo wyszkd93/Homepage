@@ -10,12 +10,11 @@ description: 사용자가 링크(GitHub 저장소, AI 뉴스, 블로그, 논문)
 ## 자동 수집 출처 (2026-11-03 접속 확인)
 | 출처 | 읽을 주소 | 상태 |
 |---|---|---|
-| AI 타임스 | https://www.aitimes.com/rss/allArticle.xml , https://www.aitimes.com/news/articleList.html?sc_section_code=S1N24&view_type=sm | ✅ (robots: /admin/만 금지) |
+| AI 타임스 | https://www.aitimes.com/rss/allArticle.xml . 기사 썸네일 호스트 `cdn.aitimes.com` 허용됨(2026-11-12) → 뉴스 픽은 og:image를 card.image에 넣음 | ✅ |
 | Anthropic | https://www.anthropic.com/news | ✅ |
 | OpenAI | https://openai.com/news/rss.xml (웹 페이지는 봇 차단 403 → 본문을 못 읽으면 올리지 않음) | ✅ RSS |
 | Google DeepMind | https://deepmind.google/blog/rss.xml (gzip으로 와요: `curl --compressed`), https://deepmind.google/blog/ | ✅ |
 | Meta AI | https://ai.meta.com/blog/ | ✅ |
-| ZDNet Korea | https://zdnet.co.kr/feed/article_list.xml (RSS가 아니라 sitemap 형식: `<url><loc>`) | ✅ (robots: /Include2/user/, /Contents/ 금지) |
 | PostgreSQL | https://www.postgresql.org/news.rss | ✅ |
 | GitHub 새 인기 저장소 | `https://api.github.com/search/repositories?q=topic:<주제>+created:>YYYY-MM-DD+stars:>=200&sort=stars&order=desc&per_page=10` (주제: llm, ai-agent, mcp, claude, rag, vector-database, text-to-sql / 최근 7일) — trending 웹은 403 | ✅ API (비로그인 분당 10회 제한) |
 | GeekNews | https://news.hada.io/rss/news → https://feeds.feedburner.com/geeknews-feed (웹 페이지는 403) | ✅ RSS (Atom) |
@@ -30,12 +29,12 @@ description: 사용자가 링크(GitHub 저장소, AI 뉴스, 블로그, 논문)
   | PostgreSQL 뉴스 | https://www.postgresql.org/news.rss (AI가 아니어도 됨) | ✅ |
   | GitHub | 검색 API `topic:<주제>+created:>YYYY-MM-DD+stars:>=100` (주제: database, postgresql, mysql, oracle-database, sql, dba / 최근 14일) | ✅ API |
   | GeekNews, AI 타임스 | DB 관련 글만 (원문을 읽을 수 있을 때) | ✅ |
-  | Planet MySQL | https://planet.mysql.com/rss20.xml (MySQL 블로그 모음) | ✅ 2026-11-10 환경 'Homepage'에서 허용 |
+  | Planet MySQL | https://planet.mysql.com/rss20.xml (MySQL 블로그 모음, 피드에 `content:encoded` 본문 포함 → 외부 블로그가 막혀도 피드 본문으로 요약 가능) | ✅ |
   | Percona 블로그 | https://www.percona.com/blog/feed/ (MySQL, PostgreSQL, MongoDB 운영) | ✅ |
   | MariaDB | https://mariadb.org/feed/ | ✅ |
-  | ORACLE-BASE (Tim Hall) | https://oracle-base.com/blog/feed/ (Oracle 새 기능, 운영 팁) | ✅ |
-  | Oracle 공식 블로그 | blogs.oracle.com (사이트 방화벽 403) | ❌ |
-  | Planet PostgreSQL, DuckDB 블로그 | 네트워크에서 막힘 | ❌ |
+  | ORACLE-BASE (Tim Hall) | https://oracle-base.com/blog/feed/ (Oracle 새 기능, 운영 팁. Oracle 공식 블로그 blogs.oracle.com은 늘 403이라 Oracle은 여기와 GitHub 위주) | ✅ |
+  | Planet PostgreSQL | https://planet.postgresql.org/rss20.xml (PostgreSQL 블로그 모음) | ✅ 2026-11-12 허용 |
+  | 막힘 | blogs.oracle.com(방화벽 403), DuckDB 블로그, Planet이 링크하는 개인 블로그 상당수(blogspot 등, 허용 목록에 없음). 개인 블로그가 막히면 Planet 피드의 본문/요약으로 판단하고, 그래도 부족하면 건너뜀 | ❌ |
 - **개수**: AI 1~3개와 별도로 DB 0~2개. 볼 만한 게 없으면 0개
 - **고르게**: PostgreSQL에만 몰리지 않게 Oracle, MySQL·MariaDB 소식을 먼저 살펴보고, 같은 DB가 며칠 연속이면 다른 DB를 우선
 - **GitHub 기준**: DB 도구는 별이 적은 경우가 많아, 공식 뉴스(PostgreSQL 뉴스 등)에 소개된 저장소는 별 수와 관계없이 후보. 그 밖에는 별 100개 이상, LICENSE 필수
