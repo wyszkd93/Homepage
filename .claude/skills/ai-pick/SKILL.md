@@ -34,6 +34,7 @@ description: 사용자가 링크(GitHub 저장소, AI 뉴스, 블로그, 논문)
   | MariaDB | https://mariadb.org/feed/ | ✅ |
   | ORACLE-BASE (Tim Hall) | https://oracle-base.com/blog/feed/ (Oracle 새 기능, 운영 팁. Oracle 공식 블로그 blogs.oracle.com은 늘 403이라 Oracle은 여기와 GitHub 위주) | ✅ |
   | Planet PostgreSQL | https://planet.postgresql.org/rss20.xml (PostgreSQL 블로그 모음) | ✅ 2026-11-12 허용 |
+  | CortexRidge (Dinesh Kumar) | https://cortexridge.com/blog/ (PostgreSQL·MySQL·Mongo 운영 사례. Planet PostgreSQL이 자주 링크) | ✅ 2026-11-15 허용 |
   | 막힘 | blogs.oracle.com(방화벽 403), DuckDB 블로그, Planet이 링크하는 개인 블로그 상당수(blogspot 등, 허용 목록에 없음). 개인 블로그가 막히면 Planet 피드의 본문/요약으로 판단하고, 그래도 부족하면 건너뜀 | ❌ |
 - **개수**: AI 1~3개와 별도로 DB 0~2개. 볼 만한 게 없으면 0개
 - **고르게**: PostgreSQL에만 몰리지 않게 Oracle, MySQL·MariaDB 소식을 먼저 살펴보고, 같은 DB가 며칠 연속이면 다른 DB를 우선
