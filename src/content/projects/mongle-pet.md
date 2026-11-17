@@ -1,7 +1,7 @@
 ---
 title: "몽글이 키우기"
 description: "알에서 깨어난 도트 펫을 돌보고 키우는 가상 펫 게임 — PWA 설치·클라우드 저장·30종 진화 도감"
-date: 2026-11-17
+date: 2026-11-03
 repo: "https://github.com/wyszkd93/game"
 demo: "https://mongle-pet.netlify.app"
 tech: [JavaScript, HTML, PWA, Firebase, Netlify]
