@@ -5,7 +5,7 @@ date: 2026-11-17
 repo: "https://github.com/wyszkd93/CLAUDE/tree/add-metric-checkboard/eai-upsert-generator"
 tech: [Python, PostgreSQL, SQL, CLI]
 tags: [EAI, SQL, 자동화, PostgreSQL]
-status: active
+status: done
 summary: "EAI 연동으로 받는 데이터를 PostgreSQL UPSERT(INSERT … ON CONFLICT DO UPDATE) 문으로 자동 생성하는 스크립트예요. 컬럼 목록(TSV)만 주면, 정해진 포맷 규칙을 그대로 지켜 수백 컬럼짜리도 한 번에 찍어 줘요."
 motivation: "EAI 수신 인터페이스는 컬럼이 수십에서 수백 개까지 가는데, 이걸 손으로 UPSERT 문으로 옮기면 컬럼 하나 빠뜨리거나 콤마·들여쓰기가 틀어지기 쉬워요. 게다가 선행 콤마, 바인드 변수는 대문자, 문장 끝 세미콜론 금지, PK도 갱신 절에 포함 같은 규칙을 매번 똑같이 지켜야 하고요. 그래서 컬럼 목록만 넣으면 규칙을 그대로 지켜 SQL을 만들어 주는 생성기를 만들었어요."
 features:
