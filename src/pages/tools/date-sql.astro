@@ -11,45 +11,38 @@ import Base from '../../layouts/Base.astro';
   <div class="tool-panel">
     <h2>설정</h2>
 
-    <div class="ds-field">
+    <div class="ds-grid">
       <label for="ds-col">컬럼명</label>
       <input id="ds-col" class="tool-input tool-mono ds-col" value="REG_DT" autocomplete="off" spellcheck="false" />
-    </div>
 
-    <div class="ds-field">
       <span class="ds-label">컬럼 타입</span>
       <div class="ds-seg" role="group" aria-label="컬럼 타입">
         <button type="button" class="ds-seg-btn" data-type="date" aria-pressed="true">DATE 타입</button>
         <button type="button" class="ds-seg-btn" data-type="varchar" aria-pressed="false">문자(VARCHAR) 저장</button>
       </div>
-    </div>
 
-    <div class="ds-field" id="ds-fmt-wrap" hidden>
-      <label for="ds-fmt">저장 형식</label>
-      <select id="ds-fmt" class="tool-select">
+      <label for="ds-fmt" id="ds-fmt-label" hidden>저장 형식</label>
+      <select id="ds-fmt" class="tool-select" hidden>
         <option value="YYYYMMDD">YYYYMMDD (예: 20261117)</option>
         <option value="YYYYMMDDHH24MISS">YYYYMMDDHH24MISS (예: 20261117091500)</option>
         <option value="YYYY-MM-DD">YYYY-MM-DD (예: 2026-11-17)</option>
         <option value="YYYY-MM-DD HH24:MI:SS">YYYY-MM-DD HH24:MI:SS</option>
       </select>
-    </div>
 
-    <div class="ds-field">
       <span class="ds-label">조회 범위</span>
       <div class="ds-seg" role="group" aria-label="조회 범위">
         <button type="button" class="ds-seg-btn ds-range" data-range="day" aria-pressed="true">하루</button>
         <button type="button" class="ds-seg-btn ds-range" data-range="period" aria-pressed="false">기간</button>
       </div>
-    </div>
 
-    <div class="ds-field ds-dates">
-      <div>
-        <label for="ds-d1" id="ds-d1-label">날짜</label>
-        <input id="ds-d1" class="tool-input tool-mono" type="date" />
-      </div>
-      <div id="ds-d2-wrap" hidden>
-        <label for="ds-d2">~ 끝 날짜</label>
-        <input id="ds-d2" class="tool-input tool-mono" type="date" />
+      <span class="ds-label" id="ds-d1-label">날짜</span>
+      <div class="ds-dates">
+        <input id="ds-d1" class="tool-input tool-mono ds-date" type="date" />
+        <span class="ds-sep" id="ds-d2-wrap" hidden>
+          <span class="ds-tilde" aria-hidden="true">~</span>
+          <label for="ds-d2" class="visually-hidden">끝 날짜</label>
+          <input id="ds-d2" class="tool-input tool-mono ds-date" type="date" />
+        </span>
       </div>
     </div>
   </div>
@@ -87,7 +80,7 @@ import Base from '../../layouts/Base.astro';
 <script>
   const $ = (id: string) => document.getElementById(id)!;
   const colEl = $('ds-col') as HTMLInputElement;
-  const fmtWrap = $('ds-fmt-wrap');
+  const fmtLabel = $('ds-fmt-label');
   const fmtEl = $('ds-fmt') as HTMLSelectElement;
   const d1El = $('ds-d1') as HTMLInputElement;
   const d2El = $('ds-d2') as HTMLInputElement;
@@ -191,7 +184,8 @@ import Base from '../../layouts/Base.astro';
         document.querySelectorAll<HTMLButtonElement>('[data-type]').forEach((x) =>
           x.setAttribute('aria-pressed', String(x === b)),
         );
-        fmtWrap.hidden = type !== 'varchar';
+        fmtLabel.hidden = type !== 'varchar';
+        fmtEl.hidden = type !== 'varchar';
       } else if (b.dataset.range) {
         range = b.dataset.range as 'day' | 'period';
         document.querySelectorAll<HTMLButtonElement>('.ds-range').forEach((x) =>
@@ -234,15 +228,23 @@ import Base from '../../layouts/Base.astro';
 </script>
 
 <style>
-  .ds-field { margin-bottom: 16px; }
-  .ds-field > label, .ds-label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; }
-  .ds-col { width: 100%; max-width: 320px; font-size: 1.1rem; padding: 9px 13px; }
-  .tool-select { font: inherit; font-size: 0.95rem; padding: 9px 12px; border-radius: 10px; border: 1px solid var(--hairline); background: var(--surface-2); color: var(--ink); cursor: pointer; }
-  .ds-seg { display: inline-flex; gap: 4px; padding: 4px; border: 1px solid var(--hairline); border-radius: 12px; background: var(--surface-2); flex-wrap: wrap; }
+  .ds-grid { display: grid; grid-template-columns: max-content 1fr; gap: 16px 20px; align-items: center; }
+  .ds-grid > label, .ds-grid > .ds-label { margin: 0; font-size: 0.9rem; font-weight: 600; color: var(--text-muted); text-align: right; white-space: nowrap; }
+  .ds-col { width: 100%; max-width: 300px; font-size: 1.1rem; padding: 9px 13px; }
+  .tool-select { justify-self: start; font: inherit; font-size: 0.95rem; padding: 9px 12px; border-radius: 10px; border: 1px solid var(--hairline); background: var(--surface-2); color: var(--ink); cursor: pointer; }
+  .ds-seg { justify-self: start; display: inline-flex; gap: 4px; padding: 4px; border: 1px solid var(--hairline); border-radius: 12px; background: var(--surface-2); flex-wrap: wrap; }
   .ds-seg-btn { font: inherit; font-size: 0.9rem; font-weight: 600; cursor: pointer; padding: 7px 16px; border: 0; border-radius: 9px; background: none; color: var(--text-muted); }
   .ds-seg-btn[aria-pressed='true'] { background: var(--surface-1); color: var(--accent); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
-  .ds-dates { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end; }
-  .ds-dates input { font-size: 1rem; padding: 8px 12px; }
+  .ds-dates { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .ds-sep { display: inline-flex; gap: 12px; align-items: center; }
+  .ds-sep[hidden] { display: none; }
+  .ds-tilde { color: var(--text-muted); }
+  .ds-date { font-size: 1rem; padding: 8px 12px; }
+  @media (max-width: 560px) {
+    .ds-grid { grid-template-columns: 1fr; gap: 6px; }
+    .ds-grid > label, .ds-grid > .ds-label { text-align: left; margin-top: 10px; }
+    .ds-grid > label:first-child, .ds-grid > .ds-label:first-of-type { margin-top: 0; }
+  }
   .ds-out { display: flex; gap: 10px; align-items: flex-start; }
   .ds-sql { flex: 1; margin: 0; padding: 14px 16px; border: 1px solid var(--hairline); border-radius: 10px; background: var(--surface-1); color: var(--ink); font-size: 1rem; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
   .ds-help { margin: 0; padding-left: 1.2em; font-size: 0.9rem; line-height: 1.9; color: var(--text-muted); }
