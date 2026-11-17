@@ -24,9 +24,15 @@ notes:
 
 ## 해보기
 
-바로 플레이: **[mongle-pet.netlify.app](https://mongle-pet.netlify.app)** — 휴대폰에서 열고 "홈 화면에 추가"를 하면 앱처럼 설치돼요(아이폰 Safari 공유 → 홈 화면에 추가 / 안드로이드 Chrome 메뉴 → 앱 설치).
+<p class="play-cta"><a href="https://mongle-pet.netlify.app" target="_blank" rel="noopener noreferrer">▶ 바로 플레이하기</a></p>
 
-처음 시작할 때 고양이·강아지·곰·여우·판다·너구리 중 하나를 골라 이름을 지어 주면 알에서 깨어나요. 로그인은 선택이고, 안 해도 그 기기에 저장돼요.
+휴대폰에서 열고 "홈 화면에 추가"를 하면 앱처럼 설치돼요 — 아이폰은 Safari 공유 → 홈 화면에 추가, 안드로이드는 Chrome 메뉴 → 앱 설치. 로그인은 선택이라, 안 해도 그 기기에 저장돼요.
 
-- 기술: 프레임워크 없는 바닐라 JavaScript 게임, PWA(서비스 워커·오프라인 캐시), 로그인·클라우드 저장은 Firebase(Auth·Firestore), 카카오 로그인은 Netlify 함수로 토큰 교환
-- 폰트: 도트 폰트 Galmuri11 (OFL-1.1)
+처음 시작할 때 친구 하나를 골라 이름을 지어 주면 알에서 깨어나요.
+
+<p class="friends"><span>🐱 고양이</span><span>🐶 강아지</span><span>🐻 곰</span><span>🦊 여우</span><span>🐼 판다</span><span>🦝 너구리</span></p>
+
+<div class="buildbox">
+<b>기술</b> &middot; 프레임워크 없는 바닐라 JavaScript, PWA(서비스 워커·오프라인 캐시), 로그인·클라우드 저장은 Firebase(Auth·Firestore), 카카오 로그인은 Netlify 함수로 토큰 교환<br>
+<b>폰트</b> &middot; 도트 폰트 Galmuri11 (OFL-1.1)
+</div>
