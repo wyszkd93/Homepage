@@ -2,10 +2,17 @@
 import Base from '../layouts/Base.astro';
 import { PROFILE } from '../consts';
 import { Image } from 'astro:assets';
+import { getCollection } from 'astro:content';
+import { url } from '../utils/url';
 import mogu from '../assets/mogu.webp';
 
 // ✏️ 소개 페이지 문구는 여기서 수정합니다. (관심 분야·기술 스택·링크는 src/consts.ts의 PROFILE)
 const blogNotes = ['직접 해 본 것만', '다시 찾기 쉽게', '오픈소스 DB도 곧'];
+
+const projects = (await getCollection('projects'))
+  .filter((p) => !p.data.draft)
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+const STATUS: Record<string, string> = { active: '진행 중', done: '완료' };
 ---
 
 <Base title="소개" description="Oracle DBA 모구(mogu)를 소개합니다.">
@@ -62,6 +69,29 @@ const blogNotes = ['직접 해 본 것만', '다시 찾기 쉽게', '오픈소�
         </li>
       </ul>
     </section>
+
+    {projects.length > 0 && (
+      <section class="proj" aria-labelledby="proj-title">
+        <h2 id="proj-title" class="board-title">만든 것들</h2>
+        <ul class="proj-list">
+          {projects.map((p) => (
+            <li>
+              <a class="proj-card" href={url(`/projects/${p.id}/`)}>
+                <div class="proj-head">
+                  <h3>{p.data.title}</h3>
+                  <span class:list={['proj-badge', p.data.status]}>{STATUS[p.data.status] ?? p.data.status}</span>
+                </div>
+                <p class="proj-desc">{p.data.description}</p>
+                {p.data.tech.length > 0 && (
+                  <p class="proj-tech">{p.data.tech.map((t) => <span>{t}</span>)}</p>
+                )}
+              </a>
+            </li>
+          ))}
+        </ul>
+        <p class="proj-more"><a href={url('/projects/')}>프로젝트 전체 보기 →</a></p>
+      </section>
+    )}
 
     <p class="sign">오늘도 데이터가 무사하길 바라며, 모구 🐶</p>
   </div>
@@ -239,6 +269,62 @@ const blogNotes = ['직접 해 본 것만', '다시 찾기 쉽게', '오픈소�
     color: var(--ink-muted);
     background: var(--surface-2);
   }
+
+  /* 프로젝트 */
+  .proj { margin-top: 72px; }
+  .proj-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+  }
+  .proj-list > li { margin: 0; }
+  .proj-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    height: 100%;
+    padding: 20px;
+    border-radius: 18px;
+    background: var(--surface-1);
+    border: 1px solid var(--hairline);
+    color: inherit;
+    text-decoration: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+  .proj-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--link);
+    box-shadow: var(--shadow);
+  }
+  .proj-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+  .proj-head h3 { margin: 0; font-size: 1.02rem; font-weight: 700; letter-spacing: -0.01em; line-height: 1.35; word-break: keep-all; }
+  .proj-badge {
+    flex: none;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .proj-badge.active { color: #1f6f4a; background: #d9f0e3; }
+  .proj-badge.done { color: #4b5563; background: #e5e7eb; }
+  :global(:root[data-theme='dark']) .proj-badge.active { color: #8ce0b3; background: #15372a; }
+  :global(:root[data-theme='dark']) .proj-badge.done { color: #cbd5e1; background: #2a2f3a; }
+  .proj-desc { margin: 0; font-size: 0.875rem; line-height: 1.6; color: var(--text-muted); word-break: keep-all; }
+  .proj-tech { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
+  .proj-tech span {
+    font-size: 0.76rem;
+    padding: 3px 9px;
+    border-radius: 7px;
+    color: var(--ink-muted);
+    background: var(--surface-2);
+  }
+  .proj-more { margin: 16px 2px 0; text-align: right; font-size: 0.9rem; font-weight: 600; }
+  .proj-more a { color: var(--link); text-decoration: none; }
+  .proj-more a:hover { text-decoration: underline; }
 
   .sign {
     font-family: var(--hand);

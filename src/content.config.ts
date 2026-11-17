@@ -54,10 +54,20 @@ const projects = defineCollection({
     date: z.coerce.date(), // 공개(또는 갱신)한 날
     repo: z.string().url().optional(), // 소스 저장소 주소
     demo: z.string().url().optional(), // 데모·실행 주소(있으면)
+    pdf: z.string().url().optional(), // 소개서(PDF) 주소(있으면)
     tech: z.array(z.string()).default([]), // 기술 스택 (예: Python, CLI)
     tags: z.array(z.string()).default([]),
     status: z.enum(['active', 'done']).default('active'), // 진행 중 | 완료
-    cover: z.string().optional(), // 대표 이미지(스크린샷) /public 기준 경로
+    cover: z.string().optional(), // 상단 대표 이미지 /public 기준 경로
+    shot: z.string().optional(), // 본문 중간 스크린샷 /public 기준 경로
+    summary: z.string().optional(), // 상단 리드 한두 문장
+    motivation: z.string().optional(), // "왜 만들었나" 박스 본문
+    features: z // "주요 기능" 카드 그리드
+      .array(z.object({ icon: z.string().optional(), title: z.string(), desc: z.string() }))
+      .default([]),
+    notes: z // "기술적으로 고민한 점" 박스 묶음
+      .array(z.object({ title: z.string(), desc: z.string() }))
+      .default([]),
     draft: z.boolean().default(false),
   }),
 });
