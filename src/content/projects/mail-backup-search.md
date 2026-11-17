@@ -5,7 +5,7 @@ date: 2026-11-17
 repo: "https://github.com/wyszkd93/X-unit-portfolio/tree/EMAIL"
 tech: [Python, SQLite, "표준 라이브러리만", "Vanilla JS", Windows]
 tags: [이메일, 로컬앱, 검색, 프라이버시]
-status: done
+status: active
 ---
 
 회사에서 매달 받는 **메일 백업 zip**을 압축을 풀지 않고 바로 검색하는 윈도우용 로컬 웹 앱이에요. 파이썬 표준 라이브러리만 써서 만들었고, 파이썬이 안 깔린 PC에서도 zip을 풀고 더블클릭하면 실행돼요. 메일 내용이 담긴 파일이라 **어떤 데이터도 밖으로 내보내지 않는 것**을 최우선으로 설계했어요.
