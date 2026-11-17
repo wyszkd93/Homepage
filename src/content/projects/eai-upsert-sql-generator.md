@@ -21,21 +21,14 @@ notes:
 
 ## 써 보기
 
-컬럼 목록 TSV(`name` / `pk` / `type`)를 주고, `--db`와 `--mode`만 바꾸면 돼요.
+컬럼 목록 TSV(`name` / `pk` / `type`) 한 장을 주고, `--db`(postgres·oracle·mysql)와 `--mode`(recv 수신·send 송신)만 바꾸면 돼요.
 
 ```bash
-# 수신(UPSERT)
 python generate_sql.py --db oracle --mode recv \
-  --table IF_SAMPLE --input cols.tsv --out out.sql
-
-# 송신(SELECT)
-python generate_sql.py --db oracle --mode send \
   --table IF_SAMPLE --input cols.tsv --out out.sql
 ```
 
-`--db` 는 `postgres` · `oracle` · `mysql`, `--mode` 는 `recv`(수신) · `send`(송신)이에요.
-
-같은 입력에서 **Oracle 수신**은 이런 블록이 나와요:
+### 생성 결과 — Oracle 수신(UPSERT)
 
 ```sql
 BEGIN
@@ -66,7 +59,9 @@ BEGIN
 END;
 ```
 
-**송신(SELECT)**은 DATE를 전송용 문자열로 바꿔 내보내요:
+### 생성 결과 — 송신(SELECT)
+
+DATE는 전송용 문자열로 바꿔 내보내요.
 
 ```sql
 SELECT
