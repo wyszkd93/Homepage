@@ -1,7 +1,7 @@
 ---
 title: "EAI 송수신 SQL 생성기"
 description: "컬럼·PK·타입만 주면, 이기종 DB(PostgreSQL·Oracle·MySQL)의 송신(SELECT)·수신(UPSERT) SQL을 자동 생성하는 스크립트"
-date: 2026-11-17
+date: 2026-08-20
 repo: "https://github.com/wyszkd93/CLAUDE/tree/add-metric-checkboard/eai-upsert-generator"
 tech: [Python, PostgreSQL, Oracle, MySQL, SQL, CLI]
 tags: [EAI, SQL, 자동화, 이기종DB]
@@ -21,17 +21,19 @@ notes:
 
 ## 써 보기
 
-컬럼 목록 TSV(`name` / `pk`(Y·N) / `type`(DATE만 표시))를 주고, `--db`와 `--mode`만 바꾸면 돼요.
+컬럼 목록 TSV(`name` / `pk` / `type`)를 주고, `--db`와 `--mode`만 바꾸면 돼요.
 
 ```bash
-# 수신(UPSERT) — DB별
-python generate_sql.py --db postgres --mode recv --table public.eai_sample --input examples/sample_input.tsv --out output/recv_postgres.sql
-python generate_sql.py --db oracle   --mode recv --table IF_SAMPLE         --input examples/sample_input.tsv --out output/recv_oracle.sql
-python generate_sql.py --db mysql    --mode recv --table eai_sample        --input examples/sample_input.tsv --out output/recv_mysql.sql
+# 수신(UPSERT)
+python generate_sql.py --db oracle --mode recv \
+  --table IF_SAMPLE --input cols.tsv --out out.sql
 
 # 송신(SELECT)
-python generate_sql.py --db oracle   --mode send --table IF_SAMPLE         --input examples/sample_input.tsv --out output/send_oracle.sql
+python generate_sql.py --db oracle --mode send \
+  --table IF_SAMPLE --input cols.tsv --out out.sql
 ```
+
+`--db` 는 `postgres` · `oracle` · `mysql`, `--mode` 는 `recv`(수신) · `send`(송신)이에요.
 
 같은 입력에서 **Oracle 수신**은 이런 블록이 나와요:
 
