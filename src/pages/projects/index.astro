@@ -5,7 +5,7 @@ import { url, formatDate } from '../../utils/url';
 
 const projects = (await getCollection('projects'))
   .filter((p) => !p.data.draft)
-  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+  .sort((a, b) => a.data.date.valueOf() - b.data.date.valueOf());
 
 const STATUS: Record<string, string> = { active: '진행 중', done: '완료' };
 
