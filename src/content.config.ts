@@ -45,4 +45,21 @@ const picks = defineCollection({
   }),
 });
 
-export const collections = { blog, picks };
+// 프로젝트: 직접 만든 단위 프로젝트(도구·실험)를 카드+상세 페이지로 소개
+const projects = defineCollection({
+  loader: glob({ base: './src/content/projects', pattern: '**/*.md' }),
+  schema: z.object({
+    title: z.string(),
+    description: z.string(), // 카드·메타에 쓰는 한 줄 설명
+    date: z.coerce.date(), // 공개(또는 갱신)한 날
+    repo: z.string().url().optional(), // 소스 저장소 주소
+    demo: z.string().url().optional(), // 데모·실행 주소(있으면)
+    tech: z.array(z.string()).default([]), // 기술 스택 (예: Python, CLI)
+    tags: z.array(z.string()).default([]),
+    status: z.enum(['active', 'done']).default('active'), // 진행 중 | 완료
+    cover: z.string().optional(), // 대표 이미지(스크린샷) /public 기준 경로
+    draft: z.boolean().default(false),
+  }),
+});
+
+export const collections = { blog, picks, projects };

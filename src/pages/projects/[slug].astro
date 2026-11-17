@@ -1,0 +1,68 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import { url, formatDate } from '../../utils/url';
+
+export async function getStaticPaths() {
+  const projects = await getCollection('projects');
+  return projects
+    .filter((p) => !p.data.draft)
+    .map((project) => ({ params: { slug: project.id }, props: { project } }));
+}
+
+const { project } = Astro.props;
+const { Content } = await render(project);
+const d = project.data;
+
+const STATUS: Record<string, string> = { active: '진행 중', done: '완료' };
+---
+
+<Base title={d.title} description={d.description} narrow article={{ published: d.date, tags: d.tags, section: '프로젝트' }}>
+  <article class="pj-detail">
+    <a class="pj-back" href={url('/projects/')}>← 프로젝트 목록으로</a>
+    <div class="pj-head">
+      <h1 class="pj-h1">{d.title}</h1>
+      <span class:list={['pj-status', d.status]}>{STATUS[d.status] ?? d.status}</span>
+    </div>
+    <p class="pj-sub">{d.description}</p>
+    <p class="pj-meta">
+      {d.tech.map((t) => <span class="pj-chip">{t}</span>)}
+      <time datetime={d.date.toISOString()}>{formatDate(d.date)}</time>
+    </p>
+    {(d.repo || d.demo) && (
+      <p class="pj-links">
+        {d.repo && <a href={d.repo} target="_blank" rel="noopener noreferrer">소스 보기 ↗</a>}
+        {d.demo && <a href={d.demo} target="_blank" rel="noopener noreferrer">데모 ↗</a>}
+      </p>
+    )}
+
+    <div class="pj-body"><Content /></div>
+  </article>
+</Base>
+
+<style>
+  .pj-detail { padding-top: 24px; }
+  .pj-back { font-size: 0.9rem; color: var(--text-muted); }
+  .pj-head { display: flex; align-items: center; gap: 12px; margin: 14px 0 8px; flex-wrap: wrap; }
+  .pj-h1 { margin: 0; font-size: clamp(1.5rem, 4.5vw, 2rem); font-weight: 800; line-height: 1.35; letter-spacing: -0.03em; word-break: keep-all; }
+  .pj-status { font-size: 0.74rem; font-weight: 700; padding: 2px 9px; border-radius: 999px; white-space: nowrap; }
+  .pj-status.active { color: #1f6f4a; background: #d9f0e3; }
+  .pj-status.done { color: #4b5563; background: #e5e7eb; }
+  :root[data-theme='dark'] .pj-status.active { color: #8ce0b3; background: #15372a; }
+  :root[data-theme='dark'] .pj-status.done { color: #cbd5e1; background: #2a2f3a; }
+  .pj-sub { margin: 0 0 14px; color: var(--text-muted); line-height: 1.7; word-break: keep-all; }
+  .pj-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 14px; font-size: 0.82rem; }
+  .pj-chip { color: var(--link); padding: 1px 8px; border-radius: 6px; background: var(--surface-2); }
+  .pj-meta time { color: var(--text-muted); }
+  .pj-links { display: flex; gap: 14px; margin: 0 0 24px; font-size: 0.9rem; font-weight: 700; }
+  .pj-links a { color: var(--link); text-decoration: none; }
+  .pj-links a:hover { text-decoration: underline; }
+  .pj-body { line-height: 1.85; word-break: keep-all; }
+  .pj-body :global(h2) { margin: 28px 0 12px; font-size: 1.25rem; font-weight: 800; }
+  .pj-body :global(h3) { margin: 22px 0 10px; font-size: 1.05rem; font-weight: 700; }
+  .pj-body :global(p) { margin: 0 0 12px; }
+  .pj-body :global(ul), .pj-body :global(ol) { margin: 0 0 12px; padding-left: 1.3em; }
+  .pj-body :global(li) { margin: 4px 0; }
+  .pj-body :global(code) { font-size: 0.9em; padding: 1px 5px; border-radius: 5px; background: var(--surface-1); }
+  .pj-body :global(img) { max-width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--hairline); }
+</style>
