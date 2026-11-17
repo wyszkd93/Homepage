@@ -1,0 +1,112 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+import { url, formatDate } from '../../utils/url';
+
+const projects = (await getCollection('projects'))
+  .filter((p) => !p.data.draft)
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+
+const STATUS: Record<string, string> = { active: '진행 중', done: '완료' };
+
+const tagline =
+  projects.length > 0
+    ? `프로젝트 ${projects.length}개 · 직접 만든 도구와 실험을 모아 둡니다.`
+    : '직접 만든 도구와 실험을 모아 둡니다.';
+---
+
+<Base
+  title="프로젝트"
+  description="모구가 직접 만든 단위 프로젝트 — 도구와 실험을 모아 둡니다."
+  heading="프로젝트"
+  tagline={tagline}
+>
+  {projects.length === 0 ? (
+    <div class="pj-empty">
+      <p class="pj-empty-emoji" aria-hidden="true">🧪</p>
+      <p class="pj-empty-title">곧 공개할 프로젝트를 준비 중이에요.</p>
+      <p class="pj-empty-sub">직접 만든 도구와 실험을 하나씩 정리해 올릴 예정이에요.</p>
+    </div>
+  ) : (
+    <ul class="pj-grid">
+      {projects.map((p) => (
+        <li class="pj-card">
+          <a class="pj-link" href={url(`/projects/${p.id}/`)}>
+            <div class="pj-top">
+              <h2 class="pj-title">{p.data.title}</h2>
+              <span class:list={['pj-status', p.data.status]}>{STATUS[p.data.status] ?? p.data.status}</span>
+            </div>
+            <p class="pj-desc">{p.data.description}</p>
+            {p.data.tech.length > 0 && (
+              <p class="pj-tech">{p.data.tech.map((t) => <span>{t}</span>)}</p>
+            )}
+            <time class="pj-date" datetime={p.data.date.toISOString()}>{formatDate(p.data.date)}</time>
+          </a>
+        </li>
+      ))}
+    </ul>
+  )}
+</Base>
+
+<style>
+  .pj-empty {
+    margin: 48px auto;
+    max-width: 480px;
+    text-align: center;
+    padding: 40px 24px;
+    border: 1px dashed var(--hairline);
+    border-radius: 16px;
+    background: var(--surface-1);
+  }
+  .pj-empty-emoji { margin: 0 0 12px; font-size: 2.4rem; line-height: 1; }
+  .pj-empty-title { margin: 0 0 6px; font-weight: 800; font-size: 1.05rem; }
+  .pj-empty-sub { margin: 0; color: var(--text-muted); font-size: 0.9rem; word-break: keep-all; }
+
+  .pj-grid {
+    list-style: none;
+    margin: 24px 0 0;
+    padding: 0;
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  }
+  .pj-card { margin: 0; }
+  .pj-link {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    height: 100%;
+    padding: 18px 20px;
+    border: 1px solid var(--hairline);
+    border-radius: 14px;
+    background: var(--surface-1);
+    color: inherit;
+    text-decoration: none;
+    transition: border-color 0.15s, transform 0.15s;
+  }
+  .pj-link:hover { border-color: var(--link); transform: translateY(-2px); }
+  .pj-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+  .pj-title { margin: 0; font-size: 1.05rem; font-weight: 800; line-height: 1.35; word-break: keep-all; }
+  .pj-status {
+    flex: none;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .pj-status.active { color: #1f6f4a; background: #d9f0e3; }
+  .pj-status.done { color: #4b5563; background: #e5e7eb; }
+  :root[data-theme='dark'] .pj-status.active { color: #8ce0b3; background: #15372a; }
+  :root[data-theme='dark'] .pj-status.done { color: #cbd5e1; background: #2a2f3a; }
+  .pj-desc { margin: 0; color: var(--text-muted); font-size: 0.9rem; line-height: 1.6; word-break: keep-all; }
+  .pj-tech { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
+  .pj-tech span {
+    font-size: 0.74rem;
+    color: var(--link);
+    padding: 1px 7px;
+    border-radius: 6px;
+    background: var(--surface-2);
+  }
+  .pj-date { margin-top: auto; font-size: 0.78rem; color: var(--text-muted); }
+</style>
