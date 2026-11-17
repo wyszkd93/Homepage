@@ -69,11 +69,11 @@ export const TOOLS: Tool[] = [
   },
   {
     kind: 'tool',
-    slug: 'epoch',
-    title: '에포크·시간 변환기',
-    description: 'Unix 타임스탬프와 날짜를 UTC·KST로 서로 바꿔요.',
-    color: '#2f7d9f',
-    icon: '<path d="M3 12a9 9 0 1 0 2.5-6.2"/><path d="M3 4v3.5h3.5"/><path d="M12 8v4.2l3 1.8"/>',
+    slug: 'date-sql',
+    title: '날짜 컬럼 조회',
+    description: 'DATE·문자 컬럼에 맞는 WHERE 조건과 TO_CHAR 표시를 만들어요.',
+    color: '#c98a12',
+    icon: '<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/><path d="M8 2v4M16 2v4"/><path d="M7.5 14h4M7.5 17.5h7"/>',
     added: '2026-11-17',
   },
   {
