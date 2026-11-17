@@ -57,6 +57,7 @@ const projects = defineCollection({
     pdf: z.string().url().optional(), // 소개서(PDF) 주소(있으면)
     tech: z.array(z.string()).default([]), // 기술 스택 (예: Python, CLI)
     tags: z.array(z.string()).default([]),
+    license: z.string().optional(), // 라이선스 (예: MIT)
     status: z.enum(['active', 'done']).default('active'), // 진행 중 | 완료
     cover: z.string().optional(), // 상단 대표 이미지 /public 기준 경로
     shot: z.string().optional(), // 본문 중간 스크린샷 /public 기준 경로
