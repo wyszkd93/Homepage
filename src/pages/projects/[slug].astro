@@ -24,16 +24,71 @@ const STATUS: Record<string, string> = { active: '진행 중', done: '완료' };
       <h1 class="pj-h1">{d.title}</h1>
       <span class:list={['pj-status', d.status]}>{STATUS[d.status] ?? d.status}</span>
     </div>
-    <p class="pj-sub">{d.description}</p>
+
+    {d.summary && <p class="pj-lead">{d.summary}</p>}
+
     <p class="pj-meta">
       {d.tech.map((t) => <span class="pj-chip">{t}</span>)}
       <time datetime={d.date.toISOString()}>{formatDate(d.date)}</time>
     </p>
-    {(d.repo || d.demo) && (
+
+    {(d.repo || d.demo || d.pdf) && (
       <p class="pj-links">
         {d.repo && <a href={d.repo} target="_blank" rel="noopener noreferrer">소스 보기 ↗</a>}
         {d.demo && <a href={d.demo} target="_blank" rel="noopener noreferrer">데모 ↗</a>}
+        {d.pdf && <a href={d.pdf} target="_blank" rel="noopener noreferrer">소개서 PDF ↗</a>}
       </p>
+    )}
+
+    {d.cover && (
+      <figure class="pj-shot">
+        <img src={url(d.cover)} alt={`${d.title} 메인 화면`} loading="lazy" />
+        <figcaption>화면은 모두 가상의 데모 데이터예요.</figcaption>
+      </figure>
+    )}
+
+    {d.motivation && (
+      <section class="pj-box pj-why">
+        <h2>왜 만들었나</h2>
+        <p>{d.motivation}</p>
+      </section>
+    )}
+
+    {d.features.length > 0 && (
+      <section class="pj-section">
+        <h2 class="pj-h2">주요 기능</h2>
+        <ul class="pj-feats">
+          {d.features.map((f) => (
+            <li class="pj-feat">
+              {f.icon && <span class="pj-feat-ic" aria-hidden="true">{f.icon}</span>}
+              <div>
+                <p class="pj-feat-t">{f.title}</p>
+                <p class="pj-feat-d">{f.desc}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
+
+    {d.shot && (
+      <figure class="pj-shot">
+        <img src={url(d.shot)} alt={`${d.title} 검색 화면`} loading="lazy" />
+      </figure>
+    )}
+
+    {d.notes.length > 0 && (
+      <section class="pj-section">
+        <h2 class="pj-h2">기술적으로 고민한 점</h2>
+        <div class="pj-notes">
+          {d.notes.map((n) => (
+            <div class="pj-note">
+              <p class="pj-note-t">{n.title}</p>
+              <p class="pj-note-d">{n.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
     )}
 
     <div class="pj-body"><Content /></div>
@@ -43,26 +98,55 @@ const STATUS: Record<string, string> = { active: '진행 중', done: '완료' };
 <style>
   .pj-detail { padding-top: 24px; }
   .pj-back { font-size: 0.9rem; color: var(--text-muted); }
-  .pj-head { display: flex; align-items: center; gap: 12px; margin: 14px 0 8px; flex-wrap: wrap; }
+  .pj-head { display: flex; align-items: center; gap: 12px; margin: 14px 0 10px; flex-wrap: wrap; }
   .pj-h1 { margin: 0; font-size: clamp(1.5rem, 4.5vw, 2rem); font-weight: 800; line-height: 1.35; letter-spacing: -0.03em; word-break: keep-all; }
   .pj-status { font-size: 0.74rem; font-weight: 700; padding: 2px 9px; border-radius: 999px; white-space: nowrap; }
   .pj-status.active { color: #1f6f4a; background: #d9f0e3; }
   .pj-status.done { color: #4b5563; background: #e5e7eb; }
   :root[data-theme='dark'] .pj-status.active { color: #8ce0b3; background: #15372a; }
   :root[data-theme='dark'] .pj-status.done { color: #cbd5e1; background: #2a2f3a; }
-  .pj-sub { margin: 0 0 14px; color: var(--text-muted); line-height: 1.7; word-break: keep-all; }
+
+  .pj-lead { margin: 0 0 16px; font-size: 1.08rem; line-height: 1.7; font-weight: 500; word-break: keep-all; }
   .pj-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 14px; font-size: 0.82rem; }
   .pj-chip { color: var(--link); padding: 1px 8px; border-radius: 6px; background: var(--surface-2); }
   .pj-meta time { color: var(--text-muted); }
-  .pj-links { display: flex; gap: 14px; margin: 0 0 24px; font-size: 0.9rem; font-weight: 700; }
+  .pj-links { display: flex; flex-wrap: wrap; gap: 14px; margin: 0 0 22px; font-size: 0.9rem; font-weight: 700; }
   .pj-links a { color: var(--link); text-decoration: none; }
   .pj-links a:hover { text-decoration: underline; }
-  .pj-body { line-height: 1.85; word-break: keep-all; }
-  .pj-body :global(h2) { margin: 28px 0 12px; font-size: 1.25rem; font-weight: 800; }
-  .pj-body :global(h3) { margin: 22px 0 10px; font-size: 1.05rem; font-weight: 700; }
+
+  .pj-shot { margin: 0 0 24px; }
+  .pj-shot img { display: block; max-width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--hairline); }
+  .pj-shot figcaption { margin-top: 8px; font-size: 0.78rem; color: var(--text-muted); text-align: center; }
+
+  .pj-h2 { margin: 0 0 14px; font-size: 1.2rem; font-weight: 800; letter-spacing: -0.02em; }
+  .pj-section { margin: 0 0 28px; }
+
+  /* 왜 만들었나 — 강조 박스 */
+  .pj-box { margin: 0 0 28px; padding: 20px 22px; border-radius: 14px; background: var(--surface-2); border-left: 4px solid var(--link); }
+  .pj-box h2 { margin: 0 0 8px; font-size: 1.1rem; font-weight: 800; }
+  .pj-box p { margin: 0; line-height: 1.8; word-break: keep-all; }
+
+  /* 주요 기능 — 카드 그리드 */
+  .pj-feats { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+  .pj-feat { display: flex; gap: 12px; padding: 16px; border-radius: 12px; background: var(--surface-1); border: 1px solid var(--hairline); }
+  .pj-feat-ic { flex: none; font-size: 1.3rem; line-height: 1.4; }
+  .pj-feat-t { margin: 0 0 4px; font-weight: 700; font-size: 0.95rem; word-break: keep-all; }
+  .pj-feat-d { margin: 0; font-size: 0.86rem; line-height: 1.55; color: var(--text-muted); word-break: keep-all; }
+
+  /* 고민한 점 — 박스 묶음 */
+  .pj-notes { display: grid; gap: 10px; }
+  .pj-note { padding: 14px 18px; border-radius: 12px; background: var(--surface-1); border: 1px solid var(--hairline); }
+  .pj-note-t { margin: 0 0 4px; font-weight: 700; font-size: 0.92rem; }
+  .pj-note-d { margin: 0; font-size: 0.88rem; line-height: 1.65; color: var(--text-muted); word-break: keep-all; }
+
+  /* 꼬리말(써 보기·더 보기) 마크다운 */
+  .pj-body { line-height: 1.8; word-break: keep-all; }
+  .pj-body :global(h2) { margin: 28px 0 12px; font-size: 1.2rem; font-weight: 800; }
   .pj-body :global(p) { margin: 0 0 12px; }
   .pj-body :global(ul), .pj-body :global(ol) { margin: 0 0 12px; padding-left: 1.3em; }
   .pj-body :global(li) { margin: 4px 0; }
+  .pj-body :global(a) { color: var(--link); }
   .pj-body :global(code) { font-size: 0.9em; padding: 1px 5px; border-radius: 5px; background: var(--surface-1); }
-  .pj-body :global(img) { max-width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--hairline); }
+  .pj-body :global(pre) { padding: 14px 16px; border-radius: 10px; overflow-x: auto; border: 1px solid var(--hairline); }
+  .pj-body :global(pre code) { background: none; padding: 0; }
 </style>
