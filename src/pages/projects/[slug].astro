@@ -30,6 +30,7 @@ const STATUS: Record<string, string> = { active: '진행 중', done: '완료' };
     <p class="pj-meta">
       {d.tech.map((t) => <span class="pj-chip">{t}</span>)}
       <time datetime={d.date.toISOString()}>{formatDate(d.date)}</time>
+      {d.license && <span class="pj-lic">라이선스 {d.license}</span>}
     </p>
 
     {(d.repo || d.demo || d.pdf) && (
@@ -110,6 +111,8 @@ const STATUS: Record<string, string> = { active: '진행 중', done: '완료' };
   .pj-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 14px; font-size: 0.82rem; }
   .pj-chip { color: var(--link); padding: 1px 8px; border-radius: 6px; background: var(--surface-2); }
   .pj-meta time { color: var(--text-muted); }
+  .pj-lic { color: var(--text-muted); }
+  .pj-lic::before { content: '· '; }
   .pj-links { display: flex; flex-wrap: wrap; gap: 14px; margin: 0 0 22px; font-size: 0.9rem; font-weight: 700; }
   .pj-links a { color: var(--link); text-decoration: none; }
   .pj-links a:hover { text-decoration: underline; }

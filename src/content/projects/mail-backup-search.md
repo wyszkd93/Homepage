@@ -6,6 +6,7 @@ repo: "https://github.com/wyszkd93/X-unit-portfolio/tree/EMAIL"
 pdf: "https://github.com/wyszkd93/X-unit-portfolio/blob/EMAIL/docs/%EB%A9%94%EC%9D%BC%EB%B0%B1%EC%97%85%EA%B2%80%EC%83%89%EA%B8%B0_%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8%EC%86%8C%EA%B0%9C.pdf"
 tech: [Python, SQLite, "표준 라이브러리만", "Vanilla JS", Windows]
 tags: [이메일, 로컬앱, 검색, 프라이버시]
+license: "MIT"
 status: active
 cover: "/images/projects/mail-backup-search/main.png"
 shot: "/images/projects/mail-backup-search/search.png"
@@ -32,4 +33,4 @@ python make_demo.py                          # 가상의 메일 백업 169통 �
 python mail_search.py --data-dir demo/data   # http://127.0.0.1:8790
 ```
 
-실제 백업으로 쓸 땐 `python mail_search.py`를 실행하고, 처음 뜨는 창에서 백업 zip을 모아 둔 폴더를 고르면 돼요. 라이선스는 MIT예요.
+실제 백업으로 쓸 땐 `python mail_search.py`를 실행하고, 처음 뜨는 창에서 백업 zip을 모아 둔 폴더를 고르면 돼요.
