@@ -60,6 +60,7 @@ const projects = defineCollection({
     license: z.string().optional(), // 라이선스 (예: MIT)
     status: z.enum(['active', 'done']).default('active'), // 진행 중 | 완료
     cover: z.string().optional(), // 상단 대표 이미지 /public 기준 경로
+    coverCaption: z.string().optional(), // 커버 아래 설명(없으면 캡션 생략)
     shot: z.string().optional(), // 본문 중간 스크린샷 /public 기준 경로
     summary: z.string().optional(), // 상단 리드 한두 문장
     motivation: z.string().optional(), // "왜 만들었나" 박스 본문

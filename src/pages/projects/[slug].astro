@@ -43,8 +43,8 @@ const STATUS: Record<string, string> = { active: '진행 중', done: '완료' };
 
     {d.cover && (
       <figure class="pj-shot">
-        <img src={url(d.cover)} alt={`${d.title} 메인 화면`} loading="lazy" />
-        <figcaption>화면은 모두 가상의 데모 데이터예요.</figcaption>
+        <img src={url(d.cover)} alt={`${d.title} 대표 이미지`} loading="lazy" />
+        {d.coverCaption && <figcaption>{d.coverCaption}</figcaption>}
       </figure>
     )}
 
