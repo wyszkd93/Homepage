@@ -9,6 +9,7 @@ tags: [이메일, 로컬앱, 검색, 프라이버시]
 license: "MIT"
 status: active
 cover: "/images/projects/mail-backup-search/main.png"
+coverCaption: "화면은 모두 가상의 데모 데이터예요."
 shot: "/images/projects/mail-backup-search/search.png"
 summary: "매달 zip으로 받는 메일 백업을, 압축을 풀지 않고 내 PC 안에서만 검색하는 윈도우용 로컬 웹 앱이에요. 파이썬 표준 라이브러리만 썼고, 어떤 데이터도 밖으로 내보내지 않아요."
 motivation: "보안 정책상 메일 서버에는 최근 메일만 남고, 지난 메일은 매달 전월 백업(zip)으로 내려받아요. 지난 메일 하나를 찾으려면 여러 달치 zip을 풀어 .eml 수백 개를 하나씩 열어 봐야 했고, zip 안에 zip이 들어 있는 데다 파일명·본문이 EUC-KR 계열 인코딩이라 일반 도구로는 한글이 자주 깨졌어요. 메일 원문이라 외부 검색 서비스에 올릴 수도 없었고요. 그래서 내 PC 안에서만 돌고, 백업 파일은 읽기만 하는 검색기를 직접 만들었어요."
