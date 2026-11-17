@@ -68,6 +68,15 @@ export const TOOLS: Tool[] = [
     added: '2026-11-04',
   },
   {
+    kind: 'tool',
+    slug: 'epoch',
+    title: '에포크·시간 변환기',
+    description: 'Unix 타임스탬프와 날짜를 UTC·KST로 서로 바꿔요.',
+    color: '#2f7d9f',
+    icon: '<path d="M3 12a9 9 0 1 0 2.5-6.2"/><path d="M3 4v3.5h3.5"/><path d="M12 8v4.2l3 1.8"/>',
+    added: '2026-11-17',
+  },
+  {
     kind: 'game',
     slug: 'flappy-mogu',
     title: '플래피 모구',
