@@ -54,7 +54,7 @@ const projects = defineCollection({
     date: z.coerce.date(), // 공개(또는 갱신)한 날
     repo: z.string().url().optional(), // 소스 저장소 주소
     demo: z.string().url().optional(), // 데모·실행 주소(있으면)
-    pdf: z.string().url().optional(), // 소개서(PDF) 주소(있으면)
+    pdf: z.string().optional(), // 소개서(PDF) 주소 — 외부 URL 또는 사이트 내 경로(/files/...)
     tech: z.array(z.string()).default([]), // 기술 스택 (예: Python, CLI)
     tags: z.array(z.string()).default([]),
     license: z.string().optional(), // 라이선스 (예: MIT)

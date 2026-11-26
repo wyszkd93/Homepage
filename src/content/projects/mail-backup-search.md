@@ -3,7 +3,7 @@ title: "메일 백업 검색기"
 description: "매달 zip으로 받는 메일 백업을, 압축을 풀지 않고 내 PC 안에서만 검색하는 로컬 웹 앱"
 date: 2026-11-19
 repo: "https://github.com/wyszkd93/X-unit-portfolio/tree/EMAIL"
-pdf: "https://github.com/wyszkd93/X-unit-portfolio/blob/EMAIL/docs/%EB%A9%94%EC%9D%BC%EB%B0%B1%EC%97%85%EA%B2%80%EC%83%89%EA%B8%B0_%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8%EC%86%8C%EA%B0%9C.pdf"
+pdf: "/files/projects/mail-backup-search/mail-backup-search-intro.pdf"
 tech: [Python, SQLite, "표준 라이브러리만", "Vanilla JS", Windows]
 tags: [이메일, 로컬앱, 검색, 프라이버시]
 license: "MIT"

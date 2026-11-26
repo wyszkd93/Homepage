@@ -37,7 +37,7 @@ const STATUS: Record<string, string> = { active: '진행 중', done: '완료' };
       <p class="pj-links">
         {d.repo && <a href={d.repo} target="_blank" rel="noopener noreferrer">소스 보기 ↗</a>}
         {d.demo && <a href={d.demo} target="_blank" rel="noopener noreferrer">데모 ↗</a>}
-        {d.pdf && <a href={d.pdf} target="_blank" rel="noopener noreferrer">소개서 PDF ↗</a>}
+        {d.pdf && <a href={d.pdf.startsWith('http') ? d.pdf : url(d.pdf)} target="_blank" rel="noopener noreferrer">소개서 PDF ↗</a>}
       </p>
     )}
 
